@@ -70,17 +70,14 @@ $(IMG): $(EXEC)
 
 # Implicit rule for creating object files from c files
 $(BUILD)/%.o : %.c | $(BUILD)
-	@echo here
 	$(CC) $(CFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
 
 # Implicit rule for creating object files from c++ files
 $(BUILD)/%.o : %.cc | $(BUILD)
-	@echo i
 	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
 
 # Implicit rule for creating object files from assembly files
 $(BUILD)/%.o : %.s | $(BUILD)
-	@echo am
 	$(AS) $(ASFLAGS) -c $< -o $@
 
 # Make the build directory if doesn't exist
