@@ -13,25 +13,27 @@ CC := $(ARMBIN)/aarch64-none-elf-gcc # C Compiler
 CXX := $(ARMBIN)/aarch64-none-elf-g++ # C++ Compiler
 OBJCOPY := $(ARMBIN)/aarch64-none-elf-objcopy # Objcopy
 GDB := $(ARMBIN)/aarch64-none-elf-gdb # GDB
-QEMU := $(QEMUBIN)/qemu-system-aarch64 
+QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
 QEMU_FLAGS := -no-reboot -M raspi4b -nographic
 CCFLAGS := -ffreestanding -nostdlib
 CXXFLAGS := -ffreestanding -nostdlib
-ASFLAGS := 
+ASFLAGS :=
 DEBUG_FLAGS := -g
 OPT_FLAGS := -O2
 # Desired object files, executables names, etc.
 BUILD = build
-VPATH = src
+SRCDIR = src
+INCDIR = include
+VPATH = $(SRCDIR) $(INCDIR)
 # NOTE(Nate): The wildcard and the vpath could fuck us up here when used
 # together
-CSRC = $(wildcard *.c)
-COBJ = $(patsubst %.c,%.o,$(CSRC))
-CXXSRC = $(wildcard *.cc)
-CXXOBJ = $(patsubst %.cc,%.o,$(CXXSRC))
-ASSRC = $(wildcard *.s)
-ASOBJ = $(patsubst %.s,%.o,$(ASSRC))
+CSRC = $(wildcard $(SRCDIR)/*.c)
+COBJ = $(patsubst $(SRCDIR)/%.c,%.o,$(CSRC))
+CXXSRC = $(wildcard $(SRCDIR)/*.cc)
+CXXOBJ = $(patsubst $(SRCDIR)/%.cc,%.o,$(CXXSRC))
+ASSRC = $(wildcard $(SRCDIR)/*.s)
+ASOBJ = $(patsubst $(SRCDIR)/%.s,%.o,$(ASSRC))
 SRCS = $(CSRC) $(CXXSRC) $(ASSRC)
 OBJS = $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
 EXEC = $(BUILD)/kernel.elf
@@ -69,12 +71,12 @@ $(IMG): $(EXEC)
 # Implicit rule for creating object files from c files
 $(BUILD)/%.o : %.c | $(BUILD)
 	@echo here
-	$(CC) $(CFLAGS) $(OPT_FLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
 
 # Implicit rule for creating object files from c++ files
 $(BUILD)/%.o : %.cc | $(BUILD)
 	@echo i
-	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
 
 # Implicit rule for creating object files from assembly files
 $(BUILD)/%.o : %.s | $(BUILD)
@@ -88,4 +90,3 @@ $(BUILD):
 # All files are in the build dir
 clean:
 	$(RM) -rf $(BUILD)
-
