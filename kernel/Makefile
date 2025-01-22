@@ -7,6 +7,7 @@
 # Programs
 ARMBIN := /u/hill/Coursework/CS378/tools/arm-gnu-toolchain/bin
 QEMUBIN := /u/hill/Coursework/CS378/tools/qemu/bin
+QEMU_LIBS := /u/hill/Coursework/CS378/tools/glib/lib/x86_64-linux-gnu
 AS := $(ARMBIN)/aarch64-none-elf-as # Assembler
 CC := $(ARMBIN)/aarch64-none-elf-gcc # C Compiler
 CXX := $(ARMBIN)/aarch64-none-elf-g++ # C++ Compiler
@@ -36,29 +37,24 @@ OBJS = $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
 EXEC = $(BUILD)/kernel.elf
 IMG = $(BUILD)/kernel.img
 
+.PHONY: all clean debug qemu
+
 # Build an operating system
 all: $(IMG)
-	@echo "Objects are $(OBJS)"
-	$(QEMU) $(QEMU_FLAGS) -kernel $(IMG)
 
 # Set the debug flags and compile
 debug: OPT_FLAGS = -O0
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: CXXFLAGS += $(DEBUG_FLAGS)
 debug: ASFLAGS += $(DEBUG_FLAGS)
-debug: all
+debug: $(IMG)
 	@echo "To debug via gdb: type into another terminal"
 	@echo "$(GDB) kernel/build/kernel.elf"
 	@echo "target remote :1234"
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(EXEC) -s
 
-	#mkdir -p kernel/build
-
-	#/u/hill/Coursework/CS378/tools/arm-gnu-toolchain/bin/aarch64-none-elf-as -c kernel/boot.s -o kernel/build/boot.o -g
-	#/u/hill/Coursework/CS378/tools/arm-gnu-toolchain/bin/aarch64-none-elf-gcc -ffreestanding -c ${CC_FILES} -o kernel/build/kernel.o -g
-	#/u/hill/Coursework/CS378/tools/arm-gnu-toolchain/bin/aarch64-none-elf-gcc -T kernel/linker.ld -o kernel/build/kernel.elf -ffreestanding -O2 -nostdlib kernel/build/boot.o kernel/build/kernel.o -g
-
-
-	#/u/hill/Coursework/CS378/tools/qemu/bin/qemu-system-aarch64 ${QEMU_FLAGS} -kernel kernel/build/kernel.elf -s
+qemu: $(IMG)
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG)
 
 # The executable, a .elf file (eg. kernel.elf)
 $(EXEC): linker.ld $(OBJS)
@@ -93,4 +89,3 @@ $(BUILD):
 clean:
 	$(RM) -rf $(BUILD)
 
-.PHONY: clean
