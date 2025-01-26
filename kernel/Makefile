@@ -16,10 +16,10 @@ GDB := $(ARMBIN)/aarch64-none-elf-gdb # GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
 QEMU_FLAGS := -no-reboot -M raspi4b -nographic
-CCFLAGS := -ffreestanding -nostdlib
-CXXFLAGS := -ffreestanding -nostdlib
+CCFLAGS := -march=armv8-a -mcpu=cortex-a72 -ffreestanding -nostdlib
+CXXFLAGS := -march=armv8-a -mcpu=cortex-a72 -ffreestanding -nostdlib
 ASFLAGS :=
-DEBUG_FLAGS := -g
+DEBUG_FLAGS := -march=armv8-a -mcpu=cortex-a72 -g
 OPT_FLAGS := -O2
 # Desired object files, executables names, etc.
 BUILD = build
@@ -37,7 +37,8 @@ ASOBJ = $(patsubst $(SRCDIR)/%.s,%.o,$(ASSRC))
 SRCS = $(CSRC) $(CXXSRC) $(ASSRC)
 OBJS = $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
 EXEC = $(BUILD)/kernel.elf
-IMG = $(BUILD)/kernel.img
+IMG = $(BUILD)/kernel8.img
+TMP_IMG = $(BUILD)/kernel8_tmp.img
 
 .PHONY: all clean debug qemu
 
@@ -53,7 +54,7 @@ debug: $(IMG)
 	@echo "To debug via gdb: type into another terminal"
 	@echo "$(GDB) kernel/build/kernel.elf"
 	@echo "target remote :1234"
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(EXEC) -s
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG) -s -S
 
 qemu: $(IMG)
 	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG)
@@ -65,6 +66,8 @@ $(EXEC): linker.ld $(OBJS)
 # THe image, a .img file (eg. kernel.img)
 $(IMG): $(EXEC)
 	$(OBJCOPY) $< -O binary $@
+	dd if=$@ of=$(TMP_IMG) bs=1 skip=524288
+	mv -f $(TMP_IMG) $@
 
 # NOTE(Nate): Implicit rules are okay... but explicit would be good
 
