@@ -1,3 +1,1 @@
 # dingOS
-
-source .bashrc
