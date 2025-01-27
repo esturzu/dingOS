@@ -2,14 +2,13 @@
 
 #include "stdint.h"
 #include "uart.h"
+#include "debug.h"
 
 void kernelMain()
 {
   init_uart();
 
-  uart_putc('h');
-  uart_putc('i');
-  uart_putc('!');
+  debug_print("DingOS is Booting!\n");
 
 	while (1) {}
 }

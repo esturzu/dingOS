@@ -1,3 +1,7 @@
+// Citations
+// https://wiki.osdev.org/Raspberry_Pi_Bare_Bones
+// https://datasheets.raspberrypi.com/bcm2711/bcm2711-peripherals.pdf
+
 #include "uart.h"
 #include "stdint.h"
 
