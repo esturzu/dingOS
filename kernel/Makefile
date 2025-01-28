@@ -66,8 +66,8 @@ $(EXEC): linker.ld $(OBJS)
 # THe image, a .img file (eg. kernel.img)
 $(IMG): $(EXEC)
 	$(OBJCOPY) $< -O binary $@
-	dd if=$@ of=$(TMP_IMG) bs=1 skip=524288
-	mv -f $(TMP_IMG) $@
+	# dd if=$@ of=$(TMP_IMG) bs=1 skip=524288
+	# mv -f $(TMP_IMG) $@
 
 # NOTE(Nate): Implicit rules are okay... but explicit would be good
 
