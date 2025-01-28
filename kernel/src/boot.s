@@ -1,6 +1,6 @@
 .section ".text.boot"
 
-.global _start
+.globl _start
 _start:
   ldr x5, =_start
   mov sp, x5
