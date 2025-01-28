@@ -1,12 +1,14 @@
 .global atomic_load
-atomic_load:                    // long atomic_load(long* obj)
+// long atomic_load(long* obj)
+atomic_load:
     ldxr x1, [x0]               // Atomically load the obj
     dmb sy                      // Sets up a Data Memory Barrier
     mov x0, x1                  // Setting the obj to return 
     ret
 
 .global atomic_store
-atomic_store:                   // void atomic_store(long* obj, long desired)
+// void atomic_store(long* obj, long desired)
+atomic_store:
     mov w2, #1                  // Initally set as failing
 atomic_store_retry:
     ldxr x2, [x0]               // Establish exclusive monitor (value in x2 is unused)
@@ -16,7 +18,8 @@ atomic_store_retry:
     ret
 
 .global atomic_exchange
-atomic_exchange:                    // long atomic_exchange(long* obj, long desired)
+// long atomic_exchange(long* obj, long desired)
+atomic_exchange:
     mov w2, #1                      // Initally set as failing
 atomic_exchange_retry:
     ldxr x3, [x0]                   // Establish exclusive monitor 
