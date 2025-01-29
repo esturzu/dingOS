@@ -15,7 +15,7 @@ OBJCOPY := $(ARMBIN)/aarch64-none-elf-objcopy # Objcopy
 GDB := $(ARMBIN)/aarch64-none-elf-gdb # GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
-QEMU_FLAGS := -no-reboot -M raspi3b -nographic
+QEMU_FLAGS := -no-reboot -M raspi3 -nographic
 CCFLAGS := -march=armv8-a -mcpu=cortex-a72 -ffreestanding -nostdlib
 CXXFLAGS := -march=armv8-a -mcpu=cortex-a72 -ffreestanding -nostdlib
 ASFLAGS :=
