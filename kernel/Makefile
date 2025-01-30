@@ -47,7 +47,7 @@ all: $(IMG)
 
 # Set the debug flags and compile
 debug: OPT_FLAGS = -O0
-debug: CFLAGS += $(DEBUG_FLAGS)
+debug: CCFLAGS += $(DEBUG_FLAGS)
 debug: CXXFLAGS += $(DEBUG_FLAGS)
 debug: ASFLAGS += $(DEBUG_FLAGS)
 debug: $(IMG)
@@ -66,14 +66,12 @@ $(EXEC): linker.ld $(OBJS)
 # THe image, a .img file (eg. kernel.img)
 $(IMG): $(EXEC)
 	$(OBJCOPY) $< -O binary $@
-	dd if=$@ of=$(TMP_IMG) bs=1 skip=524288
-	mv -f $(TMP_IMG) $@
 
 # NOTE(Nate): Implicit rules are okay... but explicit would be good
 
 # Implicit rule for creating object files from c files
 $(BUILD)/%.o : %.c | $(BUILD)
-	$(CC) $(CFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
+	$(CC) $(CCFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
 
 # Implicit rule for creating object files from c++ files
 $(BUILD)/%.o : %.cc | $(BUILD)
