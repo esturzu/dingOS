@@ -6,7 +6,6 @@
 #include "stdint.h"
 #include "peripherals_mappings.h"
 
-
 void init_uart ()
 {
   volatile uint32_t* UART0_CONTROL_REGISTER = (volatile uint32_t*) (UART0_CONTROL_PHYS);
