@@ -1,3 +1,6 @@
+/*
+To reunderstand what each part means, visit https://wiki.osdev.org/Linker_Scripts
+*/
 ENTRY(_start)
 
 SECTIONS
