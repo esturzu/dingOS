@@ -15,11 +15,11 @@ OBJCOPY := $(ARMBIN)/aarch64-none-elf-objcopy # Objcopy
 GDB := $(ARMBIN)/aarch64-none-elf-gdb # GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
-QEMU_FLAGS := -no-reboot -M raspi4b -nographic
-CCFLAGS := -march=armv8-a -mcpu=cortex-a72 -ffreestanding -nostdlib
-CXXFLAGS := -march=armv8-a -mcpu=cortex-a72 -ffreestanding -nostdlib
+QEMU_FLAGS := -no-reboot -M raspi3b -nographic
+CCFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
+CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
 ASFLAGS :=
-DEBUG_FLAGS := -march=armv8-a -mcpu=cortex-a72 -g
+DEBUG_FLAGS := -g
 OPT_FLAGS := -O2
 # Desired object files, executables names, etc.
 BUILD = build
@@ -47,7 +47,7 @@ all: $(IMG)
 
 # Set the debug flags and compile
 debug: OPT_FLAGS = -O0
-debug: CFLAGS += $(DEBUG_FLAGS)
+debug: CCFLAGS += $(DEBUG_FLAGS)
 debug: CXXFLAGS += $(DEBUG_FLAGS)
 debug: ASFLAGS += $(DEBUG_FLAGS)
 debug: $(IMG)
@@ -66,14 +66,12 @@ $(EXEC): linker.ld $(OBJS)
 # THe image, a .img file (eg. kernel.img)
 $(IMG): $(EXEC)
 	$(OBJCOPY) $< -O binary $@
-	# dd if=$@ of=$(TMP_IMG) bs=1 skip=524288
-	# mv -f $(TMP_IMG) $@
 
 # NOTE(Nate): Implicit rules are okay... but explicit would be good
 
 # Implicit rule for creating object files from c files
 $(BUILD)/%.o : %.c | $(BUILD)
-	$(CC) $(CFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
+	$(CC) $(CCFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
 
 # Implicit rule for creating object files from c++ files
 $(BUILD)/%.o : %.cc | $(BUILD)

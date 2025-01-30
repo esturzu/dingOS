@@ -1,13 +1,13 @@
-# Connect to QEMU's GDB server
+# Connect to QEMU
 target remote :1234
 
-# Set the program counter (PC) to the entry point
-set $pc = 0x80000
+# load symbols
+add-symbol-file kernel/build/kernel.elf 0x80000
 
-# Set a breakpoint at kernelMain
+# set breakpoints
 b kernelMain
 
-# Define a cleanup hook to kill QEMU on GDB exit
+# kill qemu on gdb exit
 define hook-quit
   shell pkill -f qemu-system-aarch64
 end
