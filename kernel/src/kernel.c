@@ -4,8 +4,7 @@
 #include "uart.h"
 #include "debug.h"
 #include "atomics.h"
-
-
+#include "event_loop.h"
 
 void kernelMain()
 {
@@ -16,5 +15,7 @@ void kernelMain()
 
   basic_test_atomics();
 
-  // while(1){};
+  event_loop_test();
+
+  // while(1);
 }
