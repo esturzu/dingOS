@@ -4,29 +4,37 @@
 
 extern "C" char _end; 
 #define HEAP_START ((size_t)&_end)
-#define HEAP_SIZE  0x100000  // Example: 1 MB heap size
+#define HEAP_SIZE  0x100000  // 1 MB heap size
 
 static size_t current_heap = HEAP_START;
 static const size_t heap_end = HEAP_START + HEAP_SIZE;
 
-void* malloc(size_t size) {
-    // Simple allocation without fragmentation handling for now
-    if (current_heap + size > heap_end) {
-        return 0;  // Out of memory
+size_t align_up(size_t addr, size_t alignment) {
+    return (addr + alignment - 1) & ~(alignment - 1);
+}
+
+void* malloc(size_t size, size_t alignment) {
+    // defaults to align to 4 bytes (word thingy from gheith though i am not sure)
+    size_t aligned_heap = align_up(current_heap, alignment);
+
+    // check if out of memory
+    if (aligned_heap + size > heap_end) {
+        return 0;
     }
 
-    void* allocated = (void*)current_heap;
-    current_heap += size;
+    void* allocated = (void*)aligned_heap;
+    current_heap = aligned_heap + size;
     return allocated;
 }
 
 void free(void* pointer) {
-    // Free is a no-op for now (you can implement more complex handling later)
+    // haven't done it lol
 }
+
 
 void run_heap_tests() {
     // Test 1: Basic allocation
-    void* block1 = malloc(256);
+    void* block1 = malloc(256, 8);
     if (block1 != 0) {
         debug_print("Test 1 Passed: Allocated 256 bytes.\n");
     } else {
@@ -49,8 +57,8 @@ void run_heap_tests() {
         debug_print("Test 3 Failed: Allocation succeeded unexpectedly.\n");
     }
 
-    // Test 4: Allocate remaining available space
-    void* block4 = malloc(HEAP_END - (size_t)block2 - 256);
+    size_t remaining_space = heap_end - current_heap;
+    void* block4 = malloc(remaining_space);
     if (block4 != 0) {
         debug_print("Test 4 Passed: Allocated remaining heap space.\n");
     } else {
