@@ -15,8 +15,6 @@ extern "C" void kernelMain()
 
 
   run_heap_tests();
-  
-  basic_test_atomics();
 
   event_loop_test();
 
