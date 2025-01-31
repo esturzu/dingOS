@@ -13,7 +13,6 @@ extern "C" void kernelMain()
   debug_print("DingOS is Booting!\n");
 
 
-  basic_test_atomics();
 
   event_loop_test();
 
