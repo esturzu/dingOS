@@ -1,16 +1,24 @@
 #ifndef ATOMICS_H
 #define ATOMICS_H
 
-/*
- * Atomic operations
- * https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
-*/
+
+/**
+ * @brief Atomic wrapper for GCC builtins
+ * 
+ * 
+ * modification reference: https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
+ * @tparam T type of the object to be atomically modified
+ */
 template <typename T>
 class Atomic {
     private:
         volatile T* obj;
-
     public:
+        /**
+         * @brief Construct a new Atomic object
+         * 
+         * @param ptr   ptr to the object to be atomically modified
+         */
         explicit Atomic(T* ptr) : obj(ptr) {}
 
         /**
