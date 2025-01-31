@@ -69,6 +69,4 @@ class Atomic {
         }
 };
 
-extern void basic_test_atomics();
-
 #endif // ATOMICS_H
