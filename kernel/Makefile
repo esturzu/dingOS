@@ -17,7 +17,8 @@ QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
 QEMU_FLAGS := -no-reboot -M raspi3b -nographic
 CCFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
-CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
+CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib -mno-outline-atomics -fno-builtin -fno-stack-protector -fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles
+
 ASFLAGS :=
 DEBUG_FLAGS := -g
 OPT_FLAGS := -O2
