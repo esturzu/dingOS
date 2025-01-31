@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "atomics.h"
 #include "event_loop.h"
+#include "heap.h"
 
 extern "C" void kernelMain()
 {
@@ -13,6 +14,9 @@ extern "C" void kernelMain()
   debug_print("DingOS is Booting!\n");
 
 
+  run_heap_tests();
+  
+  basic_test_atomics();
 
   event_loop_test();
 

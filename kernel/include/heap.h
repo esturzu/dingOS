@@ -1,19 +1,15 @@
 #ifndef _HEAP_H_
 #define _HEAP_H_
 
-#define HEAP_START_ADDR ((size_t) 0x10000)
-#define HEAP_END_ADDR   ((size_t) 0x20000)
+#include "stdint.h"  // Or your equivalent file with size_t defined
 
-typedef struct {
-    size_t lock;
-    size_t offset;
-} HeapMetadata;
+extern "C" char _end;  // Linker script will define this symbol
 
-#define ROUNDUP16(value)  (((value) + 15) / 16)
-#define HEAP_METADATA_PTR ((HeapMetadata*) HEAP_START_ADDR)
-#define HEAP_DATA_ADDR    ROUNDUP16((size_t) (HEAP_METADATA_PTR + 1))
+#define HEAP_START ((size_t)&_end)  
+#define HEAP_SIZE  0x100000          // Example: 1 MB heap size
+#define HEAP_END   (HEAP_START + HEAP_SIZE)
 
-extern void* malloc(size_t size);
-extern void free(void* pointer);
-
-#endif
+void* malloc(size_t size);
+void free(void* pointer);
+void run_heap_tests();
+#endif  // _HEAP_H_
