@@ -9,7 +9,7 @@
 // Todo: change to lock-less queue for multi-cores
 
 typedef struct Node {
-  void *item;
+  void* item;
   struct Node *next;
 } Node;
 

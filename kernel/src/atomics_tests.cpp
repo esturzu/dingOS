@@ -2,8 +2,8 @@
 
 #include "debug.h"
 
-void print_test_results(long x, long y, char* test_title){
-    char* out = " ";
+void print_test_results(long x, long y, const char* test_title){
+    char out[] = " ";
     debug_print(test_title);
     
     if(x == y){

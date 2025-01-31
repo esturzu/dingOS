@@ -30,8 +30,8 @@ VPATH = $(SRCDIR) $(INCDIR)
 # together
 CSRC = $(wildcard $(SRCDIR)/*.c)
 COBJ = $(patsubst $(SRCDIR)/%.c,%.o,$(CSRC))
-CXXSRC = $(wildcard $(SRCDIR)/*.cc)
-CXXOBJ = $(patsubst $(SRCDIR)/%.cc,%.o,$(CXXSRC))
+CXXSRC = $(wildcard $(SRCDIR)/*.cpp)
+CXXOBJ = $(patsubst $(SRCDIR)/%.cpp,%.o,$(CXXSRC))
 ASSRC = $(wildcard $(SRCDIR)/*.s)
 ASOBJ = $(patsubst $(SRCDIR)/%.s,%.o,$(ASSRC))
 SRCS = $(CSRC) $(CXXSRC) $(ASSRC)
@@ -61,7 +61,7 @@ qemu: $(IMG)
 
 # The executable, a .elf file (eg. kernel.elf)
 $(EXEC): linker.ld $(OBJS)
-	$(CC) -T $< $(CCFLAGS) -o $@ $(OBJS)
+	$(CXX) -T $< $(CXXFLAGS) -o $@ $(OBJS)
 
 # THe image, a .img file (eg. kernel.img)
 $(IMG): $(EXEC)
@@ -74,7 +74,7 @@ $(BUILD)/%.o : %.c | $(BUILD)
 	$(CC) $(CCFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
 
 # Implicit rule for creating object files from c++ files
-$(BUILD)/%.o : %.cc | $(BUILD)
+$(BUILD)/%.o : %.cpp | $(BUILD)
 	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
 
 # Implicit rule for creating object files from assembly files

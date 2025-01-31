@@ -6,7 +6,7 @@
 #include "atomics.h"
 #include "event_loop.h"
 
-void kernelMain()
+extern "C" void kernelMain()
 {
   init_uart();
 
