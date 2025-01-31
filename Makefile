@@ -23,4 +23,3 @@ clean:
 	for dir in $(COMPONENTS); do \
 		$(MAKE) -C $$dir clean; \
 	done
-

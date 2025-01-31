@@ -25,8 +25,8 @@ void event_loop_test() {
   // Don't have malloc so have to do sketchy stuff
   Queue queue;
 
-  Node fun2_node = { .item = fun2, .next = 0 };
-  Node fun1_node = { .item = fun1, .next = &fun2_node };
+  Node fun2_node = { (void*)fun2, nullptr };
+  Node fun1_node = { (void*)fun1, &fun2_node };
   queue.head = &fun1_node;
 
   event_loop(&queue);
