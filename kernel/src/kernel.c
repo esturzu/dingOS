@@ -3,6 +3,7 @@
 #include "stdint.h"
 #include "uart.h"
 #include "debug.h"
+#include "event_loop.h"
 
 void kernelMain()
 {
@@ -10,5 +11,7 @@ void kernelMain()
 
   debug_print("DingOS is Booting!\n");
 
-	while (1) {}
+  event_loop_test();
+
+  // while(1);
 }
