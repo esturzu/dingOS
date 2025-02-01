@@ -1,6 +1,7 @@
 #include "kernel.h"
 
 #include "stdint.h"
+#include "printf.h"
 #include "uart.h"
 #include "debug.h"
 #include "atomics.h"
@@ -12,7 +13,7 @@ extern "C" void kernelMain()
 
   debug_print("DingOS is Booting!\n");
 
-
+  printf("Hello %s %d %x\n", "Hi!", 7, 11);
 
   event_loop_test();
 
