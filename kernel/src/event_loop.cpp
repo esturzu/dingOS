@@ -1,10 +1,10 @@
 #include "event_loop.h"
 
 #include "queue.h"
-#include "debug.h"
+#include "printf.h"
 
 void event_loop(Queue *queue) {
-  debug_print("Entering event loop!\n");
+  Debug::printf("Entering event loop!\n");
   while (!empty(queue)) {
     Work event = (Work) dequeue(queue);
     event(0);
@@ -12,11 +12,11 @@ void event_loop(Queue *queue) {
 }
 
 void fun1(void *args) {
-  debug_print("In fun1()\n");
+  Debug::printf("In fun1()\n");
 }
 
 void fun2(void *args) {
-  debug_print("In fun2(), calling fun1()\n");
+  Debug::printf("In fun2(), calling fun1()\n");
   fun1(0);
 }
 

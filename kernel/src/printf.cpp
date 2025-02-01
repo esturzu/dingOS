@@ -33,9 +33,12 @@
 #include "printf.h"
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// #ifdef __cplusplus
+// extern "C" {
+// #endif
+
+namespace Debug
+{
 
 // define this globally (e.g. gcc -DPRINTF_INCLUDE_CONFIG_H ...) to include the
 // printf_config.h header file
@@ -920,6 +923,8 @@ void _putchar(char character)
   uart_putc(character);
 }
 
-#ifdef __cplusplus
+// #ifdef __cplusplus
+// }
+// #endif
+
 }
-#endif
