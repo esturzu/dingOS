@@ -1,26 +1,48 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-////////////////////////////////////
-// A generic queue implementation //
-////////////////////////////////////
+#include "atomics.h"
 
-// Note: only supports single-core, no locks, uses linked list structure
-// Todo: change to lock-less queue for multi-cores
+template <typename T>
+class LocklessQueue
+{
+  struct Node
+  {
+    T item;
+    Atomic<Node*> next; 
+  };
 
-typedef struct Node {
-  void* item;
-  struct Node *next;
-} Node;
+  Atomic<Node*> head;
+  Atomic<Node*> tail;
 
-typedef struct Queue {
-  Node *head;
-  Node *tail;
-} Queue;
+public:
+  
+  LocklessQueue();
+  ~LocklessQueue();
+  void enqueue(T item);
+  T dequeue();
+  bool is_empty();
+};
 
-void init_queue(Queue *queue);
-void enqueue(Queue *queue, void *item);
-void *dequeue(Queue *queue);
-int empty(Queue *queue);
+template <typename T>
+class Queue
+{
+  struct Node
+  {
+    T item; 
+    Node* next;
+  };
+
+  Node* head;
+  Node* tail;
+
+public:
+
+  Queue();
+  ~Queue();
+  void enqueue(T item);
+  T dequeue();
+  bool is_empty();
+};
 
 #endif // QUEUE_H

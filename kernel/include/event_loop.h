@@ -1,16 +1,17 @@
+// Citations
+// https://stackoverflow.com/questions/51837684/c-save-lambda-functions-as-member-variables-without-function-pointers-for-opti
+
 #ifndef EVENT_LOOP_H
 #define EVENT_LOOP_H
 
-// Dependencies
-struct Queue;
+#include "queue.h"
 
-typedef void (*Work)(void *);
+extern void event_loop();
 
-typedef struct {
-  Work work;
-} Event;
-
-void event_loop(struct Queue *queue);
-void event_loop_test();
+struct Event
+{
+  virtual void run() = 0;
+  virtual ~Event();
+};
 
 #endif // EVENT_LOOP_H
