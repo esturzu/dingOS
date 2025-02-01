@@ -13,7 +13,7 @@ size_t align_up(size_t addr, size_t alignment) {
     return (addr + alignment - 1) & ~(alignment - 1);
 }
 
-void* malloc(size_t size, size_t alignment) {
+extern "C" void* malloc(size_t size, size_t alignment) {
     // defaults to align to 4 bytes (word thingy from gheith though i am not sure)
     size_t aligned_heap = align_up(current_heap, alignment);
 
@@ -27,10 +27,15 @@ void* malloc(size_t size, size_t alignment) {
     return allocated;
 }
 
-void free(void* pointer) {
+extern "C" void free(void* pointer) {
     // haven't done it lol
 }
 
+
+struct HeapTestStruct
+{
+  uint64_t test;
+};
 
 void run_heap_tests() {
     // Test 1: Basic allocation
@@ -57,11 +62,55 @@ void run_heap_tests() {
         debug_print("Test 3 Failed: Allocation succeeded unexpectedly.\n");
     }
 
-    size_t remaining_space = heap_end - current_heap;
-    void* block4 = malloc(remaining_space);
+    // Test 4: Testing new keyword
+    HeapTestStruct* block4 = new HeapTestStruct();
     if (block4 != 0) {
-        debug_print("Test 4 Passed: Allocated remaining heap space.\n");
+        debug_print("Test 4 Passed: New keyword succeeded.\n");
     } else {
-        debug_print("Test 4 Failed: Allocation returned null.\n");
+        debug_print("Test 4 Failed: New keywork failed.\n");
     }
+
+    // Test 5: Testing allocating all remaining heap space
+    size_t remaining_space = heap_end - current_heap;
+    void* block5 = malloc(remaining_space);
+    if (block5 != 0) {
+        debug_print("Test 5 Passed: Allocated remaining heap space.\n");
+    } else {
+        debug_print("Test 5 Failed: Allocation returned null.\n");
+    }
+}
+
+// C++ Operators
+// Citations
+// https://en.cppreference.com/w/cpp/memory/new/operator_new
+// https://en.cppreference.com/w/cpp/memory/new/operator_delete
+
+void* operator new(size_t count)
+{
+  return malloc(count, 8);
+}
+
+void* operator new[](size_t count)
+{
+  return malloc(count, 8);
+}
+
+void* operator new(size_t count, align_val_t al)
+{
+  return malloc(count, al);
+}
+
+void* operator new[](size_t count, align_val_t al)
+{
+  return malloc(count, al);
+}
+
+void operator delete(void* ptr) noexcept
+{
+  free(ptr);
+}
+
+void operator delete[](void* ptr) noexcept
+{
+ free(ptr);
 }
