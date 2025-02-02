@@ -1,6 +1,6 @@
 #include "stdint.h"
 #include "heap.h"
-#include "debug.h"
+#include "printf.h"
 
 extern "C" char _end; 
 #define HEAP_START ((size_t)&_end)
@@ -41,42 +41,42 @@ void run_heap_tests() {
     // Test 1: Basic allocation
     void* block1 = malloc(256, 8);
     if (block1 != 0) {
-        debug_print("Test 1 Passed: Allocated 256 bytes.\n");
+        Debug::printf("Test 1 Passed: Allocated 256 bytes.\n");
     } else {
-        debug_print("Test 1 Failed: Allocation returned null.\n");
+        Debug::printf("Test 1 Failed: Allocation returned null.\n");
     }
 
     // Test 2: Large allocation within heap size
     void* block2 = malloc(500000);
     if (block2 != 0) {
-        debug_print("Test 2 Passed: Allocated 500000 bytes.\n");
+        Debug::printf("Test 2 Passed: Allocated 500000 bytes.\n");
     } else {
-        debug_print("Test 2 Failed: Allocation returned null.\n");
+        Debug::printf("Test 2 Failed: Allocation returned null.\n");
     }
 
     // Test 3: Allocation exceeding available heap space
     void* block3 = malloc(700000);  // This should fail
     if (block3 == 0) {
-        debug_print("Test 3 Passed: Out-of-memory condition handled.\n");
+        Debug::printf("Test 3 Passed: Out-of-memory condition handled.\n");
     } else {
-        debug_print("Test 3 Failed: Allocation succeeded unexpectedly.\n");
+        Debug::printf("Test 3 Failed: Allocation succeeded unexpectedly.\n");
     }
 
     // Test 4: Testing new keyword
     HeapTestStruct* block4 = new HeapTestStruct();
     if (block4 != 0) {
-        debug_print("Test 4 Passed: New keyword succeeded.\n");
+        Debug::printf("Test 4 Passed: New keyword succeeded.\n");
     } else {
-        debug_print("Test 4 Failed: New keywork failed.\n");
+        Debug::printf("Test 4 Failed: New keywork failed.\n");
     }
 
     // Test 5: Testing allocating all remaining heap space
     size_t remaining_space = heap_end - current_heap;
     void* block5 = malloc(remaining_space);
     if (block5 != 0) {
-        debug_print("Test 5 Passed: Allocated remaining heap space.\n");
+        Debug::printf("Test 5 Passed: Allocated remaining heap space.\n");
     } else {
-        debug_print("Test 5 Failed: Allocation returned null.\n");
+        Debug::printf("Test 5 Failed: Allocation returned null.\n");
     }
 }
 
@@ -112,5 +112,5 @@ void operator delete(void* ptr) noexcept
 
 void operator delete[](void* ptr) noexcept
 {
- free(ptr);
+  free(ptr);
 }

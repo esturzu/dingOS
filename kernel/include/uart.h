@@ -3,6 +3,6 @@
 
 extern void init_uart();
 
-extern void uart_putc(char c);
+extern "C" void uart_putc(char c);
 
 #endif
