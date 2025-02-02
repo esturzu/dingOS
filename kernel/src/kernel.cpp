@@ -5,12 +5,15 @@
 #include "uart.h"
 #include "atomics.h"
 #include "event_loop.h"
+#include "heap.h"
 
 extern "C" void kernelMain()
 {
   init_uart();
 
-  Debug::printf("Hello %s %d %x\n", "Hi!", 7, 11);
+  Debug::printf("DingOS is Booting!\n");
+
+  run_heap_tests();
 
   event_loop_test();
 

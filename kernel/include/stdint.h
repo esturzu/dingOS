@@ -15,6 +15,9 @@ typedef int int32_t;
 
 typedef unsigned long uint64_t;
 typedef long int64_t;
+typedef unsigned long size_t; 
+
+typedef size_t align_val_t;
 
 typedef unsigned long size_t;
 
