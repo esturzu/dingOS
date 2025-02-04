@@ -1,5 +1,11 @@
+// Citations
+// https://stackoverflow.com/questions/51837684/c-save-lambda-functions-as-member-variables-without-function-pointers-for-opti
+
 #ifndef EVENT_LOOP_H
 #define EVENT_LOOP_H
+
+#include "queue.h"
+#include "heap.h"
 
 struct Event {
   // General Event data goes here
@@ -30,7 +36,16 @@ struct EventWithWorkAndValue : public EventWithWork<Work> {
   }
 };
 
-void event_loop(struct Queue *queue);
-void event_loop_test();
+extern LocklessQueue<Event*>* ready_queue;
+
+void init_event_loop();
+void event_loop();
+
+template <typename Work>
+void schedule_event(Work work)
+{
+  Event* event = new EventWithWork<Work>(work);
+  ready_queue->enqueue(event);
+}
 
 #endif // EVENT_LOOP_H
