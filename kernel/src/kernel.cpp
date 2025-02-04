@@ -36,26 +36,27 @@ extern "C" void kernelMain_core1()
 {
   Debug::printf("Core 1!\n");
 
-  while(1) {}
+  event_loop();
 }
 
 extern "C" void kernelMain_core2()
 {
   Debug::printf("Core 2!\n");
 
-  while(1) {}
+  event_loop();
 }
 
 extern "C" void kernelMain_core3()
 {
   Debug::printf("Core 3!\n");
 
-  while(1) {}
+  event_loop();
 }
 
 extern "C" void kernelMain()
 {
-  // init_uart();
+  init_event_loop();
+  init_uart();
 
   Debug::printf("DingOS is Booting!\n");
 
@@ -65,9 +66,16 @@ extern "C" void kernelMain()
   *(core_wakeup_base + 2) = (uint64_t) &_start_core2;
   *(core_wakeup_base + 3) = (uint64_t) &_start_core3;
 
-  run_heap_tests();
+  for (int i = 0; i < 10; i++)
+  {
+    schedule_event([i] {
+      Debug::printf("Event #%d!\n", i);
+    });
+  }
 
-  event_loop_test();
+  // run_heap_tests();
+
+  event_loop();
 
   while(1);
 }

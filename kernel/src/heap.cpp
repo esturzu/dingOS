@@ -114,3 +114,21 @@ void operator delete[](void* ptr) noexcept
 {
   free(ptr);
 }
+
+void operator delete(void* ptr, size_t sz) noexcept
+{
+  free(ptr);
+}
+
+void operator delete[](void* ptr, size_t sz) noexcept
+{
+  free(ptr);
+}
+
+// Undefined Delete Reference Fix
+
+extern "C" void __cxa_atexit() {}
+
+extern "C" void __dso_handle() {}
+
+extern "C" void __cxa_pure_virtual() {}
