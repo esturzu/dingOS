@@ -13,7 +13,7 @@ void init_uart ()
   *UART0_CONTROL_REGISTER = 0x00000000;
 }
 
-void uart_putc(char c)
+extern "C" void uart_putc(char c)
 {
   volatile uint32_t* UART0_DATA_REGISTER = (volatile uint32_t*) (UART0_DATA_PHYS);
   volatile uint32_t* UART0_FLAG_REGISTER = (volatile uint32_t*) (UART0_FLAG_PHYS);

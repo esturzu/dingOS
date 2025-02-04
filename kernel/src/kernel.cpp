@@ -4,10 +4,11 @@
 #include "kernel.h"
 
 #include "stdint.h"
+#include "printf.h"
 #include "uart.h"
-#include "debug.h"
 #include "atomics.h"
 #include "event_loop.h"
+#include "heap.h"
 
 #define STACK_SIZE 8192
 
@@ -33,24 +34,30 @@ extern "C" void _start_core3();
 
 extern "C" void kernelMain_core1()
 {
-  debug_print("Core 1!\n");
+  Debug::printf("Core 1!\n");
+
+  while(1) {}
 }
 
 extern "C" void kernelMain_core2()
 {
-  debug_print("Core 2!\n");
+  Debug::printf("Core 2!\n");
+
+  while(1) {}
 }
 
 extern "C" void kernelMain_core3()
 {
-  debug_print("Core 3!\n");
+  Debug::printf("Core 3!\n");
+
+  while(1) {}
 }
 
 extern "C" void kernelMain()
 {
-  init_uart();
+  // init_uart();
 
-  debug_print("DingOS is Booting!\n");
+  Debug::printf("DingOS is Booting!\n");
 
   // Boot other cores
   uint64_t* core_wakeup_base = (uint64_t*) 216;
@@ -58,7 +65,9 @@ extern "C" void kernelMain()
   *(core_wakeup_base + 2) = (uint64_t) &_start_core2;
   *(core_wakeup_base + 3) = (uint64_t) &_start_core3;
 
-  // event_loop_test();
+  run_heap_tests();
+
+  event_loop_test();
 
   while(1);
 }
