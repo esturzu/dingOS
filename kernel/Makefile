@@ -5,14 +5,14 @@
 # https://www.gnu.org/software/make/manual/make.html#Implicit-Rules Info
 
 # Programs
-ARMBIN := /u/hill/Coursework/CS378/tools/arm-gnu-toolchain/bin
+ARMBIN := /u/gheith/public/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bin
 QEMUBIN := /u/hill/Coursework/CS378/tools/qemu/bin
 QEMU_LIBS := /u/hill/Coursework/CS378/tools/glib/lib/x86_64-linux-gnu
-AS := $(ARMBIN)/aarch64-none-elf-as # Assembler
-CC := $(ARMBIN)/aarch64-none-elf-gcc # C Compiler
-CXX := $(ARMBIN)/aarch64-none-elf-g++ # C++ Compiler
-OBJCOPY := $(ARMBIN)/aarch64-none-elf-objcopy # Objcopy
-GDB := $(ARMBIN)/aarch64-none-elf-gdb # GDB
+AS := $(ARMBIN)/aarch64-none-linux-gnu-as # Assembler
+CC := $(ARMBIN)/aarch64-none-linux-gnu-gcc # C Compiler
+CXX := $(ARMBIN)/aarch64-none-linux-gnu-g++ # C++ Compiler
+OBJCOPY := $(ARMBIN)/aarch64-none-linux-gnu-objcopy # Objcopy
+GDB := $(ARMBIN)/aarch64-none-linux-gnu-gdb # GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
 QEMU_FLAGS := -no-reboot -M raspi3b -nographic

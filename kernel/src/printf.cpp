@@ -31,7 +31,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "printf.h"
-
+#include "atomics.h"
+#include "uart.h"
 
 // #ifdef __cplusplus
 // extern "C" {
@@ -863,13 +864,22 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+bool printf_lock = true;
+
 int printf_(const char* format, ...)
 {
+  // Enter Lock
+  while (!__atomic_exchange_n (&printf_lock, false, __ATOMIC_SEQ_CST)) {};
+
   va_list va;
   va_start(va, format);
   char buffer[1];
   const int ret = _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
   va_end(va);
+  
+  // Leave Lock
+  __atomic_store_n(&printf_lock, true, __ATOMIC_SEQ_CST);
+
   return ret;
 }
 
@@ -917,7 +927,6 @@ int fctprintf(void (*out)(char character, void* arg), void* arg, const char* for
   return ret;
 }
 
-#include "uart.h"
 void _putchar(char character)
 {
   uart_putc(character);
