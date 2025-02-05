@@ -10,6 +10,7 @@
 #include "event_loop.h"
 #include "heap.h"
 #include "crti.h"
+#include "tester.h"
 
 #define STACK_SIZE 8192
 
@@ -70,14 +71,8 @@ extern "C" void kernelMain()
   *(core_wakeup_base + 2) = (uint64_t) &_start_core2;
   *(core_wakeup_base + 3) = (uint64_t) &_start_core3;
 
-  for (int i = 0; i < 10; i++)
-  {
-  schedule_event([i] {
-    Debug::printf("Event #%d!\n", i);
-  });
-  }
-
-  run_heap_tests();
+  // Run tests
+  runTests();
 
   event_loop();
 

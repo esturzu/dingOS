@@ -136,7 +136,7 @@ void* malloc(size_t size, size_t alignment) {
 //     // Debug::printf("Block Size: 0x%X\n", size);
 
 //     // check if out of memory
-//     if (aligned_heap + size > heap_end) {
+//     if (aligned_heap + size > HEAP_END) {
 //       return 0;
 //     }
 
