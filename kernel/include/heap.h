@@ -11,5 +11,4 @@ extern "C" char _end;  // Linker script will define this symbol
 
 extern "C" void* malloc(size_t size, size_t alignment = 4);
 extern "C" void free(void* pointer);
-void run_heap_tests();
 #endif  // _HEAP_H_
