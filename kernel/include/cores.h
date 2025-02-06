@@ -5,7 +5,6 @@
 
 extern Atomic<int> startedCores;
 
-
 extern "C" void bootCores();
 
 #endif
