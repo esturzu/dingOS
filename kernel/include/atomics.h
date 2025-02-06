@@ -67,6 +67,16 @@ class Atomic {
                 __ATOMIC_SEQ_CST
             );
         }
+
+        /**
+         * @brief atomically adds val to obj
+         * 
+         * @param val   value to be added
+         * @return T    new value
+         */
+        T add_fetch(T val) {
+            return __atomic_add_fetch(obj, val, __ATOMIC_SEQ_CST);
+        }
 };
 
 #endif // ATOMICS_H

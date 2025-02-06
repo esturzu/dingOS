@@ -3,6 +3,7 @@
 
 #include "heap.h"
 #include "printf.h"
+#include "testFramework.h"
 
 struct HeapTestStruct
 {
@@ -10,46 +11,27 @@ struct HeapTestStruct
 };
 
 void heapTests() {
+    initTests("Heap Tests");
     // Test 1: Basic allocation
     void* block1 = malloc(256, 8);
-    if (block1 != 0) {
-        Debug::printf("Test 1 Passed: Allocated 256 bytes.\n");
-    } else {
-        Debug::printf("Test 1 Failed: Allocation returned null.\n");
-    }
+    testsResult("Basic allocation", block1 != 0);
 
     // Test 2: Large allocation within heap size
     void* block2 = malloc(500000);
-    if (block2 != 0) {
-        Debug::printf("Test 2 Passed: Allocated 500000 bytes.\n");
-    } else {
-        Debug::printf("Test 2 Failed: Allocation returned null.\n");
-    }
+    testsResult("Large allocation within heap size", block2 != 0); 
 
     // Test 3: Allocation exceeding available heap space
     void* block3 = malloc(700000);  // This should fail
-    if (block3 == 0) {
-        Debug::printf("Test 3 Passed: Out-of-memory condition handled.\n");
-    } else {
-        Debug::printf("Test 3 Failed: Allocation succeeded unexpectedly.\n");
-    }
+    testsResult("Out-of-memory condition handled", block3 == 0);
 
     // Test 4: Testing new keyword
     HeapTestStruct* block4 = new HeapTestStruct();
-    if (block4 != 0) {
-        Debug::printf("Test 4 Passed: New keyword succeeded.\n");
-    } else {
-        Debug::printf("Test 4 Failed: New keywork failed.\n");
-    }
+    testsResult("New keyword", block4 != 0);
 
     // Test 5: Testing allocating all remaining heap space
     size_t remaining_space = HEAP_END - ((size_t)block4 + sizeof(HeapTestStruct));
     void* block5 = malloc(remaining_space);
-    if (block5 != 0) {
-        Debug::printf("Test 5 Passed: Allocated remaining heap space.\n");
-    } else {
-        Debug::printf("Test 5 Failed: Allocation returned null.\n");
-    }
+    testsResult("Allocating all remaining heap space", block5 != 0);
 }
 
 #endif

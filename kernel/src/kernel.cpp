@@ -13,6 +13,8 @@
 
 #define STACK_SIZE 8192
 
+Atomic<int> A_startedCores = Atomic<int>(new int(0));
+
 uint8_t stack0[STACK_SIZE] __attribute__((aligned(16)));
 extern "C" uint8_t* stack0_top;
 uint8_t* stack0_top = (stack0 + STACK_SIZE);
@@ -36,6 +38,7 @@ extern "C" void _start_core3();
 extern "C" void kernelMain_core1()
 {
   Debug::printf("Core 1!\n");
+  A_startedCores.add_fetch(1);
 
   event_loop();
 }
@@ -43,6 +46,7 @@ extern "C" void kernelMain_core1()
 extern "C" void kernelMain_core2()
 {
   Debug::printf("Core 2!\n");
+  A_startedCores.add_fetch(1);
 
   event_loop();
 }
@@ -50,6 +54,7 @@ extern "C" void kernelMain_core2()
 extern "C" void kernelMain_core3()
 {
   Debug::printf("Core 3!\n");
+  A_startedCores.add_fetch(1);
 
   event_loop();
 }
@@ -69,7 +74,11 @@ extern "C" void kernelMain()
 
 
   // Run tests
-  runTests();
+  schedule_event([]{
+    while(A_startedCores.load() < 4);
+    runTests();
+  });
+  A_startedCores.add_fetch(1);
 
   event_loop();
 
