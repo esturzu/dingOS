@@ -5,7 +5,7 @@
 #include "event_loop.h"
 
 
-Atomic<int> startedCores = Atomic<int>(new int(0));
+Atomic<int> startedCores = Atomic<int>(0);
 
 uint8_t stack0[STACK_SIZE] __attribute__((aligned(16)));
 extern "C" uint8_t* stack0_top;
