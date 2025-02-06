@@ -4,7 +4,7 @@
 
 #include "uart.h"
 #include "stdint.h"
-#include "peripherals_mappings.h"
+#include "definitions.h"
 
 void init_uart ()
 {

@@ -11,8 +11,8 @@
 #include "heap.h"
 #include "crti.h"
 #include "tester.h"
+#include "definitions.h"
 
-#define STACK_SIZE 8192
 
 Atomic<int> A_startedCores = Atomic<int>(new int(0));
 
