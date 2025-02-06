@@ -89,3 +89,40 @@ $(BUILD):
 # All files are in the build dir
 clean:
 	$(RM) -rf $(BUILD)
+
+# -------------------
+# Test-specific section
+# -------------------
+
+TEST_SRCS := $(wildcard tests/*.cpp)
+TEST_OBJS := $(patsubst tests/%.cpp, $(BUILD)/%.o, $(TEST_SRCS))
+TEST_ELFS := $(patsubst tests/%.cpp, $(BUILD)/%.elf, $(TEST_SRCS))
+TEST_IMGS := $(patsubst tests/%.cpp, $(BUILD)/%.img, $(TEST_SRCS))
+
+TEST_NAME ?= test_main
+TEST_OBJ := $(BUILD)/$(TEST_NAME).o
+TEST_ELF := $(BUILD)/$(TEST_NAME).elf
+TEST_IMG := $(BUILD)/$(TEST_NAME).img
+
+run_test: $(TEST_IMG)
+	@echo "Running test $(TEST_NAME) in QEMU..."
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $< -serial mon:stdio
+
+debug_test: $(TEST_IMG)
+	@echo "Starting QEMU for debugging test $(TEST_NAME)..."
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $< -serial mon:stdio -s -S
+
+run_all_tests: $(TEST_IMGS)
+	@for img in $(TEST_IMGS); do \
+		echo "Running test $${img} in QEMU..."; \
+		LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $$img -serial mon:stdio; \
+	done
+
+$(BUILD)/%.o: tests/%.cpp | $(BUILD)
+	$(CXX) $(CXXFLAGS) -c $< -o $@ -I $(INCDIR)
+
+$(BUILD)/%.elf: $(BUILD)/%.o $(filter-out $(BUILD)/kernel.o, $(OBJS))
+	$(CXX) -T linker.ld $(CXXFLAGS) -o $@ $(filter-out $(BUILD)/kernel.o, $(OBJS)) $<
+
+$(BUILD)/%.img: $(BUILD)/%.elf
+	$(OBJCOPY) $< -O binary $@
