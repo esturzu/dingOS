@@ -14,7 +14,7 @@ _start_core1:
   ldr x5, =stack1_top
   ldr x5, [x5]
   mov sp, x5
-  bl kernelMain_core1
+  bl initCore1
 
 .extern stack2_top
 .globl _start_core2
@@ -22,7 +22,7 @@ _start_core2:
   ldr x5, =stack2_top
   ldr x5, [x5]
   mov sp, x5
-  bl kernelMain_core2
+  bl initCore2
 
 .extern stack3_top
 .globl _start_core3
@@ -30,6 +30,4 @@ _start_core3:
   ldr x5, =stack3_top
   ldr x5, [x5]
   mov sp, x5
-  bl kernelMain_core3
-
-    
+  bl initCore3

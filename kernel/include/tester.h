@@ -3,12 +3,19 @@
 
 #include "eventTests.h"
 #include "heapTests.h"
+#include "cores.h"
 
 void runTests() {
     eventLoopTests();
-
-    // Heap tests must be last until we have free
+    // Must be done last until free is implemented
     heapTests();
+}
+
+void setupTests() {
+    schedule_event([]{
+        while(startedCores.load() < 4);
+        runTests();
+    });
 }
 
 #endif
