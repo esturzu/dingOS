@@ -6,6 +6,8 @@
 
 void runTests() {
     eventLoopTests();
+
+    // Heap tests must be last until we have free
     heapTests();
 }
 
