@@ -3,15 +3,16 @@
  * https://ultibo.org/wiki/Unit_BCM2837
  */
 
-#ifndef PERIPHERALS_MAPPINGS_H
-#define PERIPHERALS_MAPPINGS_H
+#ifndef DEFINITIONS_H
+#define DEFINITIONS_H
+
+// Stack
+#define STACK_SIZE 8192
 
 
+
+// Peripherals
 #define PERIPHERALS_BASE = 0x3F000000
-
-
-
-// UART0
 #define UART0_DATA_PHYS 0x3f201000 // PERIPHERALS_BASE + 0x201000
 #define UART0_FLAG_PHYS 0x3f201018 // UART0_DATA_PHYS + 0x18
 #define UART0_CONTROL_PHYS 0x3f201030 // UART0_DATA_PHYS + 0x30

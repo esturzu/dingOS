@@ -10,8 +10,8 @@
 #include "event_loop.h"
 #include "heap.h"
 #include "tester.h"
+#include "definitions.h"
 
-#define STACK_SIZE 8192
 
 Atomic<int> A_startedCores = Atomic<int>(new int(0));
 

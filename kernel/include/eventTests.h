@@ -1,5 +1,5 @@
-#ifndef EVENT_TESTS_H
-#define EVENT_TESTS_H
+#ifndef EVENTTESTS_H
+#define EVENTTESTS_H
 
 #include "event_loop.h"
 #include "printf.h"
