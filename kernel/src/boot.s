@@ -1,26 +1,35 @@
-.global _start
+.section ".text.boot"
 
-.section .text.boot
+.extern stack0_top
+.globl _start
 _start:
-    // Set the stack pointer
-    ldr x0, =_stack_top
-    mov sp, x0
+  ldr x5, =stack0_top
+  ldr x5, [x5]
+  mov sp, x5
+  bl kernelMain
 
-    // Zero out BSS section
-    ldr x1, =_end
-    ldr x2, =_heap_start
-zero_bss:
-    cmp x1, x2
-    b.eq bss_zero_done
-    str xzr, [x1], #8
-    b zero_bss
-bss_zero_done:
+.extern stack1_top
+.globl _start_core1
+_start_core1:
+  ldr x5, =stack1_top
+  ldr x5, [x5]
+  mov sp, x5
+  bl kernelMain_core1
 
-    // Call kernel main
-    bl kernelMain
+.extern stack2_top
+.globl _start_core2
+_start_core2:
+  ldr x5, =stack2_top
+  ldr x5, [x5]
+  mov sp, x5
+  bl kernelMain_core2
 
-    // Infinite loop to stop execution
-halt:
-    wfi
-    b halt
+.extern stack3_top
+.globl _start_core3
+_start_core3:
+  ldr x5, =stack3_top
+  ldr x5, [x5]
+  mov sp, x5
+  bl kernelMain_core3
+
     
