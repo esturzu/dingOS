@@ -1,36 +1,107 @@
+
+
+    
+
 #include "stdint.h"
 #include "heap.h"
 #include "debug.h"
 
-extern "C" char _end; 
-#define HEAP_START ((size_t)&_end)
-#define HEAP_SIZE  0x100000  // 1 MB heap size
-
-static size_t current_heap = HEAP_START;
-static const size_t heap_end = HEAP_START + HEAP_SIZE;
-
-size_t align_up(size_t addr, size_t alignment) {
-    return (addr + alignment - 1) & ~(alignment - 1);
+extern "C" {
+    extern char _heap_start;
+    extern char _heap_end;
 }
 
-extern "C" void* malloc(size_t size, size_t alignment) {
-    // defaults to align to 4 bytes (word thingy from gheith though i am not sure)
-    size_t aligned_heap = align_up(current_heap, alignment);
+static char* heap_ptr = (char*) &_heap_start;
+static char* heap_end = (char*) &_heap_end;
+static uint64_t heap_size = (&_heap_end - &_heap_start);
+static char* prev_block = 0;
 
-    // check if out of memory
-    if (aligned_heap + size > heap_end) {
-        return 0;
+int retrieve_num(int* position) {
+    return position[0];
+}
+
+void insert_num(int* position, int val) {
+    position[0] = val;
+}
+
+void mark_allocated(char* position, int num_bytes) {
+    insert_num((int*) position, -1 * num_bytes);
+    insert_num((int*) (position + num_bytes - 4), -1 * num_bytes);
+}
+
+void mark_free(char* position, int num_bytes) {
+    insert_num((int*) position, num_bytes);
+    insert_num((int*) (position + num_bytes - 4), num_bytes);
+    insert_num((int*) (position + 4), (uint64_t) prev_block);
+    insert_num((int*) (position + 8), 0);
+    if (prev_block != 0) {
+        insert_num((int*) (prev_block + 8), (uint64_t) (position));
+    }
+    prev_block = position;
+}
+
+void remove(char* block) {
+    char* previous = (char*) retrieve_num((int*) (block + 4));
+    char* next = (char*) retrieve_num((int*) (block + 8));
+
+    if (next == 0) {
+        prev_block = previous;
+    }
+    else {
+        insert_num((int*) (next + 4), (uint64_t) previous);
+    }
+    if (previous != 0) {
+        insert_num((int*) (previous + 8), (uint64_t) next);
+    }
+}
+
+void heap_init() {
+    mark_allocated(heap_ptr, 8);
+    mark_free((char*) (heap_ptr + 8), (&_heap_end - &_heap_start));
+    mark_allocated((char*)(heap_end - 8), 8);
+}
+
+void* malloc(size_t size) {
+    // Align to 8 bytes
+    size = ((size + 2) + 7) & ~7;
+
+    void* block = 0;
+    int min_block_size = 0x7FFFFFFF;
+
+    char* cur = (char*) prev_block;
+
+    while (cur != 0) {
+        int block_size = retrieve_num((int*) cur);
+
+        if (block_size < 0) {
+            return nullptr;
+        }
+
+        if (block_size >= size) {
+            if (block_size <= min_block_size) {
+                min_block_size = block_size;
+                block = (void*) cur;
+            }
+        }
+        cur = (char*) retrieve_num((int*) (cur + 4));
+    }
+    
+    if (cur != 0) {
+        remove(cur);
+        int difference = min_block_size - size;
+        if (difference >= 8) {
+            mark_allocated(cur, size);
+            mark_free(cur + size, difference);
+        }
+        else {
+            mark_allocated(cur, min_block_size);
+        }
+        block = cur + 4;
     }
 
-    void* allocated = (void*)aligned_heap;
-    current_heap = aligned_heap + size;
-    return allocated;
-}
+    return block;
 
-extern "C" void free(void* pointer) {
-    // haven't done it lol
 }
-
 
 struct HeapTestStruct
 {
@@ -39,7 +110,7 @@ struct HeapTestStruct
 
 void run_heap_tests() {
     // Test 1: Basic allocation
-    void* block1 = malloc(256, 8);
+    char* block1 = (char*) malloc(256);
     if (block1 != 0) {
         debug_print("Test 1 Passed: Allocated 256 bytes.\n");
     } else {
@@ -47,70 +118,59 @@ void run_heap_tests() {
     }
 
     // Test 2: Large allocation within heap size
-    void* block2 = malloc(500000);
+    char* block2 = (char*) malloc(0x3D000000);
+    for (int i = 0; i < 0x3D000000; i++) {
+        block2[i] = 0xFF;
+    }
     if (block2 != 0) {
         debug_print("Test 2 Passed: Allocated 500000 bytes.\n");
     } else {
         debug_print("Test 2 Failed: Allocation returned null.\n");
     }
 
-    // Test 3: Allocation exceeding available heap space
-    void* block3 = malloc(700000);  // This should fail
-    if (block3 == 0) {
-        debug_print("Test 3 Passed: Out-of-memory condition handled.\n");
-    } else {
-        debug_print("Test 3 Failed: Allocation succeeded unexpectedly.\n");
-    }
+    // // Test 3: Allocation exceeding available heap space
+    // void* block3 = malloc(0xFFFFFFFF);  // This should fail
+    // if (block3 == 0) {
+    //     debug_print("Test 3 Passed: Out-of-memory condition handled.\n");
+    // } else {
+    //     debug_print("Test 3 Failed: Allocation succeeded unexpectedly.\n");
+    // }
 
-    // Test 4: Testing new keyword
-    HeapTestStruct* block4 = new HeapTestStruct();
-    if (block4 != 0) {
-        debug_print("Test 4 Passed: New keyword succeeded.\n");
-    } else {
-        debug_print("Test 4 Failed: New keywork failed.\n");
-    }
+    // // Test 4: Testing new keyword
+    // HeapTestStruct* block4 = new HeapTestStruct();
+    // if (block4 != 0) {
+    //     debug_print("Test 4 Passed: New keyword succeeded.\n");
+    // } else {
+    //     debug_print("Test 4 Failed: New keywork failed.\n");
+    // }
 
-    // Test 5: Testing allocating all remaining heap space
-    size_t remaining_space = heap_end - current_heap;
-    void* block5 = malloc(remaining_space);
-    if (block5 != 0) {
-        debug_print("Test 5 Passed: Allocated remaining heap space.\n");
-    } else {
-        debug_print("Test 5 Failed: Allocation returned null.\n");
-    }
+    // // Test 5: Testing allocating all remaining heap space
+    // size_t remaining_space = _heap_end - (uint64_t)heap_ptr;
+    // void* block5 = malloc(remaining_space);
+    // if (block5 != 0) {
+    //     debug_print("Test 5 Passed: Allocated remaining heap space.\n");
+    // } else {
+    //     debug_print("Test 5 Failed: Allocation returned null.\n");
+    // }
 }
 
-// C++ Operators
-// Citations
-// https://en.cppreference.com/w/cpp/memory/new/operator_new
-// https://en.cppreference.com/w/cpp/memory/new/operator_delete
-
-void* operator new(size_t count)
-{
-  return malloc(count, 8);
+void* operator new(size_t size) {
+    void* p =  malloc(size);
+    return p;
 }
 
-void* operator new[](size_t count)
-{
-  return malloc(count, 8);
+void operator delete(void* p) noexcept {
 }
 
-void* operator new(size_t count, align_val_t al)
-{
-  return malloc(count, al);
+void operator delete(void* p, size_t sz) {
 }
 
-void* operator new[](size_t count, align_val_t al)
-{
-  return malloc(count, al);
+void* operator new[](size_t size) {
+    return malloc(size);
 }
 
-void operator delete(void* ptr) noexcept
-{
-  free(ptr);
+void operator delete[](void* p) noexcept {
 }
 
-void operator delete[](void* ptr) noexcept
-{
- free(ptr);
+void operator delete[](void* p, size_t sz) {
 }

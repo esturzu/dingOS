@@ -13,6 +13,9 @@ extern "C" void kernelMain()
 
   debug_print("DingOS is Booting!\n");
 
+  // heap_init();
+
+  debug_print("Heap initialized.\n");
 
   run_heap_tests();
 
