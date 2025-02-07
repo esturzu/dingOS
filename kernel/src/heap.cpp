@@ -4,7 +4,7 @@
 
 #include "stdint.h"
 #include "heap.h"
-#include "debug.h"
+#include "printf.h"
 
 extern "C" {
     extern char _heap_start;
@@ -125,9 +125,9 @@ void run_heap_tests() {
     //     }
     // }
     if (block1 != 0) {
-        debug_print("Test 1 Passed: Allocated 256 bytes.\n");
+        Debug::printf("Test 1 Passed: Allocated 256 bytes.\n");
     } else {
-        debug_print("Test 1 Failed: Allocation returned null.\n");
+        Debug::printf("Test 1 Failed: Allocation returned null.\n");
     }
 
     // Test 2: Large allocation within heap size
@@ -136,9 +136,9 @@ void run_heap_tests() {
          block2[i] = 0xFF;
     }
     if (block2 != 0) {
-        debug_print("Test 2 Passed: Allocated 500000 bytes.\n");
+        Debug::printf("Test 2 Passed: Allocated 500000 bytes.\n");
     } else {
-        debug_print("Test 2 Failed: Allocation returned null.\n");
+        Debug::printf("Test 2 Failed: Allocation returned null.\n");
     }
 
     // // Test 3: Allocation exceeding available heap space
@@ -187,3 +187,21 @@ void operator delete[](void* p) noexcept {
 
 void operator delete[](void* p, size_t sz) {
 }
+
+void operator delete(void* ptr, size_t sz) noexcept
+{
+  free(ptr);
+}
+
+void operator delete[](void* ptr, size_t sz) noexcept
+{
+  free(ptr);
+}
+
+// Undefined Delete Reference Fix
+
+extern "C" void __cxa_atexit() {}
+
+extern "C" void __dso_handle() {}
+
+extern "C" void __cxa_pure_virtual() {}
