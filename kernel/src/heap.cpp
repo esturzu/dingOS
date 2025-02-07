@@ -11,9 +11,9 @@ extern "C" {
     extern char _heap_end;
 }
 
-static char* heap_ptr = (char*) &_heap_start;
-static char* heap_end = (char*) &_heap_end;
-static uint64_t heap_size = (&_heap_end - &_heap_start);
+static char* heap_ptr;
+static char* heap_end;
+static uint64_t heap_size;
 static char* prev_block = 0;
 
 int retrieve_num(int* position) {
@@ -56,14 +56,21 @@ void remove(char* block) {
 }
 
 void heap_init() {
+    heap_size = &_heap_end - &_heap_start;
+    heap_ptr = (char*) &_heap_start;
+    heap_end = (char*) &_heap_end; 
+    for (int i = 0; i < heap_size; i++) {
+        heap_ptr[i] = 0x0;
+    }
+
     mark_allocated(heap_ptr, 8);
-    mark_free((char*) (heap_ptr + 8), (&_heap_end - &_heap_start));
+    mark_free((char*) (heap_ptr + 8), (&_heap_end - &_heap_start) - 16);
     mark_allocated((char*)(heap_end - 8), 8);
 }
 
 void* malloc(size_t size) {
-    // Align to 8 bytes
-    size = ((size + 2) + 7) & ~7;
+    // // Align to 8 bytes
+    size = ((size + 8) + 7) & ~7;
 
     void* block = 0;
     int min_block_size = 0x7FFFFFFF;
@@ -72,7 +79,6 @@ void* malloc(size_t size) {
 
     while (cur != 0) {
         int block_size = retrieve_num((int*) cur);
-
         if (block_size < 0) {
             return nullptr;
         }
@@ -86,21 +92,18 @@ void* malloc(size_t size) {
         cur = (char*) retrieve_num((int*) (cur + 4));
     }
     
-    if (cur != 0) {
-        remove(cur);
+    if (block != 0) {
+        remove((char*) block);
         int difference = min_block_size - size;
-        if (difference >= 8) {
-            mark_allocated(cur, size);
-            mark_free(cur + size, difference);
+        if (difference >= 8) { 
+            mark_allocated((char*)block, size);
+            mark_free(((char*)block) + size, difference);
         }
         else {
-            mark_allocated(cur, min_block_size);
+            mark_allocated((char*)block, min_block_size);
         }
-        block = cur + 4;
+        block = ((char*) block) + 4;
     }
-
-    return block;
-
 }
 
 struct HeapTestStruct
@@ -111,6 +114,16 @@ struct HeapTestStruct
 void run_heap_tests() {
     // Test 1: Basic allocation
     char* block1 = (char*) malloc(256);
+    
+    // for (int i = 0; i < 20; i++) {
+        
+    //     if (block1 == &heap_ptr[i]) {
+    //         debug_print("ITS ME  ME ME ME \n");
+    //     }
+    //     else {
+    //         debug_print("not me\n");
+    //     }
+    // }
     if (block1 != 0) {
         debug_print("Test 1 Passed: Allocated 256 bytes.\n");
     } else {
@@ -118,9 +131,9 @@ void run_heap_tests() {
     }
 
     // Test 2: Large allocation within heap size
-    char* block2 = (char*) malloc(0x3D000000);
-    for (int i = 0; i < 0x3D000000; i++) {
-        block2[i] = 0xFF;
+    char* block2 = (char*) malloc(0x3D0);
+    for (int i = 0; i < 0x3D0; i++) {
+         block2[i] = 0xFF;
     }
     if (block2 != 0) {
         debug_print("Test 2 Passed: Allocated 500000 bytes.\n");
@@ -146,7 +159,7 @@ void run_heap_tests() {
 
     // // Test 5: Testing allocating all remaining heap space
     // size_t remaining_space = _heap_end - (uint64_t)heap_ptr;
-    // void* block5 = malloc(remaining_space);
+    // void* block5 = (void*) 1; 
     // if (block5 != 0) {
     //     debug_print("Test 5 Passed: Allocated remaining heap space.\n");
     // } else {

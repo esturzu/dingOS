@@ -13,7 +13,7 @@ extern "C" void kernelMain()
 
   debug_print("DingOS is Booting!\n");
 
-  // heap_init();
+  heap_init();
 
   debug_print("Heap initialized.\n");
 
@@ -21,5 +21,5 @@ extern "C" void kernelMain()
 
   event_loop_test();
 
-  // while(1);
+  while(1);
 }

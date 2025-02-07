@@ -3,8 +3,8 @@
 
 #include "stdint.h"
 
-void* operator new(size_t size);
-void operator delete(void* ptr) noexcept;
+void heap_init();
+void* malloc(size_t size);
 void run_heap_tests();
 
 
