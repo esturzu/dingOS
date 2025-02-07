@@ -106,6 +106,10 @@ void* malloc(size_t size) {
     }
 }
 
+void free(void* block) {
+
+}
+
 struct HeapTestStruct
 {
   uint64_t test;
