@@ -5,6 +5,7 @@
 #include "stdint.h"
 #include "heap.h"
 #include "printf.h"
+#include "atomics.h"
 
 extern "C" char _end; 
 extern "C" char _heap_start;
@@ -16,6 +17,8 @@ static const size_t heap_end = (size_t) &_heap_end;
 static uint64_t heap_ptr;
 static uint64_t heap_size;
 static uint64_t prev_block;
+
+SpinLock heap_spinlock;
 
 uint64_t abs(long val) {
     return val < 0 ? val * -1 : val;
@@ -75,6 +78,8 @@ void heap_init() {
 }
 
 void* malloc(size_t size, size_t alignment) {
+    LockGuard<SpinLock> lg{heap_spinlock};
+    
     size += 16;
     size = (size + alignment - 1) & ~(alignment - 1);
     void* tgt_block = 0;
@@ -141,6 +146,8 @@ void* malloc(size_t size, size_t alignment) {
 // }
 
 extern "C" void free(void* ptr) {
+    LockGuard<SpinLock> lg{heap_spinlock};
+
     if (ptr == 0) {
         Debug::printf("Freeing nullptr\n");
         return;
@@ -299,8 +306,8 @@ void operator delete[](void* ptr, size_t sz) noexcept
 
 // // Undefined Delete Reference Fix
 
-// extern "C" void __cxa_atexit() {}
+extern "C" void __cxa_atexit() {}
 
-// extern "C" void __dso_handle() {}
+extern "C" void __dso_handle() {}
 
-// extern "C" void __cxa_pure_virtual() {}
+extern "C" void __cxa_pure_virtual() {}

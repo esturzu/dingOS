@@ -9,6 +9,7 @@
 #include "atomics.h"
 #include "event_loop.h"
 #include "heap.h"
+#include "crti.h"
 
 #define STACK_SIZE 8192
 
@@ -55,28 +56,30 @@ extern "C" void kernelMain_core3()
 
 extern "C" void kernelMain()
 {
-    heap_init();
-    init_event_loop();
-    init_uart();
+  CRTI::_init();
 
-    Debug::printf("DingOS is Booting!\n");
-   
-    // Boot other cores
-    uint64_t* core_wakeup_base = (uint64_t*) 216;
-    *(core_wakeup_base + 1) = (uint64_t) &_start_core1;
-    *(core_wakeup_base + 2) = (uint64_t) &_start_core2;
-    *(core_wakeup_base + 3) = (uint64_t) &_start_core3;
+  heap_init();
+  init_event_loop();
+  init_uart();
 
-    for (int i = 0; i < 10; i++)
-    {
-    schedule_event([i] {
-        Debug::printf("Event #%d!\n", i);
-    });
-    }
+  Debug::printf("DingOS is Booting!\n");
+  
+  // Boot other cores
+  uint64_t* core_wakeup_base = (uint64_t*) 216;
+  *(core_wakeup_base + 1) = (uint64_t) &_start_core1;
+  *(core_wakeup_base + 2) = (uint64_t) &_start_core2;
+  *(core_wakeup_base + 3) = (uint64_t) &_start_core3;
 
-    run_heap_tests();
+  for (int i = 0; i < 10; i++)
+  {
+  schedule_event([i] {
+    Debug::printf("Event #%d!\n", i);
+  });
+  }
 
-    event_loop();
+  run_heap_tests();
 
-    while(1);
+  event_loop();
+
+  while(1);
 }
