@@ -31,8 +31,5 @@ SECTIONS
 
     /* Define heap and stack regions */
     _heap_start = ALIGN(8);
-    _heap_end = ORIGIN(ram) + LENGTH(ram) - 0x100000; /* Reserve 1MB for peripherals and stack */
-
-    _stack_top = ORIGIN(ram) + LENGTH(ram);
-    _stack_bottom = _stack_top - 0x100000; /* 1MB stack region */
+    _heap_end = _heap_start + 0x20000000; /* 128KB for heap space */
 }
