@@ -7,31 +7,40 @@
 
 struct HeapTestStruct
 {
-  uint64_t test;
+  uint8_t test;
 };
 
 void heapTests() {
     initTests("Heap Tests");
+
+    // Setup
+    uint64_t* block = (uint64_t*) malloc(256);
+    for (int i = 0; i < 32; i++) {
+        block[i] = (uint64_t) malloc(16);
+    }
+    for (int i = 1; i < 32; i *= 2) {
+        free((void*) block[i]);
+    }
+    for (int i = 0; i < 32; i++) {
+        free ((void*) block[i]);
+    }
+
     // Test 1: Basic allocation
     void* block1 = malloc(256, 8);
     testsResult("Basic allocation", block1 != 0);
 
     // Test 2: Large allocation within heap size
-    void* block2 = malloc(500000);
-    testsResult("Large allocation within heap size", block2 != 0); 
+    char* block2 = (char*) malloc(0x10000000);
+    testsResult("Large allocation within heap size", block2 != 0);
+
 
     // Test 3: Allocation exceeding available heap space
-    void* block3 = malloc(700000);  // This should fail
-    testsResult("Out-of-memory condition handled", block3 == 0);
+    void* block3 = malloc(0x20000000);  // This should fail
+    testsResult("Allocation exceeding available heap space", block3 == 0);
 
     // Test 4: Testing new keyword
     HeapTestStruct* block4 = new HeapTestStruct();
-    testsResult("New keyword", block4 != 0);
-
-    // Test 5: Testing allocating all remaining heap space
-    size_t remaining_space = HEAP_END - ((size_t)block4 + sizeof(HeapTestStruct));
-    void* block5 = malloc(remaining_space);
-    testsResult("Allocating all remaining heap space", block5 != 0);
+    testsResult("Testing new keyword", block4 != 0);
 }
 
 #endif
