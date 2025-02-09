@@ -3,19 +3,18 @@
 
 #include "kernel.h"
 
-#include "stdint.h"
-#include "printf.h"
-#include "uart.h"
 #include "atomics.h"
+#include "cores.h"
+#include "crti.h"
+#include "definitions.h"
 #include "event_loop.h"
 #include "heap.h"
-#include "crti.h"
+#include "printf.h"
+#include "stdint.h"
 #include "tester.h"
-#include "definitions.h"
-#include "cores.h"
+#include "uart.h"
 
-extern "C" void kernelMain()
-{
+extern "C" void kernelMain() {
   CRTI::_init();
 
   heap_init();
@@ -25,10 +24,10 @@ extern "C" void kernelMain()
   Debug::printf("DingOS is Booting!\n");
 
   bootCores();
-  
+
   setupTests();
 
   event_loop();
 
-  while(1);
+  while (1);
 }

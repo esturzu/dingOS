@@ -4,8 +4,8 @@
 #ifndef EVENT_LOOP_H
 #define EVENT_LOOP_H
 
-#include "queue.h"
 #include "heap.h"
+#include "queue.h"
 
 struct Event {
   // General Event data goes here
@@ -20,19 +20,18 @@ struct EventWithWork : public Event {
   Work const work;
 
   explicit inline EventWithWork(Work const work) : Event(), work(work) {}
-  virtual void run() override {
-    work();
-  }
+  virtual void run() override { work(); }
 };
 
 template <typename Work, typename T>
 struct EventWithWorkAndValue : public EventWithWork<Work> {
-  T *value;
+  T* value;
 
-  explicit inline EventWithWorkAndValue(Work const work) : EventWithWork<Work>(work) {}
+  explicit inline EventWithWorkAndValue(Work const work)
+      : EventWithWork<Work>(work) {}
   virtual void run() override {
     work(value);
-     // delete value; need memory management
+    // delete value; need memory management
   }
 };
 
@@ -42,10 +41,9 @@ void init_event_loop();
 void event_loop();
 
 template <typename Work>
-void schedule_event(Work work)
-{
+void schedule_event(Work work) {
   Event* event = new EventWithWork<Work>(work);
   ready_queue->enqueue(event);
 }
 
-#endif // EVENT_LOOP_H
+#endif  // EVENT_LOOP_H

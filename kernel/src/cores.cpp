@@ -1,9 +1,9 @@
 #include "cores.h"
-#include "definitions.h"
-#include "stdint.h"
-#include "printf.h"
-#include "event_loop.h"
 
+#include "definitions.h"
+#include "event_loop.h"
+#include "printf.h"
+#include "stdint.h"
 
 Atomic<int> startedCores = Atomic<int>(0);
 
@@ -27,37 +27,32 @@ extern "C" void _start_core1();
 extern "C" void _start_core2();
 extern "C" void _start_core3();
 
-extern "C" void initCore1()
-{
+extern "C" void initCore1() {
   Debug::printf("Core 1!\n");
   startedCores.add_fetch(1);
 
   event_loop();
 }
 
-extern "C" void initCore2()
-{
+extern "C" void initCore2() {
   Debug::printf("Core 2!\n");
   startedCores.add_fetch(1);
 
   event_loop();
 }
 
-extern "C" void initCore3()
-{
+extern "C" void initCore3() {
   Debug::printf("Core 3!\n");
   startedCores.add_fetch(1);
 
   event_loop();
 }
 
-
-void bootCores()
-{
+void bootCores() {
   startedCores.add_fetch(1);
   // Boot other cores
-  uint64_t* core_wakeup_base = (uint64_t*) 216;
-  *(core_wakeup_base + 1) = (uint64_t) &_start_core1;
-  *(core_wakeup_base + 2) = (uint64_t) &_start_core2;
-  *(core_wakeup_base + 3) = (uint64_t) &_start_core3;
+  uint64_t* core_wakeup_base = (uint64_t*)216;
+  *(core_wakeup_base + 1) = (uint64_t)&_start_core1;
+  *(core_wakeup_base + 2) = (uint64_t)&_start_core2;
+  *(core_wakeup_base + 3) = (uint64_t)&_start_core3;
 }
