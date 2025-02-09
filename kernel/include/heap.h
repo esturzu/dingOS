@@ -4,6 +4,7 @@
 #include "stdint.h"  // Or your equivalent file with size_t defined
 
 extern "C" char _end;  // Linker script will define this symbol
+extern "C" char _heap_start;
 
 #define HEAP_START ((size_t)&_end)  
 #define HEAP_SIZE  0x100000          // Example: 1 MB heap size
@@ -11,5 +12,6 @@ extern "C" char _end;  // Linker script will define this symbol
 
 extern "C" void* malloc(size_t size, size_t alignment = 4);
 extern "C" void free(void* pointer);
+void heap_init();
 void run_heap_tests();
 #endif  // _HEAP_H_

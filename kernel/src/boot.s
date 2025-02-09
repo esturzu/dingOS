@@ -31,3 +31,5 @@ _start_core3:
   ldr x5, [x5]
   mov sp, x5
   bl kernelMain_core3
+
+    

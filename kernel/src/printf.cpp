@@ -578,9 +578,13 @@ static size_t _etoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
 #endif  // PRINTF_SUPPORT_FLOAT
 
 
+SpinLock vsnprintf_spinlock;
+
 // internal vsnprintf
 static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const char* format, va_list va)
 {
+  LockGuard<SpinLock> lg{vsnprintf_spinlock};
+
   unsigned int flags, width, precision, n;
   size_t idx = 0U;
 
@@ -864,21 +868,13 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen, const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool printf_lock = true;
-
 int printf_(const char* format, ...)
 {
-  // Enter Lock
-  while (!__atomic_exchange_n (&printf_lock, false, __ATOMIC_SEQ_CST)) {};
-
   va_list va;
   va_start(va, format);
   char buffer[1];
   const int ret = _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
   va_end(va);
-  
-  // Leave Lock
-  __atomic_store_n(&printf_lock, true, __ATOMIC_SEQ_CST);
 
   return ret;
 }
