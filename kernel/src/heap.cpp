@@ -5,6 +5,7 @@
 #include "atomics.h"
 #include "printf.h"
 #include "stdint.h"
+#include "definitions.h"
 
 extern "C" char _end;
 extern "C" char _heap_start;
@@ -19,7 +20,6 @@ static uint64_t prev_block;
 
 SpinLock heap_spinlock;
 
-uint64_t abs(long val) { return val < 0 ? val * -1 : val; }
 
 void mark_allocated(size_t position, size_t block_size) {
   long* block_start = (long*)position;
@@ -130,8 +130,8 @@ extern "C" void free(void* ptr) {
     return;
   }
 
-  long* left_block = (block - (abs(block[-1]) / 8));
-  long* right_block = (block + abs(block[block_size / 8]) / 8);
+  long* left_block = (block - (ABS(block[-1]) / 8));
+  long* right_block = (block + ABS(block[block_size / 8]) / 8);
 
   long left_block_size = left_block[0];
   long right_block_size = right_block[0];

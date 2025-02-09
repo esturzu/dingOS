@@ -20,4 +20,8 @@
 #define HEAP_SIZE 0x100000  // Example: 1 MB heap size
 #define HEAP_END (HEAP_START + HEAP_SIZE)
 
+
+// TOOLS
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+
 #endif
