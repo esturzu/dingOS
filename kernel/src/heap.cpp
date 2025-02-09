@@ -24,9 +24,7 @@ uint64_t abs(long val) { return val < 0 ? val * -1 : val; }
 void mark_allocated(size_t position, size_t block_size) {
   long* block_start = (long*)position;
   block_start[0] = -1 * block_size;
-  // Debug::printf("Block Footer Value: 0x%X\n", block_start[0]);
   block_start[block_size / 8 - 1] = -1 * block_size;
-  // Debug::printf("Block Footer Value: %d\n", block_start[1]);
 }
 
 void mark_free(size_t position, size_t block_size) {
@@ -35,17 +33,11 @@ void mark_free(size_t position, size_t block_size) {
   block_start[block_size / 8 - 1] = block_size;
   ((int*)position)[2] = prev_block;
   ((int*)position)[3] = 0;
-  // Debug::printf("Previous: 0x%X, Next: 0x%X\n", ((int*) position)[2], ((int*)
-  // position)[3]);
   if (prev_block != 0) {
     int* previous_block_start = (int*)prev_block;
     previous_block_start[3] = position;
-    // Debug::printf("Previous Block Next Value: 0x%X, Position Value: 0%X\n",
-    // previous_block_start[2], position);
   }
   prev_block = position;
-  // Debug::printf("Block Footer Value: 0x%X\n", block_start[block_size / 8 -
-  // 1]);
 }
 
 void remove(size_t position) {
@@ -84,8 +76,6 @@ void* malloc(size_t size, size_t alignment) {
   size = (size + alignment - 1) & ~(alignment - 1);
   void* tgt_block = 0;
 
-  // Debug::printf("Malloc'ing %d bytes\n", size);
-
   uint64_t min_size = 0x7FFFFFFF;
   uint64_t chosen_block = 0;
 
@@ -94,8 +84,6 @@ void* malloc(size_t size, size_t alignment) {
   while (current != 0) {
     long* current_block = (long*)current;
     if (current_block[0] < 0) {
-      // Debug::printf("Issue with block 0x%X, Should not be in free list.\n",
-      // current);
       return nullptr;
     }
     size_t current_block_size = current_block[0];
@@ -112,7 +100,6 @@ void* malloc(size_t size, size_t alignment) {
     remove(chosen_block);
     uint64_t leftover = min_size - size;
     if (leftover >= 8) {
-      // Debug::printf("")
       mark_allocated(chosen_block, size);
       mark_free(chosen_block + size, leftover);
     } else {
@@ -120,30 +107,8 @@ void* malloc(size_t size, size_t alignment) {
     }
     tgt_block = (void*)(chosen_block + 8);
   }
-  // Debug::printf("Given Block: 0x%X, Block Size: 0x%X\n", chosen_block + 8,
-  // size);
   return tgt_block;
 }
-
-// size_t align_up(size_t addr, size_t alignment) {
-//     return (addr + alignment - 1) & ~(alignment - 1);
-// }
-
-// extern "C" void* malloc(size_t size, size_t alignment) {
-//     // defaults to align to 4 bytes (word thingy from gheith though i am not
-//     sure) size_t aligned_heap = align_up(current_heap, 4);
-
-//     // Debug::printf("Block Size: 0x%X\n", size);
-
-//     // check if out of memory
-//     if (aligned_heap + size > HEAP_END) {
-//       return 0;
-//     }
-
-//     void* allocated = (void*)aligned_heap;
-//     current_heap = aligned_heap + size;
-//     return allocated;
-// }
 
 extern "C" void free(void* ptr) {
   LockGuard<SpinLock> lg{heap_spinlock};
@@ -160,8 +125,6 @@ extern "C" void free(void* ptr) {
   long* block = ((long*)ptr) - 1;
   long block_size = block[0] * -1;
 
-  // Debug::printf("Free Block Size: %d\n", block[0]);
-
   if (block_size < 0) {
     Debug::printf("Freeing free block 0x%X\n", block);
     return;
@@ -169,8 +132,6 @@ extern "C" void free(void* ptr) {
 
   long* left_block = (block - (abs(block[-1]) / 8));
   long* right_block = (block + abs(block[block_size / 8]) / 8);
-  // Debug::printf("Address of Block: 0x%X, Address of Left: 0x%X, Address of
-  // Right: 0x%X\n", block, left_block, right_block);
 
   long left_block_size = left_block[0];
   long right_block_size = right_block[0];
@@ -178,17 +139,13 @@ extern "C" void free(void* ptr) {
   uint64_t new_start_block = (uint64_t)block;
   uint64_t new_region_size = block_size;
 
-  // Debug::printf("Left Block Size: %d\n", left_block_size);
   if (left_block_size > 0) {
-    // Debug::printf("Left Block 0x%X is Free!\n", left_block);
     remove((uint64_t)left_block);
     new_start_block = (uint64_t)left_block;
     new_region_size += left_block_size;
   }
 
-  // Debug::printf("Right Block Size: %d\n", left_block_size);
   if (right_block_size > 0) {
-    // Debug::printf("Right Block 0x%X is Free!\n", right_block);
     remove((uint64_t)right_block);
     new_region_size += right_block_size;
   }
