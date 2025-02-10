@@ -41,7 +41,7 @@ EXEC = $(BUILD)/kernel.elf
 IMG = $(BUILD)/kernel8.img
 TMP_IMG = $(BUILD)/kernel8_tmp.img
 
-.PHONY: all clean debug qemu
+.PHONY: all clean debug qemu tests run_test debug_test run_all_tests
 
 # Build an operating system
 all: $(IMG)

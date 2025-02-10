@@ -25,7 +25,8 @@ extern "C" void kernelMain() {
 
   bootCores();
 
-  setupTests();
+  // commented out this approach for testing
+  // setupTests();
 
   event_loop();
 
