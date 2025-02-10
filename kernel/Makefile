@@ -22,107 +22,100 @@ CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib -mno-outlin
 ASFLAGS :=
 DEBUG_FLAGS := -g
 OPT_FLAGS := -O2
-# Desired object files, executables names, etc.
-BUILD = build
-SRCDIR = src
-INCDIR = include
-VPATH = $(SRCDIR) $(INCDIR)
-# NOTE(Nate): The wildcard and the vpath could fuck us up here when used
-# together
-CSRC = $(wildcard $(SRCDIR)/*.c)
-COBJ = $(patsubst $(SRCDIR)/%.c,%.o,$(CSRC))
-CXXSRC = $(wildcard $(SRCDIR)/*.cpp)
-CXXOBJ = $(patsubst $(SRCDIR)/%.cpp,%.o,$(CXXSRC))
-ASSRC = $(wildcard $(SRCDIR)/*.s)
-ASOBJ = $(patsubst $(SRCDIR)/%.s,%.o,$(ASSRC))
-SRCS = $(CSRC) $(CXXSRC) $(ASSRC)
-OBJS = $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
-EXEC = $(BUILD)/kernel.elf
-IMG = $(BUILD)/kernel8.img
-TMP_IMG = $(BUILD)/kernel8_tmp.img
 
-.PHONY: all clean debug qemu tests run_test debug_test run_all_tests
+# Directories
+BUILD := build
+SRCDIR := src
+INCDIR := include
+TESTDIR := tests
 
-# Build an operating system
+# Kernel source and object files
+SRCS := $(wildcard $(SRCDIR)/*.cpp $(SRCDIR)/*.s $(SRCDIR)/*.c)
+OBJS := $(patsubst $(SRCDIR)/%.cpp, $(BUILD)/%.o, $(wildcard $(SRCDIR)/*.cpp)) \
+        $(patsubst $(SRCDIR)/%.s, $(BUILD)/%.o, $(wildcard $(SRCDIR)/*.s)) \
+        $(patsubst $(SRCDIR)/%.c, $(BUILD)/%.o, $(wildcard $(SRCDIR)/*.c))
+
+EXEC := $(BUILD)/kernel.elf
+IMG := $(BUILD)/kernel8.img
+
+# Test source and object files
+TEST_SRCS := $(wildcard $(TESTDIR)/*.cpp)
+TEST_OBJS := $(patsubst $(TESTDIR)/%.cpp, $(BUILD)/%.o, $(TEST_SRCS))
+TEST_ELFS := $(patsubst $(TESTDIR)/%.cpp, $(BUILD)/%.elf, $(TEST_SRCS))
+TEST_IMGS := $(patsubst $(TESTDIR)/%.cpp, $(BUILD)/%.img, $(TEST_SRCS))
+
+.PHONY: all clean all-tests run_all_tests run_test debug_test
+
+# --- Kernel Build Targets ---
+
 all: $(IMG)
 
-# Set the debug flags and compile
-debug: OPT_FLAGS = -O0
-debug: CCFLAGS += $(DEBUG_FLAGS)
-debug: CXXFLAGS += $(DEBUG_FLAGS)
-debug: ASFLAGS += $(DEBUG_FLAGS)
-debug: $(IMG)
-	@echo "To debug via gdb: type into another terminal"
-	@echo "$(GDB) kernel/build/kernel.elf"
-	@echo "target remote :1234"
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG) -s -S
-
-qemu: $(IMG)
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG)
-
-# The executable, a .elf file (eg. kernel.elf)
+# Kernel ELF build
 $(EXEC): linker.ld $(OBJS)
 	$(CXX) -T $< $(CXXFLAGS) -o $@ $(OBJS)
 
-# THe image, a .img file (eg. kernel.img)
+# Kernel IMG build
 $(IMG): $(EXEC)
 	$(OBJCOPY) $< -O binary $@
 
-# NOTE(Nate): Implicit rules are okay... but explicit would be good
-
-# Implicit rule for creating object files from c files
-$(BUILD)/%.o : %.c | $(BUILD)
-	$(CC) $(CCFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
-
-# Implicit rule for creating object files from c++ files
-$(BUILD)/%.o : %.cpp | $(BUILD)
-	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
-
-# Implicit rule for creating object files from assembly files
-$(BUILD)/%.o : %.s | $(BUILD)
-	$(AS) $(ASFLAGS) -c $< -o $@
-
-# Make the build directory if doesn't exist
-$(BUILD):
-	mkdir $@
-
-# All files are in the build dir
+# Clean all build files (kernel + tests)
 clean:
-	$(RM) -rf $(BUILD)
+	rm -rf $(BUILD)
 
-# -------------------
-# Test-specific section
-# -------------------
+# --- Test-Specific Section ---
 
-TEST_SRCS := $(wildcard tests/*.cpp)
-TEST_OBJS := $(patsubst tests/%.cpp, $(BUILD)/%.o, $(TEST_SRCS))
-TEST_ELFS := $(patsubst tests/%.cpp, $(BUILD)/%.elf, $(TEST_SRCS))
-TEST_IMGS := $(patsubst tests/%.cpp, $(BUILD)/%.img, $(TEST_SRCS))
+# Compile all test ELFs (no execution)
+all-tests: $(TEST_ELFS)
 
-TEST_NAME ?= test_main
-TEST_OBJ := $(BUILD)/$(TEST_NAME).o
-TEST_ELF := $(BUILD)/$(TEST_NAME).elf
-TEST_IMG := $(BUILD)/$(TEST_NAME).img
-
-run_test: $(TEST_IMG)
-	@echo "Running test $(TEST_NAME) in QEMU..."
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $< -serial mon:stdio
-
-debug_test: $(TEST_IMG)
-	@echo "Starting QEMU for debugging test $(TEST_NAME)..."
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $< -serial mon:stdio -s -S
-
-run_all_tests: $(TEST_IMGS)
+# Compile and run all test images
+run-all-tests: $(TEST_IMGS)
 	@for img in $(TEST_IMGS); do \
-		echo "Running test $${img} in QEMU..."; \
+		echo "Running test $$img..."; \
 		LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $$img -serial mon:stdio; \
 	done
 
-$(BUILD)/%.o: tests/%.cpp | $(BUILD)
+# Compile and run a specific test
+run-test:
+ifndef TEST_NAME
+	$(error "TEST_NAME is not set. Please specify a test name using TEST_NAME=<name>")
+endif
+	@$(MAKE) $(BUILD)/$(TEST_NAME).img
+	@echo "Running test $(TEST_NAME)..."
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(BUILD)/$(TEST_NAME).img -serial mon:stdio
+
+# Compile and debug a specific test
+debug-test:
+ifndef TEST_NAME
+	$(error "TEST_NAME is not set. Please specify a test name using TEST_NAME=<name>")
+endif
+	@$(MAKE) $(BUILD)/$(TEST_NAME).img
+	@echo "Starting QEMU for debugging test $(TEST_NAME)..."
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(BUILD)/$(TEST_NAME).img -serial mon:stdio -s -S
+
+# --- Compilation Rules ---
+
+# General object file compilation for kernel components
+$(BUILD)/%.o: $(SRCDIR)/%.cpp | $(BUILD)
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
+
+$(BUILD)/%.o: $(SRCDIR)/%.s | $(BUILD)
+	$(AS) $(ASFLAGS) -c $< -o $@
+
+$(BUILD)/%.o: $(SRCDIR)/%.c | $(BUILD)
+	$(CC) $(CCFLAGS) $(OPT_FLAGS) -c $< -o $@ -I $(INCDIR)
+
+# Test-specific object file compilation
+$(BUILD)/%.o: $(TESTDIR)/%.cpp | $(BUILD)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -I $(INCDIR)
 
+# Linking test ELF files
 $(BUILD)/%.elf: $(BUILD)/%.o $(filter-out $(BUILD)/kernel.o, $(OBJS))
 	$(CXX) -T linker.ld $(CXXFLAGS) -o $@ $(filter-out $(BUILD)/kernel.o, $(OBJS)) $<
 
+# Convert test ELF files to IMG format
 $(BUILD)/%.img: $(BUILD)/%.elf
 	$(OBJCOPY) $< -O binary $@
+
+# Create the build directory if it doesn't exist
+$(BUILD):
+	mkdir -p $@

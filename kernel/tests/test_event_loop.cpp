@@ -10,6 +10,9 @@
 #include "uart.h"
 #include "testFramework.h"
 
+// Atomic flag to indicate when the test is complete
+Atomic<int> testComplete;  // Using int as a substitute for boolean (0 = false, 1 = true)
+
 // Function containing all the event loop test logic
 void runEventLoopTests() {
     initTests("Event Loop Tests");
@@ -23,24 +26,21 @@ void runEventLoopTests() {
     }
 
     // Wait for all events to finish
-    while (total.load() < 10) {
-        // Optionally, you can add a debug message to monitor progress
-        // Debug::printf("Waiting for events to finish...\n");
-    }
+    while (total.load() < 10) {}
 
     // Verify that all events were processed successfully
     testsResult("Basic event scheduling", total.load() == 10);
 
     Debug::printf("Event Loop Tests completed.\n");
+
+    // Signal that the test is complete by setting the flag
+    schedule_event([] { testComplete.store(1); });
 }
 
 // Schedule the test to run within the event loop
 void setupEventLoopTestEvent() {
     schedule_event([] {
-        // Wait for all cores to boot
         while (startedCores.load() < 4);
-
-        // Run the tests after cores are synchronized
         runEventLoopTests();
     });
 }
@@ -58,12 +58,17 @@ extern "C" void kernelMain() {
     // Boot all cores
     bootCores();
 
-    // Schedule the event loop tests as an event
+    // Schedule the event loop tests
     setupEventLoopTestEvent();
 
-    // Enter the event loop to handle core synchronization and events
-    event_loop();
+    // Run the event loop until the test is complete
+    while (testComplete.load() == 0) {
+        Debug::printf("about to call event_loop\n");
+        event_loop();
+    }
 
-    // Halt the system after the event loop
+    Debug::printf("Test execution complete. Exiting kernelMain.\n");
+
+    // Halt the system after the event loop finishes
     while (1);
 }

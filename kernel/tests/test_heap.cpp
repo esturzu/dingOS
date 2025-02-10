@@ -1,8 +1,4 @@
-// Citations
-// https://medium.com/applied/applied-c-align-array-elements-32af40a768ee
-
 #include "kernel.h"
-
 #include "atomics.h"
 #include "cores.h"
 #include "crti.h"
@@ -18,6 +14,9 @@
 struct HeapTestStruct {
     uint8_t test;
 };
+
+// Atomic flag to indicate when the test is complete
+Atomic<int> testComplete;  // 0 = not complete, 1 = complete
 
 // Function containing all the heap test logic
 void runHeapTests() {
@@ -54,22 +53,44 @@ void runHeapTests() {
     // --- Test 4: Testing the `new` keyword ---
     HeapTestStruct* block4 = new HeapTestStruct();
     testsResult("Testing new keyword", block4 != 0);
+
+    Debug::printf("Heap Tests completed.\n");
+
+    // Signal that the test is complete by setting the flag
+    schedule_event([] { testComplete.store(1); });
+}
+
+// Schedule the heap test to run within the event loop
+void setupHeapTestEvent() {
+    schedule_event([] {
+        while (startedCores.load() < 4);
+        runHeapTests();
+    });
 }
 
 extern "C" void kernelMain() {
-  CRTI::_init();
+    CRTI::_init();
 
-  heap_init();
-  init_event_loop();
-  init_uart();
+    // System setup
+    heap_init();
+    init_event_loop();
+    init_uart();
 
-  Debug::printf("DingOS is Booting!\n");
+    Debug::printf("DingOS is Booting!\n");
 
-  bootCores();
-  runHeapTests();
-  event_loop();
+    // Boot all cores
+    bootCores();
 
-  while (1);
+    // Schedule the heap tests
+    setupHeapTestEvent();
+
+    // Run the event loop until the test is complete
+    while (testComplete.load() == 0) {
+        event_loop();
+    }
+
+    Debug::printf("Test execution complete. Exiting kernelMain.\n");
+
+    // Halt the system after the event loop finishes
+    while (1);
 }
-
-
