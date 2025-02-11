@@ -13,13 +13,16 @@
 #include "stdint.h"
 #include "tester.h"
 #include "uart.h"
+#include "machine.h"
 
 extern "C" void kernelMain() {
+  // Handled uart Init
   CRTI::_init();
+
+  Debug::printf("CurrentEL %lu\n", get_CurrentEL());
 
   heap_init();
   init_event_loop();
-  init_uart();
 
   Debug::printf("DingOS is Booting!\n");
 
