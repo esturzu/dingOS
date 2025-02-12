@@ -25,8 +25,9 @@ extern "C" void kernelMain() {
   init_event_loop();
 
   Debug::printf("DingOS is Booting!\n");
+  Debug::printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
-  bootCores();
+  SMP::bootCores();
 
   setupTests();
 
