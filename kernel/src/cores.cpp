@@ -2,8 +2,8 @@
 
 #include "definitions.h"
 #include "event_loop.h"
-#include "printf.h"
 #include "machine.h"
+#include "printf.h"
 #include "stdint.h"
 
 Atomic<int> startedCores = Atomic<int>(0);
@@ -29,21 +29,21 @@ extern "C" void _start_core2();
 extern "C" void _start_core3();
 
 extern "C" void initCore1() {
-  Debug::printf("Core 1! EL: %lu\n", get_CurrentEL());
+  Debug::printf("Core 1! %s\n", STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
   event_loop();
 }
 
 extern "C" void initCore2() {
-  Debug::printf("Core 2! EL: %lu\n", get_CurrentEL());
+  Debug::printf("Core 2! %s\n", STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
   event_loop();
 }
 
 extern "C" void initCore3() {
-  Debug::printf("Core 3! EL: %lu\n", get_CurrentEL());
+  Debug::printf("Core 3! %s\n", STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
   event_loop();

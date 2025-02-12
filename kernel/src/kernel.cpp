@@ -9,17 +9,17 @@
 #include "definitions.h"
 #include "event_loop.h"
 #include "heap.h"
+#include "machine.h"
 #include "printf.h"
 #include "stdint.h"
 #include "tester.h"
 #include "uart.h"
-#include "machine.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
   CRTI::_init();
 
-  Debug::printf("CurrentEL %lu\n", get_CurrentEL());
+  Debug::printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
   init_event_loop();
