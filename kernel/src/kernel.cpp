@@ -10,6 +10,7 @@
 #include "event_loop.h"
 #include "heap.h"
 #include "crti.h"
+#include "mem.h"
 
 #define STACK_SIZE 8192
 
@@ -59,6 +60,7 @@ extern "C" void kernelMain()
   CRTI::_init();
 
   heap_init();
+  PMem::page_init();
   init_event_loop();
   init_uart();
 
@@ -78,6 +80,8 @@ extern "C" void kernelMain()
   }
 
   run_heap_tests();
+
+  run_page_tests();
 
   event_loop();
 

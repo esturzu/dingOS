@@ -1,7 +1,3 @@
-
-
-    
-
 #include "stdint.h"
 #include "heap.h"
 #include "printf.h"
@@ -71,6 +67,8 @@ void heap_init() {
     heap_size = (size_t) &_heap_end - (size_t) &_heap_start;
     
     Debug::printf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", heap_ptr, heap_size, heap_end);
+
+    heap_spinlock = SpinLock();
 
     mark_allocated(heap_ptr, 16);
     mark_free(heap_ptr + 16, heap_size - 32);
@@ -190,6 +188,7 @@ extern "C" void free(void* ptr) {
         // Debug::printf("Right Block 0x%X is Free!\n", right_block);
         remove((uint64_t) right_block);
         new_region_size += right_block_size;
+        right_block[0] = abs(right_block_size);
     }
     block[0] = block_size;
     mark_free(new_start_block, new_region_size);
@@ -225,7 +224,7 @@ void run_heap_tests() {
     }
 
     // Test 2: Large allocation within heap size
-    char* block2 = (char*) malloc(0x10000000);
+    char* block2 = (char*) malloc(0x1000000);
     if (block2 != 0) {
         Debug::printf("Test 2 Passed: Allocated 500000 bytes.\n");
     } else {

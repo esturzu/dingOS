@@ -94,7 +94,7 @@ class LockGuard
   T* lock;
 
 public:
-  LockGuard(T & lk) : lock(&lk)
+  LockGuard(T &lk) : lock(&lk)
   {
     lock->lock();
   }
