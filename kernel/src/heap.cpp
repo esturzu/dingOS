@@ -1,11 +1,9 @@
-
-
 #include "heap.h"
 
 #include "atomics.h"
+#include "definitions.h"
 #include "printf.h"
 #include "stdint.h"
-#include "definitions.h"
 
 extern "C" char _end;
 extern "C" char _heap_start;
@@ -19,7 +17,6 @@ static uint64_t heap_size;
 static uint64_t prev_block;
 
 SpinLock heap_spinlock;
-
 
 void mark_allocated(size_t position, size_t block_size) {
   long* block_start = (long*)position;
@@ -174,7 +171,7 @@ void operator delete(void* ptr, size_t sz) noexcept { free(ptr); }
 
 void operator delete[](void* ptr, size_t sz) noexcept { free(ptr); }
 
-// // Undefined Delete Reference Fix
+// Undefined Delete Reference Fix
 
 extern "C" void __cxa_atexit() {}
 

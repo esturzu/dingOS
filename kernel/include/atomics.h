@@ -87,7 +87,7 @@ class SpinLock {
   bool status = true;
 
  public:
-  SpinLock() {};
+  SpinLock() {}
 
   void lock() {
     while (!__atomic_exchange_n(&status, false, __ATOMIC_SEQ_CST)) {
@@ -105,6 +105,73 @@ class LockGuard {
   LockGuard(T& lk) : lock(&lk) { lock->lock(); }
 
   ~LockGuard() { lock->unlock(); }
+};
+
+class RWLock {
+ public:
+  RWLock() : state(0) {}
+
+  /**
+   * @brief Acquires read lock, which is shared among multiple readers.
+   *
+   * @note This is a blocking call. If the lock is not acquired, the caller will
+   * spin until success.
+   */
+  void read_lock() {
+    while (true) {
+      int current_state = state.load();
+      if (current_state == -1) {
+        // Exclusive writer currently holds lock
+        continue;
+      }
+
+      if (state.compare_exchange_weak(&current_state, current_state + 1)) {
+        // Read lock acquired
+        break;
+      }
+
+      // Read lock not acquired, try again
+    }
+  }
+
+  /**
+   * @brief Releases read lock.
+   *
+   * Decrements the count of active read locks. If the count reaches zero, the
+   * lock is released.
+   */
+  void read_unlock() { state.add_fetch(-1); }
+
+  /**
+   * @brief Acquires exclusive write lock.
+   *
+   * @note This is a blocking call. If the lock is not acquired, the caller will
+   * spin until success.
+   */
+  void write_lock() {
+    while (true) {
+      int expected = 0;
+      if (state.compare_exchange_weak(&expected, -1)) {
+        // Write lock acquired
+        break;
+      }
+
+      // Write lock not acquired, try again
+    }
+  }
+
+  /**
+   * @brief Releases exclusive write lock.
+   *
+   * Sets the state to 0, indicating that no one holds the lock.
+   */
+  void write_unlock() { state.store(0); }
+
+ private:
+  // Lock state:
+  // state >= 0: number of readers
+  // state == -1: exclusive writer
+  Atomic<int> state;
 };
 
 #endif  // ATOMICS_H
