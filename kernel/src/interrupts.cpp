@@ -1,4 +1,6 @@
 #include "interrupts.h"
+#include "printf.h"
+#include "uart.h"
 
 uint32_t Interrupts::get_basic_pending_register()
 {
@@ -90,4 +92,10 @@ void Interrupts::Disable_All_Base(uint8_t Offset)
   volatile uint32_t* Disable_basic_IRQ_register =
         (volatile uint32_t*)(interrupt_base_address + Disable_basic_IRQ_offset);
     *Disable_basic_IRQ_register = 0xFFFFFFFF;
+}
+
+extern "C" void irq_handler()
+{
+  Debug::printf("Hello\n");
+  while(1) {}
 }
