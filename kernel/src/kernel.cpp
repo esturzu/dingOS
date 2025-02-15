@@ -14,10 +14,14 @@
 #include "stdint.h"
 #include "tester.h"
 #include "uart.h"
+#include "system_timer.h"
+#include "interrupts.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
   CRTI::_init();
+
+  SystemTimer::setup_timer(0);
 
   Debug::printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
