@@ -5,7 +5,7 @@
 
 #define PAGE_SIZE 4096
 
-namespace PMem {
+namespace PhysMem {
     void* allocate_frame();
     void free_frame(void* page); 
     void page_init();

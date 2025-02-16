@@ -12,7 +12,7 @@ static uint64_t* bitmap;
 extern "C" char _frame_start;
 extern "C" char _frame_end;
 
-namespace PMem {
+namespace PhysMem {
 
     static SpinLock lock{};
 
@@ -85,5 +85,5 @@ namespace PMem {
 }
 
 void run_page_tests() {
-    Debug::printf("Bitmap Location: 0x%X, Page Start: 0x%X, Page Range End: 0x%X", bitmap, &_frame_start, &_frame_end);
+    Debug::printf("Bitmap Location: 0x%X, Page Start: 0x%X, Page Range End: 0x%X\n", bitmap, &_frame_start, &_frame_end);
 }
