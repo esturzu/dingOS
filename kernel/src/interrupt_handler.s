@@ -1,3 +1,7 @@
+/* Citations
+  AArch64 Exception Model
+*/ 
+
 .balign 2048
 .globl el1_vector_table
 el1_vector_table:
@@ -36,3 +40,4 @@ el1_vector_table:
 .extern irq_handler
 irq_handler_:
   bl irq_handler
+  eret

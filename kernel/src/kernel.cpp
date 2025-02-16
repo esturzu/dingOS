@@ -21,8 +21,6 @@ extern "C" void kernelMain() {
   // Handled uart Init
   CRTI::_init();
 
-  SystemTimer::setup_timer(0);
-
   Debug::printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
@@ -33,6 +31,19 @@ extern "C" void kernelMain() {
   bootCores();
 
   setupTests();
+
+  SystemTimer::setup_timer(0);
+  schedule_event([=](){
+    uint64_t last_time = current_time;
+    while (true)
+    {
+      if (last_time != current_time)
+      {
+        Debug::printf("Heartbeat: %u\n", current_time);
+        last_time = current_time;
+      }
+    }
+  });
 
   event_loop();
 

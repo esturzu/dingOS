@@ -1,6 +1,10 @@
+// Citations
+// https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
+
 #include "interrupts.h"
+#include "system_timer.h"
 #include "printf.h"
-#include "uart.h"
+#include "event_loop.h"
 
 uint32_t Interrupts::get_basic_pending_register()
 {
@@ -96,6 +100,14 @@ void Interrupts::Disable_All_Base(uint8_t Offset)
 
 extern "C" void irq_handler()
 {
-  Debug::printf("Hello\n");
-  while(1) {}
+  uint32_t irq_pending_1 = Interrupts::get_IRQ_pending_1_register();
+
+  // System Timer 1 Interrupt
+  if (irq_pending_1 & 0b1)
+  {
+    current_time += 1;
+    uint32_t current_lower = SystemTimer::get_lower_running_counter_value();
+    SystemTimer::set_compare_register(0, current_lower + 1000000);
+    SystemTimer::clear_compare(0);
+  }
 }

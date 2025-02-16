@@ -26,3 +26,5 @@ public:
 
   static void setup_timer(uint8_t n);
 };
+
+extern volatile uint64_t current_time;

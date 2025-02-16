@@ -3,6 +3,8 @@
 #include "printf.h"
 #include "machine.h"
 
+volatile uint64_t current_time;
+
 uint8_t SystemTimer::get_status()
 {
   volatile uint32_t* control_register =
@@ -100,12 +102,8 @@ void SystemTimer::set_compare_register(uint8_t n, uint32_t value)
 
 void SystemTimer::setup_timer(uint8_t n)
 {
-  set_compare_register(0, 25000);
+  current_time = 0;
+  set_compare_register(0, 1000000);
   set_VBAR_EL1(&el1_vector_table);
   Interrupts::Enable_IRQ(n);
-
-  while(true)
-  {
-    // Debug::printf("Time %u\n", get_lower_running_counter_value());
-  }
 }
