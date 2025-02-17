@@ -51,7 +51,6 @@ extern "C" void kernelMain() {
     // System setup
     heap_init();
     init_event_loop();
-    init_uart();
 
     Debug::printf("DingOS is Booting!\n");
 
@@ -68,7 +67,6 @@ extern "C" void kernelMain() {
     }
 
     Debug::printf("Test execution complete. Exiting kernelMain.\n");
-
     // Halt the system after the event loop finishes
     while (1);
 }

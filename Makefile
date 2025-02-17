@@ -4,7 +4,7 @@
 
 COMPONENTS = kernel
 TARGET =
-.PHONY: all debug clean qemu $(COMPONENTS)
+.PHONY: all debug clean qemu $(COMPONENTS) run-test debug-test run-all-tests all-tests
 
 all: $(COMPONENTS)
 
@@ -23,3 +23,16 @@ clean:
 	for dir in $(COMPONENTS); do \
 		$(MAKE) -C $$dir clean; \
 	done
+
+# --- Test commands from root ---
+run-test:
+	$(MAKE) -C kernel run-test TEST_NAME=$(TEST_NAME)
+
+debug-test:
+	$(MAKE) -C kernel debug-test TEST_NAME=$(TEST_NAME)
+
+run-all-tests:
+	$(MAKE) -C kernel run-all-tests
+
+all-tests:
+	$(MAKE) -C kernel all-tests

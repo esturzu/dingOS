@@ -27,6 +27,7 @@ OPT_FLAGS := -O2
 BUILD := build
 SRCDIR := src
 INCDIR := include
+# CHANGE TEST DIR TO BE ABLE TO PUT IN YOUR TESTS
 TESTDIR := tests
 
 # Kernel source and object files
@@ -71,8 +72,13 @@ all-tests: $(TEST_ELFS)
 run-all-tests: $(TEST_IMGS)
 	@for img in $(TEST_IMGS); do \
 		echo "Running test $$img..."; \
-		LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $$img -serial mon:stdio; \
+		expect -c ' \
+			spawn $(QEMU) $(QEMU_FLAGS) -kernel $$img -serial mon:stdio; \
+			expect "TEST DONE" { exit 0 } timeout 10 { exit 1 }' \
+		|| echo "Test $$img failed"; \
 	done
+
+
 
 # Compile and run a specific test
 run-test:

@@ -69,12 +69,12 @@ void setupHeapTestEvent() {
 }
 
 extern "C" void kernelMain() {
-    CRTI::_init();
 
     // System setup
+    CRTI::_init();
+
     heap_init();
     init_event_loop();
-    init_uart();
 
     Debug::printf("DingOS is Booting!\n");
 
