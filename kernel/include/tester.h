@@ -13,7 +13,7 @@ void runTests() {
 
 void setupTests() {
   schedule_event([] {
-    while (startedCores.load() < 4);
+    while (SMP::startedCores.load() < 4);
     runTests();
   });
 }
