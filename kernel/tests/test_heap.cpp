@@ -63,7 +63,7 @@ void runHeapTests() {
 // Schedule the heap test to run within the event loop
 void setupHeapTestEvent() {
     schedule_event([] {
-        while (startedCores.load() < 4);
+        while (SMP::startedCores.load() < 4);  // UPDATED REFERENCE
         runHeapTests();
     });
 }
@@ -79,7 +79,7 @@ extern "C" void kernelMain() {
     Debug::printf("DingOS is Booting!\n");
 
     // Boot all cores
-    bootCores();
+    SMP::bootCores();  // UPDATED REFERENCE
 
     // Schedule the heap tests
     setupHeapTestEvent();

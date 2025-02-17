@@ -40,7 +40,7 @@ void runEventLoopTests() {
 // Schedule the test to run within the event loop
 void setupEventLoopTestEvent() {
     schedule_event([] {
-        while (startedCores.load() < 4);
+        while (SMP::startedCores.load() < 4);  // UPDATED REFERENCE
         runEventLoopTests();
     });
 }
@@ -55,7 +55,7 @@ extern "C" void kernelMain() {
     Debug::printf("DingOS is Booting!\n");
 
     // Boot all cores
-    bootCores();
+    SMP::bootCores();  // UPDATED REFERENCE
 
     // Schedule the event loop tests
     setupEventLoopTestEvent();
@@ -67,6 +67,7 @@ extern "C" void kernelMain() {
     }
 
     Debug::printf("Test execution complete. Exiting kernelMain.\n");
+    
     // Halt the system after the event loop finishes
     while (1);
 }
