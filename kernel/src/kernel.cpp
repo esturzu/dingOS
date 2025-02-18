@@ -18,6 +18,7 @@
 #include "system_timer.h"
 #include "tester.h"
 #include "uart.h"
+#include "sd.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -49,6 +50,20 @@ extern "C" void kernelMain() {
 
   run_page_tests();
 
+  SystemTimer::setup_timer(0);
+  schedule_event([=]() {
+    uint64_t last_time = current_time;
+    while (true) {
+      if (last_time != current_time) {
+        debug_printf("Heartbeat: %u\n", current_time);
+        last_time = current_time;
+      }
+    }
+  });
+
+  run_page_tests();
+
+  SD::init();
   event_loop();
 
   while (1);
