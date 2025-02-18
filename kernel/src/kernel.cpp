@@ -9,11 +9,13 @@
 #include "definitions.h"
 #include "event_loop.h"
 #include "heap.h"
+#include "interrupts.h"
 #include "crti.h"
 #include "physmem.h"
 #include "machine.h"
 #include "printf.h"
 #include "stdint.h"
+#include "system_timer.h"
 #include "tester.h"
 #include "uart.h"
 
@@ -33,6 +35,17 @@ extern "C" void kernelMain() {
   SMP::bootCores();
 
   setupTests();
+
+  SystemTimer::setup_timer(0);
+  schedule_event([=]() {
+    uint64_t last_time = current_time;
+    while (true) {
+      if (last_time != current_time) {
+        Debug::printf("Heartbeat: %u\n", current_time);
+        last_time = current_time;
+      }
+    }
+  });
 
   run_page_tests();
 
