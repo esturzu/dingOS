@@ -9,8 +9,8 @@
 
 static uint64_t* bitmap;
 
-extern "C" char _frame_start;
-extern "C" char _frame_end;
+extern "C" char* _frame_start;
+extern "C" char* _frame_end;
 
 namespace PhysMem {
 
@@ -25,7 +25,7 @@ namespace PhysMem {
     static char* frame_range_end;
 
     void zero_out(char* page, size_t size) {
-        for (int i = 0; i < 4096; i++) {
+        for (int i = 0; i < size; i++) {
             page[i] = 0;
         }
     }
@@ -42,21 +42,21 @@ namespace PhysMem {
                         bitmap[i] |= (1ULL << offset);
                         void* new_page = frame_start + ((i * 64 + word) * PAGE_SIZE);
                         zero_out((char*) new_page, PAGE_SIZE);
-                        Debug::printf("Frame found at 0x%X\n", new_page);
+                        dPrintf("Frame found at 0x%X\n", new_page);
                         return new_page;
                     }
                 }
             }
         }
-        Debug::printf("No available frames\n");
+        dPrintf("No available frames\n");
         return nullptr;
     }
 
     void free_frame(void* page) {
         uint64_t page_addr = (uint64_t) page;
-        Debug::printf("Deallocating Addr: 0x%X\n", page_addr);
+        dPrintf("Deallocating Addr: 0x%X\n", page_addr);
         if (page_addr % PAGE_SIZE != 0) {
-            Debug::printf("Attempting to deallocate an address not 4096 Byte Aligned\n");
+            dPrintf("Attempting to deallocate an address not 4096 Byte Aligned\n");
         }
 
         uint64_t page_num = (page_addr - (uint64_t) frame_start) / PAGE_SIZE;
@@ -67,23 +67,27 @@ namespace PhysMem {
     }
 
     void page_init() {
-        frame_start = &_frame_start;
-        frame_range_end = &_frame_end;
+        frame_start = (char*) &_frame_start;
+        frame_range_end = (char*) &_frame_end;
+        size_t frame_size = (size_t) &_frame_start - (size_t) &_frame_end;
 
         bitmap = (uint64_t*) &_frame_start;
- 
+
         zero_out(frame_start, BITMAP_SIZE);
+        
         for (int i = 0; i < (BITMAP_SIZE / PAGE_SIZE) && i < TOTAL_PAGES; i++) {
             uint64_t word = bitmap[i / 64];
             uint64_t offset = i % 64;
-            bitmap[i / 64] |= (1ULL << offset);
-            Debug::printf("Page %d of bitmap allocated for bitmapping\n");
+            bitmap[i / 64] &= (1ULL << offset);
+            dPrintf("Page %d of bitmap allocated for bitmapping\n");
         }
         
         frame_start += BITMAP_SIZE;
+
+        dPrintf("Bitmap Location: 0x%X, Page Start: 0x%X, Page Range End: 0x%X\n", bitmap, &_frame_start, &_frame_end);
     }
 }
 
 void run_page_tests() {
-    Debug::printf("Bitmap Location: 0x%X, Page Start: 0x%X, Page Range End: 0x%X\n", bitmap, &_frame_start, &_frame_end);
+    
 }
