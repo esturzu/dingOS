@@ -5,9 +5,9 @@
 #include "stdint.h"
 #include "definitions.h"
 
-extern "C" char _end;
-extern "C" char _heap_start;
-extern "C" char _heap_end;
+extern "C" uint64_t* _end; 
+extern "C" uint64_t* _heap_start;
+extern "C" uint64_t* _heap_end;
 
 static size_t current_heap = (size_t)&_heap_start;
 static const size_t heap_end = (size_t)&_heap_end;
