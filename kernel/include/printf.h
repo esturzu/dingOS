@@ -60,7 +60,6 @@ void _putchar(char character);
  * \return The number of characters that are written into the array, not
  * counting the terminating null character
  */
-#define printf printf_
 int printf_(const char* format, ...);
 
 /**
@@ -122,5 +121,14 @@ int fctprintf(void (*out)(char character, void* arg), void* arg,
 // #endif
 
 }  // namespace Debug
+
+// Our additions
+#if defined(DEBUG_ENABLED) && (DEBUG_ENABLED + 0)
+#define dPrintf(...) Debug::printf_(__VA_ARGS__) 
+#else
+#define dPrintf(...) 
+#endif
+
+#define printf(...) Debug::printf_(__VA_ARGS__)
 
 #endif  // _PRINTF_H_
