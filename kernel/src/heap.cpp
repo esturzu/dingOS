@@ -1,5 +1,3 @@
-
-
 #include "heap.h"
 
 #include "atomics.h"
@@ -7,9 +5,9 @@
 #include "stdint.h"
 #include "definitions.h"
 
-extern "C" char _end;
-extern "C" char _heap_start;
-extern "C" char _heap_end;
+extern "C" uint64_t* _end; 
+extern "C" uint64_t* _heap_start;
+extern "C" uint64_t* _heap_end;
 
 static size_t current_heap = (size_t)&_heap_start;
 static const size_t heap_end = (size_t)&_heap_end;
@@ -61,7 +59,7 @@ void heap_init() {
   heap_ptr = (size_t)&_heap_start;
   heap_size = (size_t)&_heap_end - (size_t)&_heap_start;
 
-  Debug::printf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", heap_ptr,
+  dPrintf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", heap_ptr,
                 heap_size, heap_end);
 
   mark_allocated(heap_ptr, 16);
@@ -114,11 +112,11 @@ extern "C" void free(void* ptr) {
   LockGuard<SpinLock> lg{heap_spinlock};
 
   if (ptr == 0) {
-    Debug::printf("Freeing nullptr\n");
+    dPrintf("Freeing nullptr\n");
     return;
   }
   if (ptr < &_heap_start || ptr > &_heap_end) {
-    Debug::printf("Freeing outside of heap: 0x%X\n", ptr);
+    dPrintf("Freeing outside of heap: 0x%X\n", ptr);
     return;
   }
 
@@ -126,7 +124,7 @@ extern "C" void free(void* ptr) {
   long block_size = block[0] * -1;
 
   if (block_size < 0) {
-    Debug::printf("Freeing free block 0x%X\n", block);
+    dPrintf("Freeing free block 0x%X\n", block);
     return;
   }
 

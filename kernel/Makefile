@@ -15,9 +15,9 @@ OBJCOPY := $(ARMBIN)/aarch64-none-linux-gnu-objcopy # Objcopy
 GDB := $(ARMBIN)/aarch64-none-linux-gnu-gdb # GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
-QEMU_FLAGS := -no-reboot -M raspi3b -nographic
+QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4
 CCFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
-CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib -mno-outline-atomics -fno-builtin -fno-stack-protector -fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles
+CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib -mno-outline-atomics -fno-builtin -fno-stack-protector -fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles -DDEBUG_ENABLED=$(DEBUG_ENABLED)
 
 ASFLAGS :=
 DEBUG_FLAGS := -g
@@ -40,6 +40,8 @@ OBJS = $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
 EXEC = $(BUILD)/kernel.elf
 IMG = $(BUILD)/kernel8.img
 TMP_IMG = $(BUILD)/kernel8_tmp.img
+# Flags
+DEBUG_ENABLED ?= 0
 
 .PHONY: all clean debug qemu
 

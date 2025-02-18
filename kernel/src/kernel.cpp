@@ -10,6 +10,8 @@
 #include "event_loop.h"
 #include "heap.h"
 #include "interrupts.h"
+#include "crti.h"
+#include "physmem.h"
 #include "machine.h"
 #include "printf.h"
 #include "stdint.h"
@@ -21,14 +23,16 @@ extern "C" void kernelMain() {
   // Handled uart Init
   CRTI::_init();
 
-  Debug::printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
+  dPrintf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
+  PhysMem::page_init();
   init_event_loop();
 
-  Debug::printf("DingOS is Booting!\n");
+  printf("DingOS is Booting!\n");
+  dPrintf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
-  bootCores();
+  SMP::bootCores();
 
   setupTests();
 
@@ -42,6 +46,8 @@ extern "C" void kernelMain() {
       }
     }
   });
+
+  run_page_tests();
 
   event_loop();
 
