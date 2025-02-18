@@ -19,13 +19,13 @@ extern "C" void kernelMain() {
   // Handled uart Init
   CRTI::_init();
 
-  Debug::printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
+  dPrintf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
   init_event_loop();
 
-  Debug::printf("DingOS is Booting!\n");
-  Debug::printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
+  printf("DingOS is Booting!\n");
+  dPrintf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
   SMP::bootCores();
 
