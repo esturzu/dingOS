@@ -78,7 +78,7 @@ namespace PhysMem {
         for (int i = 0; i < (BITMAP_SIZE / PAGE_SIZE) && i < TOTAL_PAGES; i++) {
             uint64_t word = bitmap[i / 64];
             uint64_t offset = i % 64;
-            bitmap[i / 64] &= (1ULL << offset);
+            bitmap[i / 64] |= (1ULL << offset);
             dPrintf("Page %d of bitmap allocated for bitmapping\n");
         }
         
