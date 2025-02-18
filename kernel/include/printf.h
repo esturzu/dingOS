@@ -123,7 +123,7 @@ int fctprintf(void (*out)(char character, void* arg), void* arg,
 }  // namespace Debug
 
 // Our additions
-#if DEBUG_ENABLED
+#if defined(DEBUG_ENABLED) && (DEBUG_ENABLED + 0)
 #define dPrintf(...) Debug::printf_(__VA_ARGS__) 
 #else
 #define dPrintf(...) 
