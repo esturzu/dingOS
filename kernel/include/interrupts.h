@@ -5,9 +5,7 @@
 #include "stdint.h"
 
 class Interrupts {
-
-public:
-
+ public:
   static constexpr uint64_t interrupt_base_address = 0x3f00b000;
 
   static constexpr uint64_t IRQ_basic_pending_offset = 0x200;

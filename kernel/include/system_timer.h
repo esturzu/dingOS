@@ -4,9 +4,7 @@
 #include "stdint.h"
 
 class SystemTimer {
-
-public:
-
+ public:
   static constexpr uint64_t system_timer_base_address = 0x3f003000;
 
   static constexpr uint64_t control_offset = 0x00;

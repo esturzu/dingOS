@@ -9,13 +9,13 @@
 #include "definitions.h"
 #include "event_loop.h"
 #include "heap.h"
+#include "interrupts.h"
 #include "machine.h"
 #include "printf.h"
 #include "stdint.h"
+#include "system_timer.h"
 #include "tester.h"
 #include "uart.h"
-#include "system_timer.h"
-#include "interrupts.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -33,12 +33,10 @@ extern "C" void kernelMain() {
   setupTests();
 
   SystemTimer::setup_timer(0);
-  schedule_event([=](){
+  schedule_event([=]() {
     uint64_t last_time = current_time;
-    while (true)
-    {
-      if (last_time != current_time)
-      {
+    while (true) {
+      if (last_time != current_time) {
         Debug::printf("Heartbeat: %u\n", current_time);
         last_time = current_time;
       }
