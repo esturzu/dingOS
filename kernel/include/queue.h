@@ -63,7 +63,7 @@ class LocklessQueue {
       // Empty Queue
       if (prev_head->next == 0) return {};
 
-      // A race condition exists here
+      // TODO: A race condition exists here
       item = prev_head->next->item;
     } while (!__atomic_compare_exchange_n(&head, &prev_head, prev_head->next,
                                           true, __ATOMIC_SEQ_CST,

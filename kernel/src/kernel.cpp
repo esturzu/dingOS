@@ -14,6 +14,7 @@
 #include "stdint.h"
 #include "tester.h"
 #include "uart.h"
+#include "sd.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -31,6 +32,7 @@ extern "C" void kernelMain() {
 
   setupTests();
 
+  SD::init();
   event_loop();
 
   while (1);
