@@ -24,9 +24,9 @@ namespace PhysMem {
     static char* frame_start;
     static char* frame_range_end;
 
-    void page_fill(char* page, size_t size, uint8_t val) {
+    void zero_out(char* page, size_t size) {
         for (int i = 0; i < size; i++) {
-            page[i] = val;
+            page[i] = 0;
         }
     }
 
@@ -41,7 +41,7 @@ namespace PhysMem {
                     if (word & 0x1 == 0) {
                         bitmap[i] |= (1ULL << offset);
                         void* new_page = frame_start + ((i * 64 + word) * PAGE_SIZE);
-                        page_fill((char*) new_page, PAGE_SIZE, 0);
+                        zero_out((char*) new_page, PAGE_SIZE);
                         dPrintf("Frame found at 0x%X\n", new_page);
                         return new_page;
                     }
@@ -73,12 +73,12 @@ namespace PhysMem {
 
         bitmap = (uint64_t*) &_frame_start;
 
-        page_fill(frame_start, BITMAP_SIZE, 1);
+        zero_out(frame_start, BITMAP_SIZE);
         
         for (int i = 0; i < (BITMAP_SIZE / PAGE_SIZE) && i < TOTAL_PAGES; i++) {
             uint64_t word = bitmap[i / 64];
             uint64_t offset = i % 64;
-            bitmap[i / 64] &= !(1ULL << offset);
+            bitmap[i / 64] &= (1ULL << offset);
             dPrintf("Page %d of bitmap allocated for bitmapping\n");
         }
         
