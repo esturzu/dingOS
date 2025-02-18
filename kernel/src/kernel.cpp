@@ -9,6 +9,8 @@
 #include "definitions.h"
 #include "event_loop.h"
 #include "heap.h"
+#include "crti.h"
+#include "physmem.h"
 #include "machine.h"
 #include "printf.h"
 #include "stdint.h"
@@ -22,6 +24,7 @@ extern "C" void kernelMain() {
   dPrintf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
+  PhysMem::page_init();
   init_event_loop();
 
   printf("DingOS is Booting!\n");
@@ -30,6 +33,8 @@ extern "C" void kernelMain() {
   SMP::bootCores();
 
   setupTests();
+
+  run_page_tests();
 
   event_loop();
 
