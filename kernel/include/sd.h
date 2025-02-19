@@ -4,21 +4,17 @@
 #include "definitions.h"
 #include "gpio.h"
 
-
-
-#define NEED_APP 0x80000000
-#define RSPNS_48 0x00020000
 #define ERRORS_MASK 0xfff9c004
-#define RCA_MASK 0xffff0000
 
-
-
+// SD response types
+#define SD_APP_CMD_ENABLED 0x00000020
 
 // interrupt masks
 #define INT_ERROR_MASK 0x017f3f00
 #define INT_TIMEOUT_MASK 0x00110000
-#define INT_CMD_DONE 0x00000001
-#define INT_DATA_DONE 0x00000002
+
+#define SD_READ_AVAILABLE 0x800
+
 class SD {
   static volatile uint32_t* const EMMC_BASE;
   static volatile uint32_t* const EMMC_ARG2;
@@ -47,6 +43,14 @@ class SD {
   static volatile uint32_t* const EMMC_TUNE_STEP_DDR;
   static volatile uint32_t* const EMMC_INT_SPI;
   static volatile uint32_t* const EMMC_SLOTISR_VER;
+
+  static uint32_t const OP_COND_NOT_SDSC = 1 << 30;
+  static uint32_t const VOLTAGE_WINDOW = 0x1FF << 15;
+  static uint32_t constexpr OP_COND_FULL =
+      OP_COND_NOT_SDSC   // yes for for both types (SDHC and SDXC)
+      | 1 << 28          // yes for SDXC Maximum Performance
+      | 1 << 24          // switch to 1.8V signal voltage
+      | VOLTAGE_WINDOW;  // Voltage window 2.7-3.6V
 
  public:
   enum RESPONSE {
@@ -85,17 +89,16 @@ class SD {
   static uint32_t SLOT_STATUS;
   static uint32_t SDVERSION;
 
-  static volatile uint32_t* cardConfigRegister1;
-  static volatile uint32_t* cardConfigRegister2;
+  static volatile uint64_t* cardConfigRegister1;
+  static volatile uint64_t* cardConfigRegister2;
   static uint32_t relativeCardAddress;
+  static uint32_t errInfo;
 
-  static SD::RESPONSE waitInterrupt(uint32_t mask,
-    uint32_t timeout = 1000000);
-  static SD::RESPONSE waitStatus(uint32_t mask,
-                                      uint32_t timeout = 1000000);
-  static SD::RESPONSE sendCommand(SD::CMDS cmd, uint32_t arg);
+  static SD::RESPONSE waitInterrupt(uint32_t mask, uint32_t timeout = 1000000);
+  static SD::RESPONSE waitStatus(uint32_t mask, uint32_t timeout = 1000000);
+  static uint32_t sendCommand(SD::CMDS cmd, uint32_t arg);
   static SD::RESPONSE setClock(uint32_t freq);
-  static SD::RESPONSE init();
+  static uint32_t init();
 };
 
 #endif

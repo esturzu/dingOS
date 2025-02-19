@@ -59,9 +59,10 @@ volatile uint32_t* const SD::EMMC_SLOTISR_VER =
 uint32_t SD::SLOTISR_VER = 0;
 uint32_t SD::SLOT_STATUS = 0;
 uint32_t SD::SDVERSION = 0;
-volatile uint32_t* SD::cardConfigRegister1 = 0;
-volatile uint32_t* SD::cardConfigRegister2 = 0;
+volatile uint64_t* SD::cardConfigRegister1 = 0;
+volatile uint64_t* SD::cardConfigRegister2 = 0;
 uint32_t SD::relativeCardAddress = 0;
+uint32_t SD::errInfo = 0;
 
 /**
  * @brief Waits for an interrupt to be set for the given mask or a timeout/error
@@ -82,14 +83,14 @@ SD::RESPONSE SD::waitInterrupt(uint32_t mask, uint32_t timeout) {
   uint32_t interruptValue = *EMMC_INTERRUPT;
   if (timeout <= 0 || (interruptValue & INT_TIMEOUT_MASK)) {
     *EMMC_INTERRUPT = interruptValue;  // sending acknowledgement
-    debug_printf("Timeout waiting for interrupt\n");
+    error_printf("Error: Timeout waiting for interrupt\n");
     return TIMEOUT;
   }
 
   // check if there was an error
   if (interruptValue & INT_ERROR_MASK) {
     *EMMC_INTERRUPT = interruptValue;  // sending acknowledgement
-    debug_printf("Error waiting for interrupt\n");
+    error_printf("Error: waiting for interrupt\n");
     return ERROR;
   }
 
@@ -113,12 +114,12 @@ SD::RESPONSE SD::waitStatus(uint32_t mask, uint32_t timeout) {
   }
 
   if (timeout <= 0) {
-    debug_printf("Timeout waiting for SD status to be ready\n");
+    error_printf("Error: Timeout waiting for SD status to be ready\n");
     return TIMEOUT;
   }
 
   if (*EMMC_INTERRUPT & INT_ERROR_MASK) {
-    debug_printf("Error waiting for SD status to be ready\n");
+    error_printf("Error: waiting for SD status to be ready\n");
     return ERROR;
   }
   return SUCCESS;
@@ -126,13 +127,17 @@ SD::RESPONSE SD::waitStatus(uint32_t mask, uint32_t timeout) {
 
 /**
  * @brief Sends a command to the SD card
+ * Note! RELATIVE_CARD_ADDRESS doesnt not return normaly. the rca is returned in
+ * the response and the error info is returned in the errInfo variable with the
+ * bits in the correct place
  *
  * @param cmd               command to send
  * @param arg               arguments to send with the command
  * @return SD::RESPONSE     result of the command
  */
-SD::RESPONSE SD::sendCommand(CMDS cmd, uint32_t arg) {
-  RESPONSE myResponse = SUCCESS;
+uint32_t SD::sendCommand(CMDS cmd, uint32_t arg) {
+  uint32_t myResponse = SUCCESS;
+  errInfo = 0;
   // check if the command is app specific
   switch (cmd) {
     case CMDS::SET_BUS_WIDTH:
@@ -146,7 +151,8 @@ SD::RESPONSE SD::sendCommand(CMDS cmd, uint32_t arg) {
       myResponse = sendCommand(appCMD, relativeCardAddress);
 
       if (relativeCardAddress && myResponse < SUCCESS) {
-        printf("ERROR: Failed to send app command\n");
+        error_printf("ERROR: Failed to send app command\n");
+        errInfo = ERROR;
         return myResponse;
       }
   }
@@ -155,7 +161,8 @@ SD::RESPONSE SD::sendCommand(CMDS cmd, uint32_t arg) {
   if ((myResponse = waitStatus(0b1)) <
       SUCCESS) {  // TODO: i wonder if there should be a
                   // lock or something for this?
-    printf("ERROR: Failed while waiting for EMMC to be free\n");
+    error_printf("ERROR: Failed while waiting for EMMC to be free\n");
+    errInfo = TIMEOUT;
     return myResponse;
   }
 
@@ -175,44 +182,45 @@ SD::RESPONSE SD::sendCommand(CMDS cmd, uint32_t arg) {
   }
 
   // wait for interrupt indicating command is done
-
-  if ((myResponse = waitInterrupt(INT_CMD_DONE)) < SUCCESS) {
-    printf("ERROR: failed to send EMMC command\n");
+  if ((myResponse = waitInterrupt(0x1)) < SUCCESS) {
+    error_printf("ERROR: failed to send EMMC command\n");
+    errInfo = myResponse;
     return myResponse;
   }
-  uint32_t cmdResponse = *EMMC_RESP0;
+
+  uint32_t cmdResponse =
+      *EMMC_RESP0;  // half a real response and half the cards status info from
+                    // before and after the command
 
   debug_printf("||CMD: %x | ARG: %x\n", cmd, arg);
-  debug_printf("||CMD_RESP: %x\n", cmdResponse);
+  debug_printf("||CMD_RESP: %b\n", cmdResponse);
   switch (cmd) {
     case CMDS::GO_IDLE:
     case CMDS::APP_CMD:
       return SUCCESS;
     case CMDS::APP_CMD_RCA:
-      return SUCCESS;  // for some reason we want a parameter error????
-  }
-  //   if (code == CMD_GO_IDLE || code == CMD_APP_CMD)
-  //     return 0;
-  //   else if (code == (CMD_APP_CMD | CMD_RSPNS_48))
-  //     return r & SR_APP_CMD;
-  //   else if (code == CMD_SEND_OP_COND)
-  //     return r;
-  //   else if (code == CMD_SEND_IF_COND)
-  //     return r == arg ? SD_OK : SD_ERROR;
-  //   else if (code == CMD_ALL_SEND_CID) {
-  //     r |= *EMMC_RESP3;
-  //     r |= *EMMC_RESP2;
-  //     r |= *EMMC_RESP1;
-  //     return r;
-  //   } else if (code == CMD_SEND_REL_ADDR) {
-  //     sd_err = (((r & 0x1fff)) | ((r & 0x2000) << 6) | ((r & 0x4000) << 8) |
-  //               ((r & 0x8000) << 8)) &
-  //              CMD_ERRORS_MASK;
-  //     return r & CMD_RCA_MASK;
-  //   }
-  //   return r & CMD_ERRORS_MASK;
+      return cmdResponse & SD_APP_CMD_ENABLED
+                 ? SUCCESS
+                 : FAIL;  // check to make sure that the stuatus indicates that
+                          // the card is ready for application specific commands
+    case CMDS::SEND_OP_COND:
+      return cmdResponse;
+    case CMDS::SEND_IF_COND:
+      return cmdResponse == arg ? SUCCESS : ERROR;
+    case CMDS::ALL_SEND_CID:
+      return *EMMC_RESP3 | *EMMC_RESP2 | *EMMC_RESP1 |
+             cmdResponse;  // TODO: returning the whole response??
+    case CMDS::SEND_REL_ADDR:
+      // response has lower half error info and uppper half RCA
+      errInfo = ((cmdResponse & 0x1FFF) | ((cmdResponse & (1 << 13)) << 6) |
+                 ((cmdResponse & (3 << 14)) << 8)) &
+                ERRORS_MASK;  // lower 13 bits are in normal place and upper
+                              // 3 bits have to be moved to right place 13
+                              // -> 19, 14 ->22, 15 ->23
 
-  return myResponse;
+      return (cmdResponse & 0xFFFF0000) >> 16;
+  }
+  return cmdResponse & ERRORS_MASK;
 }
 
 SD::RESPONSE SD::setClock(uint32_t freq) {
@@ -280,9 +288,9 @@ SD::RESPONSE SD::setClock(uint32_t freq) {
   return SUCCESS;
 }
 
-SD::RESPONSE SD::init() {
+uint32_t SD::init() {
   uint32_t timeout = 1000000;
-  RESPONSE response = SUCCESS;
+  uint32_t response = SUCCESS;
   GPIO::eMMCinit();
 
   // *** this part starts to make a little more sense. we are now doing very
@@ -301,10 +309,10 @@ SD::RESPONSE SD::init() {
 
   timeout = 1000;
   while ((*EMMC_CONTROL1 & 0x01000000) && timeout--) {
-    debug_printf("Waiting for EMMC host circuit reset...\n");
+    error_printf("Error: Waiting for EMMC host circuit reset...\n");
   };
   if (timeout <= 0) {
-    debug_printf("Timeout waiting for EMMC host circuit reset\n");
+    error_printf("Error: Timeout waiting for EMMC host circuit reset\n");
     return TIMEOUT;
   }
   debug_printf("Done with EMMC host circuit reset\n");
@@ -317,7 +325,7 @@ SD::RESPONSE SD::init() {
   // initialization)
 
   if ((response = setClock(400000)) != SUCCESS) {
-    debug_printf("Failed to set clock frequency\n");
+    error_printf("Error to set clock frequency\n");
     return response;
   }
 
@@ -329,8 +337,153 @@ SD::RESPONSE SD::init() {
   cardConfigRegister1 = 0;
   cardConfigRegister2 = 0;
   relativeCardAddress = 0;
+  errInfo = 0;
 
   sendCommand(CMDS::GO_IDLE, 0);
+  if (errInfo) {
+    return ERROR;
+  }
+
+  sendCommand(SEND_IF_COND, 0x000001AA);  // AA is the check pattern and 1 is
+                                          // the voltage range (2.7-3.6V)
+  if (errInfo) {
+    return ERROR;
+  }
+
+  // trying to start the initialization process
+  const uint32_t isCompleteMask = 1 << 31;
+  timeout = 6;
+  while (timeout--) {
+    // supposedly supposed to wait for 400 ms
+    response = sendCommand(
+        SEND_OP_COND,
+        OP_COND_FULL);  // sending the voltage window for initalization
+
+    if (response & isCompleteMask) {  // check if it is still busy trying to
+                                      // initialize the card
+      break;
+    }
+    debug_printf(
+        "During initialization, card is still busy\n With this response: %x\n",
+        response);
+
+    if (errInfo != TIMEOUT && errInfo != SUCCESS) {
+      error_printf("Error: during sd initialization\n");
+      return errInfo;
+    }
+  }
+
+  // check if we timed out
+  if (timeout <= 0) {
+    error_printf("Error: Timeout during sd initialization\n");
+    return TIMEOUT;
+  }
+
+  // check if choosing the voltage window was successful
+  if (!(response & VOLTAGE_WINDOW)) {
+    error_printf("Error: Failed to choose voltage window\n");
+    return ERROR;
+  }
+
+  // check for ccs bit
+  uint32_t ccs = response & (1 << 30);
+
+  bool isNotSDHC =
+      response & OP_COND_NOT_SDSC;  // check if SCDC and SDXC are both supported
+
+  // required for some reason
+  sendCommand(ALL_SEND_CID, 0);
+
+  // try to get the relative card address
+  relativeCardAddress = sendCommand(SEND_REL_ADDR, 0);
+  if (errInfo) {
+    error_printf("Error: Failed to get relative card address\n");
+    error_printf("Error response: 0x%x\n", relativeCardAddress);
+    error_printf("Error info: 0x%x\n", errInfo);
+    return ERROR;
+  }
+
+  // setting the clock to the real clock speed
+  if ((response = setClock(25000000)) != SUCCESS) {
+    error_printf("Error: Failed to set clock speed\n");
+    return response;
+  }
+
+  // select the card
+  sendCommand(CARD_SELECT, relativeCardAddress);
+  if (errInfo) {
+    error_printf("Error: Failed to select card\n");
+    return ERROR;
+  }
+
+  // wait for no data lines to be in use
+  if (response = waitStatus(0x2)) return response;
+
+  // set the block size to ___ bytes
+  *EMMC_BLKSIZECNT =
+      1 << 10;  // TODO: this is weird, idk how big the block size should be
+  // try to get SD to send SCR
+  sendCommand(SEND_SCR, 0);
+  if (errInfo) {
+    error_printf("Error: Failed to send SCR command\n");
+    return ERROR;
+  }
+
+  // wait for interrupt indicating read is ready
+  if ((response = waitInterrupt(0x20)) < SUCCESS) {
+    error_printf("Error: failed to read EMMC\n");
+    return response;
+  }
+
+  // keep trying to get both of the SCR registers
+  timeout = 1000000;
+  response = 0;
+  volatile uint64_t** currentRegister = &cardConfigRegister1;
+  while (timeout--) {
+    // read the data
+    if (*EMMC_STATUS & SD_READ_AVAILABLE) {
+      **currentRegister = *EMMC_DATA;
+      if (currentRegister == &cardConfigRegister2) {
+        // we have set both registers
+        break;
+      }
+      currentRegister = &cardConfigRegister2;
+    } else {
+      // there should be an actual wait here
+      debug_printf("Waiting for cardConfigRegisters to be available\n");
+    }
+  }
+  if (timeout <= 0) {
+    error_printf(
+        "Error: Timeout waiting for cardConfigRegisters to be available\n");
+    return TIMEOUT;
+  }
+
+  // check for bus width 4 availability
+  if (*cardConfigRegister1 & 1 << 10) {
+    sendCommand(SET_BUS_WIDTH,
+                relativeCardAddress | 0x2);  // try to set the bus width to 4
+                                             // using the relative card address
+    if (errInfo) {
+      error_printf("Error: Failed to set bus width\n");
+      return ERROR;
+    }
+    // update contol 0 to enable 4 data lines
+    *EMMC_CONTROL0 |= 0x2;
+
+    // check if it supports SET_BLKCNT command
+    if (*cardConfigRegister1 & 1 << 25) {
+      // enable multiple block read
+      printf("SD supports SET_BLKCNT command\n");
+    }
+    if (ccs) {
+      printf("SD is SDHC and SDXC compatiable\n");
+    }
+
+    // make sure config is set to yes for SDHC and SDXC
+    *cardConfigRegister1&=~ccs;
+    *cardConfigRegister1|=ccs;
+  }
 
   return SUCCESS;
 }
