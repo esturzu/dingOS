@@ -59,7 +59,7 @@ void heap_init() {
   heap_ptr = (size_t)&_heap_start;
   heap_size = (size_t)&_heap_end - (size_t)&_heap_start;
 
-  dPrintf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", heap_ptr,
+  debug_printf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", heap_ptr,
                 heap_size, heap_end);
 
   mark_allocated(heap_ptr, 16);
@@ -112,11 +112,11 @@ extern "C" void free(void* ptr) {
   LockGuard<SpinLock> lg{heap_spinlock};
 
   if (ptr == 0) {
-    dPrintf("Freeing nullptr\n");
+    debug_printf("Freeing nullptr\n");
     return;
   }
   if (ptr < &_heap_start || ptr > &_heap_end) {
-    dPrintf("Freeing outside of heap: 0x%X\n", ptr);
+    debug_printf("Freeing outside of heap: 0x%X\n", ptr);
     return;
   }
 
@@ -124,7 +124,7 @@ extern "C" void free(void* ptr) {
   long block_size = block[0] * -1;
 
   if (block_size < 0) {
-    dPrintf("Freeing free block 0x%X\n", block);
+    debug_printf("Freeing free block 0x%X\n", block);
     return;
   }
 

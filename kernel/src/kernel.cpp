@@ -23,14 +23,14 @@ extern "C" void kernelMain() {
   // Handled uart Init
   CRTI::_init();
 
-  dPrintf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
+  debug_printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
   PhysMem::page_init();
   init_event_loop();
 
   printf("DingOS is Booting!\n");
-  dPrintf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
+  debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
   SMP::bootCores();
 
@@ -41,7 +41,7 @@ extern "C" void kernelMain() {
     uint64_t last_time = current_time;
     while (true) {
       if (last_time != current_time) {
-        Debug::printf("Heartbeat: %u\n", current_time);
+        debug_printf("Heartbeat: %u\n", current_time);
         last_time = current_time;
       }
     }

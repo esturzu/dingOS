@@ -42,21 +42,21 @@ namespace PhysMem {
                         bitmap[i] |= (1ULL << offset);
                         void* new_page = frame_start + ((i * 64 + word) * PAGE_SIZE);
                         zero_out((char*) new_page, PAGE_SIZE);
-                        dPrintf("Frame found at 0x%X\n", new_page);
+                        debug_printf("Frame found at 0x%X\n", new_page);
                         return new_page;
                     }
                 }
             }
         }
-        dPrintf("No available frames\n");
+        debug_printf("No available frames\n");
         return nullptr;
     }
 
     void free_frame(void* page) {
         uint64_t page_addr = (uint64_t) page;
-        dPrintf("Deallocating Addr: 0x%X\n", page_addr);
+        debug_printf("Deallocating Addr: 0x%X\n", page_addr);
         if (page_addr % PAGE_SIZE != 0) {
-            dPrintf("Attempting to deallocate an address not 4096 Byte Aligned\n");
+          debug_printf("Attempting to deallocate an address not 4096 Byte Aligned\n");
         }
 
         uint64_t page_num = (page_addr - (uint64_t) frame_start) / PAGE_SIZE;
@@ -79,12 +79,12 @@ namespace PhysMem {
             uint64_t word = bitmap[i / 64];
             uint64_t offset = i % 64;
             bitmap[i / 64] |= (1ULL << offset);
-            dPrintf("Page %d of bitmap allocated for bitmapping\n");
+            debug_printf("Page %d of bitmap allocated for bitmapping\n");
         }
         
         frame_start += BITMAP_SIZE;
 
-        dPrintf("Bitmap Location: 0x%X, Page Start: 0x%X, Page Range End: 0x%X\n", bitmap, &_frame_start, &_frame_end);
+        debug_printf("Bitmap Location: 0x%X, Page Start: 0x%X, Page Range End: 0x%X\n", bitmap, &_frame_start, &_frame_end);
     }
 }
 

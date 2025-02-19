@@ -16,7 +16,7 @@ void eventLoopTests() {
   }
 
   while (total.load() < 10) {
-    // dPrintf("Waiting for events to finish...\n");
+    // debug_printf("Waiting for events to finish...\n");
   }
 
   testsResult("Basic event scheduling", 10 == total.load());
