@@ -18,6 +18,7 @@ QEMU := $(QEMUBIN)/qemu-system-aarch64
 QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4
 CCFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
 CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib -mno-outline-atomics -fno-builtin -fno-stack-protector -fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles -DDEBUG_ENABLED=$(DEBUG_ENABLED)
+DTB := $(CURDIR)/bcm2710-rpi-3-b.dtb
 
 ASFLAGS :=
 DEBUG_FLAGS := -g
@@ -57,10 +58,11 @@ debug: $(IMG)
 	@echo "To debug via gdb: type into another terminal"
 	@echo "$(GDB) kernel/build/kernel.elf"
 	@echo "target remote :1234"
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG) -s -S
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -dtb $(DTB) -kernel $(IMG) -s -S
 
 qemu: $(IMG)
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG)
+	echo "Current directory: $(PWD)"
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -dtb $(DTB) -kernel $(IMG)
 
 # The executable, a .elf file (eg. kernel.elf)
 $(EXEC): linker.ld $(OBJS)

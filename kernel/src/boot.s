@@ -1,8 +1,11 @@
 .section ".text.boot"
 
 .extern stack0_top
+.extern dtb_location
 .globl _start
 _start:
+  adrp x1, :pg_hi21:dtb_location
+  str x0, [x1, :lo12:dtb_location]
   mov x0, #0x80000000 // Allow for 64 bit mode boot
   msr HCR_EL2, x0
   ldr x0, =kernelMain // Setup return address after returning el2 -> el1

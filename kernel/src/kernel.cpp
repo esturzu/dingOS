@@ -7,6 +7,7 @@
 #include "cores.h"
 #include "crti.h"
 #include "definitions.h"
+#include "devices.h"
 #include "event_loop.h"
 #include "heap.h"
 #include "interrupts.h"
@@ -31,6 +32,8 @@ extern "C" void kernelMain() {
 
   printf("DingOS is Booting!\n");
   debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
+
+  Devices::init_devices();
 
   SMP::bootCores();
 
