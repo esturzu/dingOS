@@ -19,7 +19,6 @@
 #include "tester.h"
 #include "uart.h"
 #include "sd.h"
-#include "sd.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -40,6 +39,7 @@ extern "C" void kernelMain() {
 
   setupTests();
 
+  SD::init();
 
   SystemTimer::setup_timer(0);
   schedule_event([=]() {
