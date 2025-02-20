@@ -40,7 +40,7 @@ extern "C" void kernelMain() {
   // testing read
 
   uint32_t startBlock = 0;
-  uint32_t blocks = 10;
+  uint32_t blocks = 3;
   uint8_t buffer[blocks * SD::BLOCKSIZE];
 
   uint32_t res = SD::read(startBlock, blocks, buffer);
@@ -61,6 +61,32 @@ extern "C" void kernelMain() {
     printf("Read Success!\n");
   } else {
     printf("Read Failed!\n");
+  }
+
+  // testing write
+  uint8_t writeBuffer[blocks * SD::BLOCKSIZE];
+  for(int i = 0; i < blocks * SD::BLOCKSIZE; i++) {
+    writeBuffer[i] = i % 0xFF;
+  }
+  res = SD::write(startBlock, blocks, writeBuffer);
+  if(res == blocks * SD::BLOCKSIZE) {
+    printf("Write Success!\n");
+  } else {
+    printf("Write Failed!\n");
+  }
+  // testing read after write
+  res = SD::read(startBlock, blocks, buffer);
+  bool success = true;
+  for(int i = 0; i < blocks * SD::BLOCKSIZE; i++) {
+    if(buffer[i] != writeBuffer[i]) {
+      success = false;
+      break;
+    }
+  }
+  if(success) {
+    printf("Read after write Success!\n");
+  } else {
+    printf("Read after write Failed!\n");
   }
 
   // setupTests();

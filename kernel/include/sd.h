@@ -15,7 +15,10 @@
 #define INT_ERROR_MASK 0x017f3f00
 #define INT_TIMEOUT_MASK 0x00110000
 
-#define SD_READ_AVAILABLE 0x800
+#define READ_AVAILABLE 0x00000800
+#define WRITE_AVAILABLE 0x00000400
+#define DATA_BUSY 0x00000002
+#define CMD_BUSY 0x00000001
 
 class SD {
   static volatile uint32_t* const EMMC_BASE;
@@ -54,9 +57,10 @@ class SD {
       | 1 << 24          // switch to 1.8V signal voltage
       | VOLTAGE_WINDOW;  // Voltage window 2.7-3.6V
 
- public:
+  static uint32_t setBlockSizeCount(uint32_t startBlock, uint32_t count, bool isRead);
 
- static const uint32_t BLOCKSIZE = 512;
+ public:
+  static const uint32_t BLOCKSIZE = 512;
   enum RESPONSE {
     ERROR = -2,
     TIMEOUT = -1,
@@ -82,7 +86,8 @@ class SD {
     WRITE_SINGLE = 0x18220000,   // write single block
     WRITE_MULTI = 0x19220022,    // write multiple blocks
     APP_CMD = 0x37000000,        // application specific command
-    APP_CMD_RCA = 0x37010000,  // application specific command with relative card address
+    APP_CMD_RCA =
+        0x37010000,  // application specific command with relative card address
     SET_BUS_WIDTH = 0x06020000,  // set bus width
     SEND_OP_COND = 0x29020000,   // send operation condition
     SEND_SCR = 0x33220010        // send SD Card Configuration Register
@@ -104,8 +109,8 @@ class SD {
   static uint32_t init();
   int SET_BLKCNT_CONFIG_MASK();
   int NewFunction();
-  static uint32_t read(uint32_t block, uint32_t count, uint8_t* buffer);
-  static uint32_t write(uint32_t block, uint32_t count, uint8_t* buffer);
+  static uint32_t read(uint32_t startBlock, uint32_t count, uint8_t* buffer);
+  static uint32_t write(uint32_t startBlock, uint32_t count, uint8_t* buffer);
 };
 
 #endif

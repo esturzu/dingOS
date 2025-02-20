@@ -15,7 +15,8 @@ OBJCOPY := $(ARMBIN)/aarch64-none-linux-gnu-objcopy # Objcopy
 GDB := $(ARMBIN)/aarch64-none-linux-gnu-gdb # GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
-QEMU_FLAGS := -no-reboot -M raspi3b -smp 4 -nographic -drive file=../test.dd,if=sd,format=raw -cpu cortex-a72 -m 1G --trace "sd*" 
+QEMU_FLAGS := -no-reboot -M raspi3b -smp 4 -nographic -drive file=../test.dd,if=sd,format=raw -cpu cortex-a72 -m 1G \
+	# --trace "sd*" 
 CCFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
 CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib -mno-outline-atomics -fno-builtin -fno-stack-protector -fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles -DQEMU_ENABLED=$(QEMU_ENABLED) -DDEBUG_ENABLED=$(DEBUG_ENABLED)
 
