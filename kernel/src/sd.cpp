@@ -76,7 +76,7 @@ SD::RESPONSE SD::waitInterrupt(uint32_t mask, uint32_t timeout) {
   mask |= INT_ERROR_MASK;  // always want to check for errors
   while (!(*EMMC_INTERRUPT & mask) && timeout--) {
     // wait(100);
-    debug_printf("Waiting for EMMC interrupt\n");
+    // debug_printf("Waiting for EMMC interrupt\n");
   }
 
   // check if we timed out
@@ -421,7 +421,7 @@ uint32_t SD::init() {
 
   // set the block size to ___ bytes
   *EMMC_BLKSIZECNT =
-      1 << 10;  // TODO: this is weird, idk how big the block size should be
+      BLOCKSIZE;  // TODO: this is weird, idk how big the block size should be
   // try to get SD to send SCR
   sendCommand(SEND_SCR, 0);
   if (errInfo) {
@@ -473,7 +473,7 @@ uint32_t SD::init() {
   *EMMC_CONTROL0 |= 0x2;
 
   // check if it supports SET_BLKCNT command
-  if (*cardConfigRegister1 & 1 << 25) {
+  if (*cardConfigRegister1 & SET_BLKCNT_MASK) {
     // enable multiple block read
     printf("SD supports SET_BLKCNT command\n");
   }
@@ -488,7 +488,7 @@ uint32_t SD::init() {
   return SUCCESS;
 }
 
-uint32_t SD::read(uint32_t block, uint32_t count, uint8_t* buffer) {
+uint32_t SD::read(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
   uint32_t response = SUCCESS;
   // first wait for data lines to be free
   if ((response = waitStatus(0b10)) < SUCCESS) {
@@ -497,14 +497,71 @@ uint32_t SD::read(uint32_t block, uint32_t count, uint8_t* buffer) {
     return response;
   }
 
-  uint8_t* bufferPtr = buffer;
+  uint32_t* bufferPtr = (uint32_t*) buffer;
 
   // check if we are supporting SDHC and SDXC
-  if (*cardConfigRegister1 & CCS_MASK) {
+  bool isSDHC = *cardConfigRegister1 & CCS_MASK;
+  if (isSDHC) {
     // check if we are supporting set block count
+    if (count > 1 && (*cardConfigRegister1 & SET_BLKCNT_MASK)) {
+      sendCommand(SET_BLOCKCNT, count);
+      if (errInfo) {
+        error_printf("Error: Failed to set block count\n");
+        return ERROR;
+      }
+    }
+
+    *EMMC_BLKSIZECNT = count << 16 | BLOCKSIZE;
+
+    sendCommand(count > 1 ? READ_MULTI : READ_SINGLE, startBlock);
+    if (errInfo) {
+      error_printf("Error: Failed to read block\n");
+      return ERROR;
+    }
+  } else {
+    *EMMC_BLKSIZECNT = 1 << 16 | BLOCKSIZE;
   }
 
-  return SUCCESS;
+  // try reading all the blocks
+  uint32_t blockOffset = 0;
+  while (blockOffset < count) {
+    // if we are not supporting SDHC and SDXC we have to read one block at a
+    // time
+    if (!isSDHC) {
+      sendCommand(READ_SINGLE, (startBlock + blockOffset) * BLOCKSIZE);
+      if (errInfo) {
+        error_printf("Error: Failed to read block\n");
+        return ERROR;
+      }
+    }
+
+    // wait for interrupt indicating read is ready
+    if ((response = waitInterrupt(0x20)) != SUCCESS) {
+      error_printf("Error: failed to read EMMC\n");
+      return response;
+    }
+
+    // read the data
+    for (uint32_t i = 0; i < BLOCKSIZE/4; i++) {
+      *bufferPtr++ = *EMMC_DATA;
+
+    }
+
+    blockOffset++;
+  }
+
+  
+  // stop transmission
+  if (count > 1 && isSDHC && (*cardConfigRegister1 & SET_BLKCNT_MASK)) {
+    sendCommand(STOP_TRANS,0);
+  }
+
+  // was there an error? 
+  if(errInfo) {
+    error_printf("Error: Failed to read block\n");
+    return errInfo;
+  }
+  return count != blockOffset ? 0 : count * BLOCKSIZE;
 }
 uint32_t SD::write(uint32_t block, uint32_t count, uint8_t* buffer) {
   return SUCCESS;

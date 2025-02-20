@@ -6,6 +6,7 @@
 
 #define ERRORS_MASK 0xfff9c004
 #define CCS_MASK 1 << 30
+#define SET_BLKCNT_MASK 1 << 25
 
 // SD response types
 #define SD_APP_CMD_ENABLED 0x00000020
@@ -54,6 +55,8 @@ class SD {
       | VOLTAGE_WINDOW;  // Voltage window 2.7-3.6V
 
  public:
+
+ static const uint32_t BLOCKSIZE = 512;
   enum RESPONSE {
     ERROR = -2,
     TIMEOUT = -1,
@@ -99,6 +102,8 @@ class SD {
   static uint32_t sendCommand(SD::CMDS cmd, uint32_t arg);
   static SD::RESPONSE setClock(uint32_t freq);
   static uint32_t init();
+  int SET_BLKCNT_CONFIG_MASK();
+  int NewFunction();
   static uint32_t read(uint32_t block, uint32_t count, uint8_t* buffer);
   static uint32_t write(uint32_t block, uint32_t count, uint8_t* buffer);
 };

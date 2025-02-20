@@ -37,6 +37,32 @@ extern "C" void kernelMain() {
   
   SD::init();
 
+  // testing read
+
+  uint32_t startBlock = 0;
+  uint32_t blocks = 10;
+  uint8_t buffer[blocks * SD::BLOCKSIZE];
+
+  uint32_t res = SD::read(startBlock, blocks, buffer);
+  uint32_t width = 4;
+  for(int i = 0; i < blocks * SD::BLOCKSIZE; i++) {
+    if(i % (SD::BLOCKSIZE) == 0) {
+      printf("\nBlock %u\n", i / SD::BLOCKSIZE + startBlock);
+    }
+    printf("%02x", buffer[i]);
+    if(i % 4 == 3){
+      printf(" ");
+    }
+    if(i % (width * 4) == ((width * 4 - 1))) {
+      printf("\n");
+    }
+  }
+  if(res == blocks * SD::BLOCKSIZE) {
+    printf("Read Success!\n");
+  } else {
+    printf("Read Failed!\n");
+  }
+
   // setupTests();
 
   // run_page_tests();
