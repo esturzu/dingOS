@@ -95,7 +95,7 @@ used in conjunction with the 2 GPPUDCLKn registers."
 
   static void setPull(uint8_t clockNum, uint32_t pullMask, PUD pud) {
     set_pull_register(pud);
-    // wait(150); // wait 150 cycles becuase we are supposed
+    // // wait(150); // wait 150 cycles becuase we are supposed
     set_clock(clockNum, pullMask);
 
     // reset the registers back to normal

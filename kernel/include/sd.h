@@ -5,6 +5,7 @@
 #include "gpio.h"
 
 #define ERRORS_MASK 0xfff9c004
+#define CCS_MASK 1 << 30
 
 // SD response types
 #define SD_APP_CMD_ENABLED 0x00000020
@@ -78,8 +79,7 @@ class SD {
     WRITE_SINGLE = 0x18220000,   // write single block
     WRITE_MULTI = 0x19220022,    // write multiple blocks
     APP_CMD = 0x37000000,        // application specific command
-    APP_CMD_RCA =
-        0x37010000,  // application specific command with relative card address
+    APP_CMD_RCA = 0x37010000,  // application specific command with relative card address
     SET_BUS_WIDTH = 0x06020000,  // set bus width
     SEND_OP_COND = 0x29020000,   // send operation condition
     SEND_SCR = 0x33220010        // send SD Card Configuration Register
@@ -99,6 +99,8 @@ class SD {
   static uint32_t sendCommand(SD::CMDS cmd, uint32_t arg);
   static SD::RESPONSE setClock(uint32_t freq);
   static uint32_t init();
+  static uint32_t read(uint32_t block, uint32_t count, uint8_t* buffer);
+  static uint32_t write(uint32_t block, uint32_t count, uint8_t* buffer);
 };
 
 #endif

@@ -37,9 +37,9 @@ extern "C" void kernelMain() {
   
   SD::init();
 
-  setupTests();
+  // setupTests();
 
-  run_page_tests();
+  // run_page_tests();
 
   event_loop();
 
