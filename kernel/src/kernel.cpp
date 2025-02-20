@@ -18,6 +18,7 @@
 #include "system_timer.h"
 #include "tester.h"
 #include "uart.h"
+#include "bfs.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -35,6 +36,17 @@ extern "C" void kernelMain() {
   SMP::bootCores();
 
   setupTests();
+  fs_init();
+
+  // Simple BFS test
+  fs_create("hello.txt", 12);
+  fs_write("hello.txt", "Hello, BFS!", 12);
+  
+  char buffer[32] = {0};
+  fs_read("hello.txt", buffer);
+  printf("Read from file: %s\n", buffer);
+
+  fs_list(); 
 
   SystemTimer::setup_timer(0);
   schedule_event([=]() {
