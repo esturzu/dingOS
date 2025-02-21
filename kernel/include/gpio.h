@@ -2,8 +2,8 @@
 // https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
 
 #include "definitions.h"
-#include "stdint.h"
 #include "printf.h"
+#include "stdint.h"
 
 class GPIO {
  public:
@@ -101,41 +101,5 @@ used in conjunction with the 2 GPPUDCLKn registers."
     // reset the registers back to normal
     set_pull_register(PUD::OFF);
     set_clock(1, 0);
-  }
-
-  static void eMMCinit() {
-    // *** setting up the SD card detect pin (pin47) by masking out its 3
-    // alternate clear out any alternate function selection for pin47
-    applyMask(GPFSEL4, ~(7 << (7 * 3)), MaskType::AND);
-
-    // set pin47 to be pull up
-    setPull(1, 1 << 15, PUD::PULL_UP);
-
-    // now we need to set that pin to also be high detect
-    applyMask(GPHEN1, 1 << 15, MaskType::OR);
-
-    // TODO: I truly have no idea why this is initatilizing any of these pins
-    // because according to documentation these pins should not be used. it
-    // might just be an error with the BCM2837 documentation but i cant find
-    // anything about alternate fucntions in more detail for now i shall assume
-    // that
-    // https://github.com/bztsrc/raspi3-tutorial/blob/master/0B_readsector/sd.c#L91
-    // knows what they are doing
-
-    // *** set up pins 48 and 49 for eMMC? supposedlyf for "GPIO_CLK, GPIO_CMD"
-    // set alt function 3 for 48 and 49
-    applyMask(GPFSEL4, (3 << (7 * 3)) | (3 << (8 * 3)), MaskType::OR);
-    // set pull up for 48 and 49
-    setPull(1, (1 << 16) | (1 << 17), PUD::PULL_UP);
-
-    // *** set up pins 50-53 for eMMC? supposedly for "GPIO_DAT0, GPIO_DAT1,
-    // GPIO_DAT2, GPIO_DAT3" set alt function 3 for 50-53
-
-    applyMask(GPFSEL5,
-              (3 << (0 * 3)) | (3 << (1 * 3)) | (3 << (2 * 3)) | (3 << (3 * 3)),
-              MaskType::OR);
-    // set pull up for 50-53
-    setPull(1, (1 << 18) | (1 << 19) | (1 << 20) | (1 << 21), PUD::PULL_UP);
-
   }
 };

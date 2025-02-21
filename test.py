@@ -3,6 +3,7 @@
 size_mb = 1
 size_bytes = size_mb * 1024 * 1024
 
+
 with open("test.dd", "wb") as f:
     for i in range(3, size_bytes, 4):
-        f.write(i.to_bytes(4, "big"))
+        f.write((i % (0x100000000)).to_bytes(4, "little"))

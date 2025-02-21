@@ -59,8 +59,8 @@ volatile uint32_t* const SD::EMMC_SLOTISR_VER =
 uint32_t SD::SLOTISR_VER = 0;
 uint32_t SD::SLOT_STATUS = 0;
 uint32_t SD::SDVERSION = 0;
-volatile uint64_t* SD::cardConfigRegister1 = 0;
-volatile uint64_t* SD::cardConfigRegister2 = 0;
+uint64_t SD::cardConfigRegister1 = 0;
+uint64_t SD::cardConfigRegister2 = 0;
 uint32_t SD::relativeCardAddress = 0;
 uint32_t SD::errInfo = 0;
 
@@ -136,6 +136,7 @@ SD::RESPONSE SD::waitStatus(uint32_t mask, uint32_t timeout) {
  * @return SD::RESPONSE     result of the command
  */
 uint32_t SD::sendCommand(CMDS cmd, uint32_t arg) {
+  debug_printf("  Sending command 0x%08x with arg 0x%08x\n", cmd, arg);
   uint32_t myResponse = SUCCESS;
   errInfo = 0;
   // check if the command is app specific
@@ -158,7 +159,7 @@ uint32_t SD::sendCommand(CMDS cmd, uint32_t arg) {
   }
 
   // now check if any commands are already running
-  if ((myResponse = waitStatus(CMD_BUSY)) <
+  if ((myResponse = waitStatus(CMD_BUSY)) !=
       SUCCESS) {  // TODO: i wonder if there should be a
                   // lock or something for this?
     error_printf("ERROR: Failed while waiting for EMMC to be free\n");
@@ -191,9 +192,8 @@ uint32_t SD::sendCommand(CMDS cmd, uint32_t arg) {
   uint32_t cmdResponse =
       *EMMC_RESP0;  // half a real response and half the cards status info from
                     // before and after the command
+  debug_printf("    Response: 0x%08x\n", cmdResponse);
 
-  debug_printf("||CMD: %x | ARG: %x\n", cmd, arg);
-  debug_printf("||CMD_RESP: %b\n", cmdResponse);
   switch (cmd) {
     case CMDS::GO_IDLE:
     case CMDS::APP_CMD:
@@ -217,7 +217,6 @@ uint32_t SD::sendCommand(CMDS cmd, uint32_t arg) {
                 ERRORS_MASK;  // lower 13 bits are in normal place and upper
                               // 3 bits have to be moved to right place 13
                               // -> 19, 14 ->22, 15 ->23
-
       return (cmdResponse & 0xFFFF0000);
   }
   return cmdResponse & ERRORS_MASK;
@@ -237,7 +236,6 @@ SD::RESPONSE SD::setClock(uint32_t freq) {
     debug_printf("Timeout waiting for command and data lines to be free\n");
     return TIMEOUT;
   }
-  debug_printf("Done waiting for command and data to be free\n");
 
   // disable "SD clock enable"
   *EMMC_CONTROL0 &= ~((uint32_t)0b100);
@@ -256,7 +254,6 @@ SD::RESPONSE SD::setClock(uint32_t freq) {
     divisor = 2;
     shift = 0;
   }
-  debug_printf("divisor: %u | shift: %u\n", divisor, shift);
 
   // if(hv>HOST_SPEC_V2) h=(d&0x300)>>2; // TODO: doesnt matter assusming
   // version doesnt go above 2 (once this does matter we nee to also change the
@@ -277,21 +274,58 @@ SD::RESPONSE SD::setClock(uint32_t freq) {
   timeout = 0xFF;
   while (!(*EMMC_STATUS & DATA_BUSY) && timeout--) {
     // wait(100);
-    debug_printf("Waiting for clock to be stable\n");
+    // debug_printf("Waiting for clock to be stable\n");
   }
 
   if (timeout <= 0) {
     return TIMEOUT;
   }
-  debug_printf("Done waiting for clock to be stable\n");
 
   return SUCCESS;
+}
+
+void SD::eMMCinit() {
+  // *** setting up the SD card detect pin (pin47) by masking out its 3
+  // alternate clear out any alternate function selection for pin47
+  GPIO::applyMask(GPIO::GPFSEL4, ~(7 << (7 * 3)), GPIO::MaskType::AND);
+
+  // set pin47 to be pull up
+  GPIO::setPull(1, 1 << 15, GPIO::PUD::PULL_UP);
+
+  // now we need to set that pin to also be high detect
+  GPIO::applyMask(GPIO::GPHEN1, 1 << 15, GPIO::MaskType::OR);
+
+  // TODO: I truly have no idea why this is initatilizing any of these pins
+  // because according to documentation these pins should not be used. it
+  // might just be an error with the BCM2837 documentation but i cant find
+  // anything about alternate fucntions in more detail for now i shall assume
+  // that
+  // https://github.com/bztsrc/raspi3-tutorial/blob/master/0B_readsector/sd.c#L91
+  // knows what they are doing
+
+  // *** set up pins 48 and 49 for eMMC? supposedlyf for "GPIO_CLK, GPIO_CMD"
+  // set alt function 3 for 48 and 49
+  GPIO::applyMask(GPIO::GPFSEL4, (3 << (7 * 3)) | (3 << (8 * 3)),
+                  GPIO::MaskType::OR);
+  // set pull up for 48 and 49
+  GPIO::setPull(1, (1 << 16) | (1 << 17), GPIO::PUD::PULL_UP);
+
+  // *** set up pins 50-53 for eMMC? supposedly for "GPIO_DAT0, GPIO_DAT1,
+  // GPIO_DAT2, GPIO_DAT3" set alt function 3 for 50-53
+
+  GPIO::applyMask(
+      GPIO::GPFSEL5,
+      (3 << (0 * 3)) | (3 << (1 * 3)) | (3 << (2 * 3)) | (3 << (3 * 3)),
+      GPIO::MaskType::OR);
+  // set pull up for 50-53
+  GPIO::setPull(1, (1 << 18) | (1 << 19) | (1 << 20) | (1 << 21),
+                GPIO::PUD::PULL_UP);
 }
 
 uint32_t SD::init() {
   uint32_t timeout = 1000000;
   uint32_t response = SUCCESS;
-  GPIO::eMMCinit();
+  eMMCinit();
 
   // *** this part starts to make a little more sense. we are now doing very
   // standard setup for EMMC
@@ -300,8 +334,6 @@ uint32_t SD::init() {
   SLOTISR_VER = (*EMMC_SLOTISR_VER);
   SLOT_STATUS = SLOTISR_VER & 0xFF;        // bits 0-7
   SDVERSION = (SLOTISR_VER >> 16) & 0xFF;  // bits 16-23
-  debug_printf("SD slot status: %d\n", SLOT_STATUS);
-  debug_printf("SD version: %d\n", SDVERSION);
 
   // resetting the sd card
   *EMMC_CONTROL0 = 0x00000000;
@@ -315,8 +347,6 @@ uint32_t SD::init() {
     error_printf("Error: Timeout waiting for EMMC host circuit reset\n");
     return TIMEOUT;
   }
-  debug_printf("Done with EMMC host circuit reset\n");
-
   // "Clock enable for internal EMMC clocks for powersaving" at bit 0 and
   // "Data timeout unit exponent" to 7 at bit 16
   *EMMC_CONTROL1 = 1 | (7 << 16);
@@ -339,7 +369,7 @@ uint32_t SD::init() {
   relativeCardAddress = 0;
   errInfo = 0;
 
-  sendCommand(CMDS::GO_IDLE, 0);
+  sendCommand(GO_IDLE, 0);
   if (errInfo) {
     return ERROR;
   }
@@ -388,9 +418,6 @@ uint32_t SD::init() {
   // check for ccs bit
   uint32_t ccs = response & CCS_MASK;
 
-  bool isNotSDHC =
-      response & OP_COND_NOT_SDSC;  // check if SCDC and SDXC are both supported
-
   // required for some reason
   sendCommand(ALL_SEND_CID, 0);
 
@@ -417,11 +444,13 @@ uint32_t SD::init() {
   }
 
   // wait for no data lines to be in use
-  if (response = waitStatus(DATA_BUSY)) return response;
+  if (response = waitStatus(DATA_BUSY) != SUCCESS) return response;
 
   // set the block size to ___ bytes
   *EMMC_BLKSIZECNT =
+      1 << 16 |
       BLOCKSIZE;  // TODO: this is weird, idk how big the block size should be
+
   // try to get SD to send SCR
   sendCommand(SEND_SCR, 0);
   if (errInfo) {
@@ -438,11 +467,11 @@ uint32_t SD::init() {
   // keep trying to get both of the SCR registers
   timeout = 1000000;
   response = 0;
-  volatile uint64_t** currentRegister = &cardConfigRegister1;
+  volatile uint64_t* currentRegister = &cardConfigRegister1;
   while (timeout--) {
     // read the data
     if (*EMMC_STATUS & READ_AVAILABLE) {
-      **currentRegister = *EMMC_DATA;
+      *currentRegister = *EMMC_DATA;
       if (currentRegister == &cardConfigRegister2) {
         // we have set both registers
         break;
@@ -458,22 +487,27 @@ uint32_t SD::init() {
         "Error: Timeout waiting for cardConfigRegisters to be available\n");
     return TIMEOUT;
   }
+  // what if there was more data to read?
+  while (*EMMC_STATUS & READ_AVAILABLE) {
+    uint32_t data = *EMMC_DATA;
+    // debug_printf("what? 0x%08x\n", *EMMC_DATA);
+  }
 
   // check for bus width 4 availability
-  if (*cardConfigRegister1 & 1 << 10) {
+  if (cardConfigRegister1 & 1 << 10) {
     sendCommand(SET_BUS_WIDTH,
                 relativeCardAddress | 0x2);  // try to set the bus width to 4
                                              // using the relative card address
+    // update contol 0 to enable 4 data lines
+    *EMMC_CONTROL0 |= 0x2;
   }
   if (errInfo) {
     error_printf("Error: Failed to set bus width\n");
     return ERROR;
   }
-  // update contol 0 to enable 4 data lines
-  *EMMC_CONTROL0 |= 0x2;
 
   // check if it supports SET_BLKCNT command
-  if (*cardConfigRegister1 & SET_BLKCNT_MASK) {
+  if (cardConfigRegister1 & SET_BLKCNT_MASK) {
     // enable multiple block read
     printf("SD supports SET_BLKCNT command\n");
   }
@@ -482,17 +516,23 @@ uint32_t SD::init() {
   }
 
   // make sure config is set to yes for SDHC and SDXC
-  *cardConfigRegister1 &= ~ccs;
-  *cardConfigRegister1 |= ccs;
+  cardConfigRegister1 &= ~ccs;
+  cardConfigRegister1 |= ccs;
 
+  debug_printf(
+      "SD is initialized with version (%d) and ccs (%d) and slot status (%d)\n",
+      SDVERSION, ccs, SLOT_STATUS);
+  debug_printf("CardConfigRegister1: %064b\n", cardConfigRegister1);
+  debug_printf("CardConfigRegister2: %064b\n", cardConfigRegister2);
   return SUCCESS;
 }
 
-uint32_t SD::setBlockSizeCount(uint32_t startBlock, uint32_t count, bool isRead) {
-  bool isSDHC = *cardConfigRegister1 & CCS_MASK;
+uint32_t SD::setBlockSizeCount(uint32_t startBlock, uint32_t count,
+                               bool isRead) {
+  bool isSDHC = cardConfigRegister1 & CCS_MASK;
   if (isSDHC) {
     // check if we are supporting set block count
-    if (count > 1 && (*cardConfigRegister1 & SET_BLKCNT_MASK)) {
+    if (count > 1 && (cardConfigRegister1 & SET_BLKCNT_MASK)) {
       sendCommand(SET_BLOCKCNT, count);
       if (errInfo) {
         error_printf("Error: Failed to set block count\n");
@@ -500,11 +540,11 @@ uint32_t SD::setBlockSizeCount(uint32_t startBlock, uint32_t count, bool isRead)
       }
     }
 
-    *EMMC_BLKSIZECNT = count << 16 | BLOCKSIZE;
+    *EMMC_BLKSIZECNT = (count << 16) | BLOCKSIZE;
 
-    if(isRead){
-      sendCommand(count > 1 ? READ_MULTI : READ_SINGLE, startBlock);
-    }else{
+    if (isRead) {
+      sendCommand(count > 1 ? READ_MULTI : READ_SINGLE_BLOCK, startBlock);
+    } else {
       sendCommand(count > 1 ? WRITE_MULTI : WRITE_SINGLE, startBlock);
     }
     if (errInfo) {
@@ -512,15 +552,17 @@ uint32_t SD::setBlockSizeCount(uint32_t startBlock, uint32_t count, bool isRead)
       return ERROR;
     }
   } else {
-    *EMMC_BLKSIZECNT = 1 << 16 | BLOCKSIZE;
+    *EMMC_BLKSIZECNT = (1 << 16) | BLOCKSIZE;
   }
   return SUCCESS;
 }
 
 uint32_t SD::read(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
+  debug_printf("SD::read current card status: 0x%08x\n", *EMMC_STATUS);
   uint32_t response = SUCCESS;
+  if (count < 1) count = 1;
   // first wait for data lines to be free
-  if ((response = waitStatus(DATA_BUSY)) < SUCCESS) {
+  if ((response = waitStatus(DATA_BUSY)) != SUCCESS) {
     error_printf(
         "Error: Failed while waiting for EMMC data lines to be free\n");
     return response;
@@ -529,7 +571,7 @@ uint32_t SD::read(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
   uint32_t* bufferPtr = (uint32_t*)buffer;
 
   // update block size and count
-  bool isSDHC = *cardConfigRegister1 & CCS_MASK;
+  bool isSDHC = cardConfigRegister1 & CCS_MASK;
   if ((response = SD::setBlockSizeCount(startBlock, count, true)) != SUCCESS) {
     error_printf("Error: Failed to set block size and count\n");
     return response;
@@ -541,7 +583,7 @@ uint32_t SD::read(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
     // if we are not supporting SDHC and SDXC we have to read one block at a
     // time
     if (!isSDHC) {
-      sendCommand(READ_SINGLE, (startBlock + blockOffset) * BLOCKSIZE);
+      sendCommand(READ_SINGLE_BLOCK, (startBlock + blockOffset) * BLOCKSIZE);
       if (errInfo) {
         error_printf("Error: Failed to enable read block\n");
         return ERROR;
@@ -549,7 +591,7 @@ uint32_t SD::read(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
     }
 
     // wait for interrupt indicating read is ready
-    if ((response = waitInterrupt(READ_AVAILABLE)) != SUCCESS) {
+    if ((response = waitInterrupt(0x20)) != SUCCESS) {
       error_printf("Error: failed to wait for sd read available\n");
       return response;
     }
@@ -563,7 +605,7 @@ uint32_t SD::read(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
   }
 
   // stop transmission
-  if (count > 1 && isSDHC && !(*cardConfigRegister1 & SET_BLKCNT_MASK)) {
+  if (count > 1 && isSDHC && !(cardConfigRegister1 & SET_BLKCNT_MASK)) {
     sendCommand(STOP_TRANS, 0);
   }
 
@@ -575,11 +617,12 @@ uint32_t SD::read(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
   return count != blockOffset ? 0 : count * BLOCKSIZE;
 }
 uint32_t SD::write(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
+  debug_printf("SD::write current card status: 0x%08x\n", *EMMC_STATUS);
   uint32_t response = SUCCESS;
   // default to 1 block
   if (count < 1) count = 1;
   // wait for data lines and write to be avaliable
-  if ((response = waitStatus(DATA_BUSY | WRITE_AVAILABLE)) < SUCCESS) {
+  if ((response = waitStatus(DATA_BUSY | WRITE_AVAILABLE)) != SUCCESS) {
     error_printf(
         "Error: Failed while waiting for data lines to be free and write to be "
         "avaliable \n");
@@ -590,12 +633,11 @@ uint32_t SD::write(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
   uint32_t* bufferPtr = (uint32_t*)buffer;
 
   // set the block size and count
-  bool isSDHC = *cardConfigRegister1 & CCS_MASK;
-  if ((response = SD::setBlockSizeCount(startBlock, count,false)) != SUCCESS) {
+  bool isSDHC = cardConfigRegister1 & CCS_MASK;
+  if ((response = SD::setBlockSizeCount(startBlock, count, false)) != SUCCESS) {
     error_printf("Error: Failed to set block size and count\n");
     return response;
   }
-
 
   // try reading all the blocks
   uint32_t blockOffset = 0;
@@ -625,7 +667,7 @@ uint32_t SD::write(uint32_t startBlock, uint32_t count, uint8_t* buffer) {
   }
 
   // stop transmission
-  if (count > 1 && isSDHC && !(*cardConfigRegister1 & SET_BLKCNT_MASK)) {
+  if (count > 1 && isSDHC && !(cardConfigRegister1 & SET_BLKCNT_MASK)) {
     sendCommand(STOP_TRANS, 0);
   }
 

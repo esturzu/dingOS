@@ -1,6 +1,9 @@
 #ifndef SD_H
 #define SD_H
 
+// Useful stuff
+// Figure 4-13: SD Memory Card State Diagram (data transfer mode)
+
 #include "definitions.h"
 #include "gpio.h"
 
@@ -57,7 +60,8 @@ class SD {
       | 1 << 24          // switch to 1.8V signal voltage
       | VOLTAGE_WINDOW;  // Voltage window 2.7-3.6V
 
-  static uint32_t setBlockSizeCount(uint32_t startBlock, uint32_t count, bool isRead);
+  static uint32_t setBlockSizeCount(uint32_t startBlock, uint32_t count,
+                                    bool isRead);
 
  public:
   static const uint32_t BLOCKSIZE = 512;
@@ -80,12 +84,12 @@ class SD {
     CARD_SELECT = 0x07030000,    // select/deselect card
     SEND_IF_COND = 0x08020000,   // send interface condition
     STOP_TRANS = 0x0C030000,     // stop transmission
-    READ_SINGLE = 0x11220010,    // read single block
-    READ_MULTI = 0x12220032,     // read multiple blocks
-    SET_BLOCKCNT = 0x17020000,   // set block count
-    WRITE_SINGLE = 0x18220000,   // write single block
-    WRITE_MULTI = 0x19220022,    // write multiple blocks
-    APP_CMD = 0x37000000,        // application specific command
+    READ_SINGLE_BLOCK = 0x11220010,  // CMD17read single block
+    READ_MULTI = 0x12220032,         // read multiple blocks
+    SET_BLOCKCNT = 0x17020000,       // set block count
+    WRITE_SINGLE = 0x18220000,       // write single block
+    WRITE_MULTI = 0x19220022,        // write multiple blocks
+    APP_CMD = 0x37000000,            // application specific command
     APP_CMD_RCA =
         0x37010000,  // application specific command with relative card address
     SET_BUS_WIDTH = 0x06020000,  // set bus width
@@ -97,8 +101,8 @@ class SD {
   static uint32_t SLOT_STATUS;
   static uint32_t SDVERSION;
 
-  static volatile uint64_t* cardConfigRegister1;
-  static volatile uint64_t* cardConfigRegister2;
+  static uint64_t cardConfigRegister1;
+  static uint64_t cardConfigRegister2;
   static uint32_t relativeCardAddress;
   static uint32_t errInfo;
 
@@ -106,8 +110,9 @@ class SD {
   static SD::RESPONSE waitStatus(uint32_t mask, uint32_t timeout = 1000000);
   static uint32_t sendCommand(SD::CMDS cmd, uint32_t arg);
   static SD::RESPONSE setClock(uint32_t freq);
+
+  static void eMMCinit();
   static uint32_t init();
-  int SET_BLKCNT_CONFIG_MASK();
   int NewFunction();
   static uint32_t read(uint32_t startBlock, uint32_t count, uint8_t* buffer);
   static uint32_t write(uint32_t startBlock, uint32_t count, uint8_t* buffer);
