@@ -5,9 +5,9 @@
 #include "printf.h"
 #include "stdint.h"
 
-extern "C" char _end;
-extern "C" char _heap_start;
-extern "C" char _heap_end;
+extern "C" char _end[];
+extern "C" char _heap_start[];
+extern "C" char _heap_end[];
 
 static size_t current_heap = (size_t)&_heap_start;
 static const size_t heap_end = (size_t)&_heap_end;
@@ -59,7 +59,7 @@ void heap_init() {
   heap_size = (size_t)&_heap_end - (size_t)&_heap_start;
 
   dPrintf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", heap_ptr,
-                heap_size, heap_end);
+          heap_size, heap_end);
 
   mark_allocated(heap_ptr, 16);
   mark_free(heap_ptr + 16, heap_size - 32);

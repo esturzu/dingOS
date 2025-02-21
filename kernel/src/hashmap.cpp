@@ -1,3 +1,4 @@
+#if 0
 #include "hashmap.h"
 
 template <typename K, typename V, typename Hash>
@@ -203,3 +204,5 @@ bool HashMap<K, V, Hash>::erase(K const& key) {
 
   return false;
 }
+
+#endif

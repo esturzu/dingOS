@@ -4,8 +4,8 @@
 #include "definitions.h"
 #include "stdint.h"  // Or your equivalent file with size_t defined
 
-extern "C" char _end;  // Linker script will define this symbol
-extern "C" char _heap_start;
+extern "C" char _end[];  // Linker script will define this symbol
+extern "C" char _heap_start[];
 
 extern "C" void* malloc(size_t size, size_t alignment = 4);
 extern "C" void free(void* pointer);

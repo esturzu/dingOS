@@ -107,6 +107,7 @@ class LockGuard {
   ~LockGuard() { lock->unlock(); }
 };
 
+// AKA shared-exclusive lock
 class RWLock {
  public:
   RWLock() : state(0) {}
@@ -168,9 +169,11 @@ class RWLock {
   void write_unlock() { state.store(0); }
 
  private:
-  // Lock state:
-  // state >= 0: number of readers
-  // state == -1: exclusive writer
+  /*
+   * Lock state:
+   * state >= 0: number of readers
+   * state == -1: exclusive writer
+   */
   Atomic<int> state;
 };
 
