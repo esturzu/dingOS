@@ -3,3 +3,4 @@ kernel/build
 qemu_log.log
 test.dd
 test.hex
+expectedFS/*

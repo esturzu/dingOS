@@ -1,10 +1,14 @@
-// Citation
-// https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
-
 #include "definitions.h"
 #include "printf.h"
 #include "stdint.h"
 
+/**
+ * @brief Interface for GPIO
+ *
+ * Citations:
+ * + https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
+ *
+ */
 class GPIO {
  public:
   /**
@@ -14,7 +18,6 @@ class GPIO {
    * 01 = Enable Pull Down control
    * 10 = Enable Pull Up control
    * 11 = Reserved
-   *
    */
   enum PUD { OFF = 0b00, PULL_DOWN = 0b01, PULL_UP = 0b10, RESERVED = 0b11 };
 
@@ -33,16 +36,13 @@ class GPIO {
    * @brief Sets the Pull-up/down Register Value for all GPIO pins
    *
    * @details "The GPIO Pull-up/down Register controls the actuation of the
-internal pull-up/down control line to ALL the GPIO pins. This register must be
-used in conjunction with the 2 GPPUDCLKn registers."
+   * internal pull-up/down control line to ALL the GPIO pins. This register must
+   * be used in conjunction with the 2 GPPUDCLKn registers."
    *
    * @param status  USE PUD Enum! Used to set the pull-up/down register
    *
    */
-  static void set_pull_register(PUD status) {
-    volatile uint32_t* GPPUD_register = (volatile uint32_t*)(GPPUD);
-    *GPPUD_register = status;
-  }
+  static void set_pull_register(PUD status);
 
   /**
    * @brief Applies the pull-up/down configuration to specific GPIO pins
@@ -56,50 +56,38 @@ used in conjunction with the 2 GPPUDCLKn registers."
    * @param device_mask   Bitmask of which GPIO pins to apply the pull-up/down
    * setting to
    */
-  static void set_clock(uint8_t clock_num, uint32_t device_mask) {
-    if (clock_num == 0) {
-      volatile uint32_t* GPPUDCLK0_register = (volatile uint32_t*)(GPPUDCLK0);
-      *GPPUDCLK0_register = device_mask;
-    } else if (clock_num == 1) {
-      volatile uint32_t* GPPUDCLK1_register = (volatile uint32_t*)(GPPUDCLK1);
-      *GPPUDCLK1_register = device_mask;
-    }
-  }
-
-  enum MaskType { AND, OR, ZERO };
+  static void set_clock(uint8_t clock_num, uint32_t device_mask);
 
   /**
-   * @brief Copies location value then performs mask to value based on MaskType
-   * and puts it back into location
+   * @brief Applies `and` mask to a location
    *
-   * @param location  location of value to perform mask on cast to (volatile
-   * uint32_t*)
-   * @param mask      mask to and apply
+   * @param location    Memory location to apply the mask to
+   * @param mask        Mask to apply to the location
    */
-  static void applyMask(uint32_t location, uint32_t mask, MaskType maskType) {
-    volatile uint32_t* locationPTR = (volatile uint32_t*)location;
-    uint32_t temp = *locationPTR;
-    switch (maskType) {
-      case MaskType::AND:
-        temp &= mask;
-        break;
-      case MaskType::OR:
-        temp |= mask;
-        break;
-      case MaskType::ZERO:
-        temp = 0;
-        break;
-    }
-    *locationPTR = temp;
-  }
+  static void maskAnd(uint32_t location, uint32_t mask);
 
-  static void setPull(uint8_t clockNum, uint32_t pullMask, PUD pud) {
-    set_pull_register(pud);
-    // // wait(150); // wait 150 cycles becuase we are supposed
-    set_clock(clockNum, pullMask);
+  /**
+   * @brief Applies `or` mask to a location
+   *
+   * @param location   Memory location to apply the mask to
+   * @param mask       Mask to apply to the location
+   */
+  static void maskOr(uint32_t location, uint32_t mask);
 
-    // reset the registers back to normal
-    set_pull_register(PUD::OFF);
-    set_clock(1, 0);
-  }
+  /**
+   * @brief Applies a mask to a location to set the value to 0
+   *
+   * @param location  Memory location to apply the mask to
+   */
+  static void maskZero(uint32_t location);
+
+  /**
+   * @brief Set the Pull object
+   *
+   * @param clockNum    0 or 1 for GPPUDCLK0 (0-31), 1 for GPPUDCLK1(32-53)
+   * @param pullMask    Bitmask of which GPIO pins to apply the pull-up/down
+   * setting to
+   * @param pud         PUD Enum! Used to set the pull-up/down register
+   */
+  static void setPull(uint8_t clockNum, uint32_t pullMask, PUD pud);
 };
