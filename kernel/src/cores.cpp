@@ -1,6 +1,7 @@
 #include "cores.h"
 
 #include "definitions.h"
+#include "devices.h"
 #include "event_loop.h"
 #include "machine.h"
 #include "printf.h"
@@ -57,10 +58,16 @@ extern "C" void initCore3() {
 void bootCores() {
   startedCores.add_fetch(1);
   // Boot other cores
-  uint64_t* core_wakeup_base = (uint64_t*)216;
-  *(core_wakeup_base + 1) = (uint64_t)&_start_core1;
-  *(core_wakeup_base + 2) = (uint64_t)&_start_core2;
-  *(core_wakeup_base + 3) = (uint64_t)&_start_core3;
+  void* core_1_device = Devices::get_device("/cpus/cpu@1");
+  Devices::DTB_Property cpu_1_release_addr = Devices::get_device_property(core_1_device, "cpu-release-addr");
+  void* core_2_device = Devices::get_device("/cpus/cpu@2");
+  Devices::DTB_Property cpu_2_release_addr = Devices::get_device_property(core_2_device, "cpu-release-addr");
+  void* core_3_device = Devices::get_device("/cpus/cpu@3");
+  Devices::DTB_Property cpu_3_release_addr = Devices::get_device_property(core_3_device, "cpu-release-addr");
+
+  *(reinterpret_cast<uint64_t*>(cpu_1_release_addr.to_uint64_t())) = (uint64_t)&_start_core1;
+  *(reinterpret_cast<uint64_t*>(cpu_2_release_addr.to_uint64_t())) = (uint64_t)&_start_core2;
+  *(reinterpret_cast<uint64_t*>(cpu_3_release_addr.to_uint64_t())) = (uint64_t)&_start_core3;
 }
 
 /**
