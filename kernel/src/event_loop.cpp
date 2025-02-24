@@ -1,9 +1,12 @@
 #include "event_loop.h"
+#include "ipc.h"
+#include "message.h"
 
 #include "printf.h"
 #include "queue.h"
 
 LocklessQueue<Event*>* ready_queue;
+LocklessQueue<Message>* msg_queue;
 
 void init_event_loop() { ready_queue = new LocklessQueue<Event*>(); }
 
