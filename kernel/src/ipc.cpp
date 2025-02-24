@@ -1,28 +1,33 @@
-#include "printf.h"
-#include "atomics.h"
-#include "queue.h"
-#include "message.h"
+#include "message_queue.h"
 
-LocklessQueue<Message> *msg_queue;
+LocklessQueue<Message> messageQueue; 
+SpinLock lock{};  
 
-namespace IPC_MSG {
+void sendMessage(int sender, int receiver, MessageType type, void* payload) {
+    LockGuard<SpinLock> l(lock);
+    messageQueue.enqueue({sender, receiver, type, payload});
+}
 
-    void send(int sender, int receiver, void *load) {
+bool receiveMessage(int receiver, Message& msg) {
+    LockGuard<SpinLock> l(lock);
+    if (messageQueue.is_empty()) return false;
 
+    LocklessQueue<Message> tempQueue;
+    bool found = false;
 
-        
-
-
+    while (!messageQueue.is_empty()) {
+        Message m = messageQueue.dequeue();
+        if (m.receiver == receiver && !found) {
+            msg = m;
+            found = true;
+        } else {
+            tempQueue.enqueue(m);
+        }
     }
 
-    void recv(int receiver, void *recv_load) {
-
-
+    // Restore remaining messages
+    while (!tempQueue.is_empty()) {
+        messageQueue.enqueue(tempQueue.dequeue());
     }
-
-
-
-
-
-
+    return found;
 }
