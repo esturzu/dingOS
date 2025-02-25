@@ -1,3 +1,4 @@
 kernel/build
 .gdb_history
 qemu_log.log
+kernel_output.log
