@@ -1,5 +1,5 @@
 # creates a file filled with 4-byte hex representting its address
-# verify with `xxd -g 4 test.dd | head -n 10`
+# verify with `xxd -g 4 test.dd > test.hex`
 size_mb = 1
 size_bytes = size_mb * 1024 * 1024
 
