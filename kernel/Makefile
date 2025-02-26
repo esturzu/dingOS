@@ -17,7 +17,7 @@ OBJCOPY := $(ARMBIN)/aarch64-none-linux-gnu-objcopy 	# Objcopy
 GDB := $(ARMBIN)/aarch64-none-linux-gnu-gdb 					# GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64 								# QEMU
 
-# Flags and params
+# QEMU flags and params
 QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4
 
 # Optional kernel output log file
@@ -46,19 +46,33 @@ DEPFLAGS = -MMD -MP
 BUILD 	:= build
 SRCDIR 	:= src
 INCDIR 	:= include
-VPATH 	:= $(SRCDIR) $(INCDIR)
 
-# Identify source files
-CSRC 		:= $(wildcard $(SRCDIR)/*.c)
-CXXSRC 	:= $(wildcard $(SRCDIR)/*.cpp)
-ASSRC 	:= $(wildcard $(SRCDIR)/*.s)
+# Dynamically find all subdirectories under include/
+INC_SUBDIRS := $(shell find $(INCDIR) -type d)
+
+# For each subdir in include/, add "-I subdir" to the compiler flags
+INC_PATHS := $(foreach d, $(INC_SUBDIRS), -I $d)
+CCFLAGS   += $(INC_PATHS)
+CXXFLAGS  += $(INC_PATHS)
+
+# Search recursively for all files to build
+CSRC   	:= $(shell find $(SRCDIR) -name '*.c')
+CXXSRC 	:= $(shell find $(SRCDIR) -name '*.cpp')
+ASSRC  	:= $(shell find $(SRCDIR) -name '*.s')
 
 # Produce object lists
 COBJ 		:= $(patsubst $(SRCDIR)/%.c,%.o,$(CSRC))
 CXXOBJ 	:= $(patsubst $(SRCDIR)/%.cpp,%.o,$(CXXSRC))
 ASOBJ 	:= $(patsubst $(SRCDIR)/%.s,%.o,$(ASSRC))
 
-OBJS 		:= $(addprefix $(BUILD)/,$(COBJ) $(CXXOBJ) $(ASOBJ))
+OBJS 		:= $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
+
+# The specialized CRT files must come first/last
+CRTI := $(BUILD)/crti.o
+CRTN := $(BUILD)/crtn.o
+
+# Filter them out of the main OBJ list
+OTHER_OBJS := $(filter-out $(CRTI) $(CRTN), $(OBJS))
 
 EXEC 		:= $(BUILD)/kernel.elf
 IMG 		:= $(BUILD)/kernel8.img
@@ -86,7 +100,7 @@ qemu: $(IMG)
 
 # How to build the final ELF from all objects + linker script
 $(EXEC): linker.ld $(OBJS)
-	$(CXX) -T $< $(CXXFLAGS) -o $@ $(OBJS)
+	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS) -Wl,--end-group $(CRTN)
 
 # How to produce the .img from the ELF
 $(IMG): $(EXEC)
@@ -94,13 +108,16 @@ $(IMG): $(EXEC)
 
 # Rules for building object files from C/C++/Assembly
 # We also generate .d dependency files automatically (-MMD -MP)
-$(BUILD)/%.o : %.c | $(BUILD)
-	$(CC) $(CCFLAGS) $(OPT_FLAGS) $(DEPFLAGS) -I $(INCDIR) -c $< -o $@ -MF $(basename $@).d
+$(BUILD)/%.o : $(SRCDIR)/%.c | $(BUILD)
+	@mkdir -p $(dir $@)
+	$(CC) $(CCFLAGS) $(OPT_FLAGS) $(DEPFLAGS) -c $< -o $@ -MF $(basename $@).d
 
-$(BUILD)/%.o : %.cpp | $(BUILD)
-	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) $(DEPFLAGS) -I $(INCDIR) -c $< -o $@ -MF $(basename $@).d
+$(BUILD)/%.o : $(SRCDIR)/%.cpp | $(BUILD)
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) $(DEPFLAGS) -c $< -o $@ -MF $(basename $@).d
 
-$(BUILD)/%.o : %.s | $(BUILD)
+$(BUILD)/%.o : $(SRCDIR)/%.s | $(BUILD)
+	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -c $< -o $@
 
 # Create the build directory if needed
