@@ -1,9 +1,11 @@
-
 #include "heap.h"
 #include "atomics.h"
 #include "printf.h"
 #include "stdint.h"
 #include "definitions.h"
+
+// For any sort of reference, you can look up implict free list or use
+// this PDF to understand: https://my.eng.utah.edu/~cs4400/malloc-2.pdf
 
 // Linker Defined Symbols
 extern "C" uint64_t* _end; 
