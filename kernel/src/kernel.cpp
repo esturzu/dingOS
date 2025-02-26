@@ -32,24 +32,24 @@ extern "C" void kernelMain() {
   printf("DingOS is Booting!\n");
   debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
-  SMP::bootCores();
+  // SMP::bootCores();
 
-  setupTests();
+  // setupTests();
 
-  SystemTimer::setup_timer(0);
-  schedule_event([=]() {
-    uint64_t last_time = current_time;
-    while (true) {
-      if (last_time != current_time) {
-        debug_printf("Heartbeat: %u\n", current_time);
-        last_time = current_time;
-      }
-    }
-  });
+//   SystemTimer::setup_timer(0);
+//   schedule_event([=]() {
+//     uint64_t last_time = current_time;
+//     while (true) {
+//       if (last_time != current_time) {
+//         debug_printf("Heartbeat: %u\n", current_time);
+//         last_time = current_time;
+//       }
+//     }
+//   });
 
   run_page_tests();
 
-  event_loop();
+  // event_loop();
 
   while (1);
 }

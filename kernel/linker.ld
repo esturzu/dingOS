@@ -47,9 +47,9 @@ SECTIONS
 
     /* Define heap and page region */
     _heap_start = ALIGN(8);
-    _heap_end = _heap_start + 0x20000000; /* 512 MB for heap space */
+    _heap_end = _heap_start + 0x10000000; /* 512 MB for heap space */
 
     
     _frame_start = _heap_end;
-    _frame_end = _heap_end + 0x10000000; /* 256 MB for page space */
+    _frame_end = _heap_end + 0x20000000; /* 256 MB for page space */
 }

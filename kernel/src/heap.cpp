@@ -1,5 +1,5 @@
-#include "heap.h"
 
+#include "heap.h"
 #include "atomics.h"
 #include "printf.h"
 #include "stdint.h"
