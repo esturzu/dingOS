@@ -4,9 +4,12 @@
 #include "cores.h"
 #include "eventTests.h"
 #include "heapTests.h"
+#include "sdTests.h"
 
 void runTests() {
   eventLoopTests();
+
+  sdTests();
   // Must be done last until free is implemented
   heapTests();
 }

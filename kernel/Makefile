@@ -15,9 +15,10 @@ OBJCOPY := $(ARMBIN)/aarch64-none-linux-gnu-objcopy # Objcopy
 GDB := $(ARMBIN)/aarch64-none-linux-gnu-gdb # GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64
 # Flags and params
-QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4
+QEMU_FLAGS := -no-reboot -M raspi3b -smp 4 -nographic -drive file=../test.dd,if=sd,format=raw -cpu cortex-a72 -m 1G \
+	# --trace "sd*" 
 CCFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
-CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib -mno-outline-atomics -fno-builtin -fno-stack-protector -fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles -DDEBUG_ENABLED=$(DEBUG_ENABLED)
+CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib -mno-outline-atomics -fno-builtin -fno-stack-protector -fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles -DQEMU_ENABLED=$(QEMU_ENABLED) -DDEBUG_ENABLED=$(DEBUG_ENABLED)
 
 ASFLAGS :=
 DEBUG_FLAGS := -g
@@ -40,7 +41,8 @@ OBJS = $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
 EXEC = $(BUILD)/kernel.elf
 IMG = $(BUILD)/kernel8.img
 TMP_IMG = $(BUILD)/kernel8_tmp.img
-# Flags
+# flags for macros
+QEMU_ENABLED ?= 1
 DEBUG_ENABLED ?= 0
 
 .PHONY: all clean debug qemu
@@ -53,6 +55,7 @@ debug: OPT_FLAGS = -O0
 debug: CCFLAGS += $(DEBUG_FLAGS)
 debug: CXXFLAGS += $(DEBUG_FLAGS)
 debug: ASFLAGS += $(DEBUG_FLAGS)
+debug: DEBUG_ENABLED = 1
 debug: $(IMG)
 	@echo "To debug via gdb: type into another terminal"
 	@echo "$(GDB) kernel/build/kernel.elf"

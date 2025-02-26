@@ -10,10 +10,10 @@
 #include "event_loop.h"
 #include "heap.h"
 #include "interrupts.h"
-#include "crti.h"
-#include "physmem.h"
 #include "machine.h"
+#include "physmem.h"
 #include "printf.h"
+#include "sd.h"
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
@@ -35,6 +35,8 @@ extern "C" void kernelMain() {
 
   SMP::bootCores();
 
+  SD::init();
+
   setupTests();
   fs_init();
 
@@ -47,19 +49,6 @@ extern "C" void kernelMain() {
   printf("Read from file: %s\n", buffer);
 
   fs_list(); 
-
-  SystemTimer::setup_timer(0);
-  schedule_event([=]() {
-    uint64_t last_time = current_time;
-    while (true) {
-      if (last_time != current_time) {
-        debug_printf("Heartbeat: %u\n", current_time);
-        last_time = current_time;
-      }
-    }
-  });
-
-  run_page_tests();
 
   event_loop();
 
