@@ -6,6 +6,7 @@
 MAX_SECS=3                      # How many seconds to let QEMU run each time before timing out
 EXPECTED_LINE="HERE 4"          # Change this to the line you expect at the end
 LOGFILE="kernel_output.log"     # File to kernel output
+DEBUG_ENABLED_FLAG=1            # Enable debug prints
 
 COUNTER=0
 
@@ -13,9 +14,12 @@ while true; do
   # Remove old logs
   rm -f "$LOGFILE"
 
+  # Make clean
+  make clean
+
   # Run QEMU for MAX_SECS seconds
   # Need --foreground otherwise QEMU arguments won't be passed in
-  timeout --foreground ${MAX_SECS}s make QEMU_LOG="$LOGFILE" qemu
+  timeout --foreground ${MAX_SECS}s make DEBUG_ENABLED=$DEBUG_ENABLED_FLAG QEMU_LOG="$LOGFILE" qemu
 
   # Reset terminal back to cooked mode
   reset
