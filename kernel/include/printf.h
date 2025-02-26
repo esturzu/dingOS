@@ -131,7 +131,7 @@ int fctprintf(void (*out)(char character, void* arg), void* arg,
 
 #define printf(...) Debug::printf_(__VA_ARGS__)
 
-// todo: decide on when to have error_printf and what to do with it
+// TODO: decide on when to have error_printf and what to do with it
 #define error_printf(...) Debug::printf_(__VA_ARGS__)
 
 #endif  // _PRINTF_H_
