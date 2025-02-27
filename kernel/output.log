@@ -1,0 +1,103 @@
+CurrentEL EL1
+Heap Start: 0x8D3D8, Heap Size: 0x20000000, Heap End: 0x2008D3D8
+Page 1 of bitmap allocated for bitmapping
+Page 3 of bitmap allocated for bitmapping
+Bitmap Location: 0x2008D3D8, Page Start: 0x2008D3D8, Page Range End: 0x3008D3D8
+DingOS is Booting!
+Core 0! EL1
+Core 2! EL1
+Core 3! EL1
+Core 1! EL1
+Starting Event Loop Tests
+UART: Õ
+ Event Loop Tests 1 Passed: Basic event scheduling
+UART: `Ö
+UART: èÔ
+Starting Heap Tests
+ Heap Tests 1 Passed: Basic allocation
+ ***Heap Tests 2 Failed: Large allocation within heap size
+ Heap Tests 3 Passed: Allocation exceeding available heap space
+ Heap Tests 4 Passed: Testing new keyword
+Heartbeat: 1
+Heartbeat: 2
+Heartbeat: 3
+Heartbeat: 4
+Heartbeat: 5
+Heartbeat: 6
+Heartbeat: 7
+Heartbeat: 8
+Heartbeat: 9
+Heartbeat: 10
+Heartbeat: 11
+Heartbeat: 12
+Heartbeat: 13
+Heartbeat: 14
+Heartbeat: 15
+Heartbeat: 16
+Heartbeat: 17
+Heartbeat: 18
+Heartbeat: 19
+Heartbeat: 20
+Heartbeat: 21
+Heartbeat: 22
+Heartbeat: 23
+Heartbeat: 24
+Heartbeat: 25
+Heartbeat: 26
+Heartbeat: 27
+Heartbeat: 28
+Heartbeat: 29
+Heartbeat: 30
+Heartbeat: 31
+Heartbeat: 32
+Heartbeat: 33
+Heartbeat: 34
+Heartbeat: 35
+Heartbeat: 36
+Heartbeat: 37
+Heartbeat: 38
+Heartbeat: 39
+Heartbeat: 40
+Heartbeat: 41
+Heartbeat: 42
+Heartbeat: 43
+Heartbeat: 44
+Heartbeat: 45
+Heartbeat: 46
+Heartbeat: 47
+Heartbeat: 48
+Heartbeat: 49
+Heartbeat: 50
+Heartbeat: 51
+Heartbeat: 52
+Heartbeat: 53
+Heartbeat: 54
+Heartbeat: 55
+Heartbeat: 56
+Heartbeat: 57
+Heartbeat: 58
+Heartbeat: 59
+Heartbeat: 60
+Heartbeat: 61
+Heartbeat: 62
+Heartbeat: 63
+Heartbeat: 64
+Heartbeat: 65
+Heartbeat: 66
+Heartbeat: 67
+Heartbeat: 68
+Heartbeat: 69
+Heartbeat: 70
+Heartbeat: 71
+Heartbeat: 72
+Heartbeat: 73
+Heartbeat: 74
+Heartbeat: 75
+Heartbeat: 76
+Heartbeat: 77
+Heartbeat: 78
+Heartbeat: 79
+Heartbeat: 80
+Heartbeat: 81
+Heartbeat: 82
+Heartbeat: 83

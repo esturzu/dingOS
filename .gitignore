@@ -1,3 +1,5 @@
 kernel/build
 .gdb_history
 qemu_log.log
+expectedFS/*
+race_logs/*

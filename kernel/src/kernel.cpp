@@ -18,6 +18,19 @@
 #include "system_timer.h"
 #include "tester.h"
 #include "uart.h"
+#include "power.h"
+
+void checkInput() {
+  while(uart_hasInput()) {
+    char c = uart_getc();
+    debug_printf("UART: %c\n", c);
+    if(c == 'q') {
+      debug_printf("Quitting...\n");
+      shutdown();
+      while(1);
+    }
+  }
+}
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -43,8 +56,15 @@ extern "C" void kernelMain() {
       if (last_time != current_time) {
         debug_printf("Heartbeat: %u\n", current_time);
         last_time = current_time;
+        schedule_event([=]() {
+          checkInput();
+        });
       }
     }
+  });
+
+  schedule_event([=]() {
+    checkInput();
   });
 
   run_page_tests();

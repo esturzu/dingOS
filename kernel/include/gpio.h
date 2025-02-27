@@ -1,3 +1,6 @@
+#ifndef GPIO_H
+#define GPIO_H
+
 // Citation
 // https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
 
@@ -63,3 +66,5 @@ used in conjunction with the 2 GPPUDCLKn registers."
     }
   }
 };
+
+#endif
