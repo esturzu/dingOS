@@ -3,10 +3,8 @@
 
 #include "kernel.h"
 
-#include "atomics.h"
 #include "cores.h"
 #include "crti.h"
-#include "definitions.h"
 #include "event_loop.h"
 #include "heap.h"
 #include "interrupts.h"
@@ -17,7 +15,6 @@
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
-#include "uart.h"
 #include "bfs.h"
 
 extern "C" void kernelMain() {
@@ -83,5 +80,6 @@ extern "C" void kernelMain() {
 
   event_loop();
 
-  while (1);
+  while (1)
+    ;
 }
