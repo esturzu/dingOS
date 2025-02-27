@@ -4,10 +4,6 @@
 
 #include "uart.h"
 
-#include "definitions.h"
-#include "gpio.h"
-#include "stdint.h"
-
 class UART {
   const uint64_t base_address;
 
@@ -60,6 +56,24 @@ class UART {
     return (*flag_register) & 0b100000;
   }
 
+  inline bool receive_fifo_full() {
+    volatile uint32_t* flag_register =
+        (volatile uint32_t*)(base_address + flag_register_offset);
+    return (*flag_register) & 1 << 6;
+  }
+
+  inline bool receive_fifo_empty() {
+    volatile uint32_t* flag_register =
+        (volatile uint32_t*)(base_address + flag_register_offset);
+    return (*flag_register) & 1 << 4;
+  }
+
+  inline char receive_data() {
+    volatile uint32_t* data_register =
+        (volatile uint32_t*)(base_address + data_register_offset);
+    return *data_register;
+  }
+
   static constexpr uint64_t data_register_offset = 0x00;
   static constexpr uint64_t flag_register_offset = 0x18;
   static constexpr uint64_t integer_braud_offset = 0x24;
@@ -75,8 +89,13 @@ class UART {
     // Enable GPIO-14 (UART 0 Transmit)
     GPIO::set_pull_register(GPIO::PUD::OFF);
 
-    GPIO::set_clock(0, 0b100000000000000);
+    GPIO::set_clock(0, 0b100000000000000); //  1 << 14
 
+    GPIO::set_clock(0, 0);
+
+    // Enable GPIO-15 (UART 0 Receive)
+    GPIO::set_pull_register(GPIO::PUD::OFF);
+    GPIO::set_clock(0, 1 << 15); // 1 << 15
     GPIO::set_clock(0, 0);
 
     clear_interrupts();
@@ -101,4 +120,17 @@ extern "C" void uart_putc(char c) {
   while (uart0.transmit_fifo_full()) {
   }
   uart0.transmit_data(c);
+}
+
+extern "C" char uart_getc(){
+  char c = 0;
+  if(!uart0.receive_fifo_empty()) {
+    c = uart0.receive_data();
+  }
+  return c;
+}
+
+
+extern bool uart_hasInput() {
+  return !uart0.receive_fifo_empty();
 }
