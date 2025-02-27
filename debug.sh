@@ -1,6 +1,12 @@
 #!/bin/bash
 GDB_PATH="/u/hill/Coursework/CS378/tools/arm-gnu-toolchain/bin/aarch64-none-elf-gdb"
+
+# Init script is a clean debuggin state
 GDB_SCRIPT="gdb-init-script.gdb"
+
+# This one is for setting predefined breakpoints for ease of debugging
+# GDB_SCRIPT="gdb-debug-script.gdb"
+
 KERNEL_ELF="kernel/build/kernel.elf"
 
 # Kill any running QEMUs
