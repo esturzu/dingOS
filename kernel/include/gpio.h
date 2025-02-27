@@ -97,3 +97,5 @@ class GPIO {
    */
   static void setPull(uint8_t clockNum, uint32_t pullMask, PUD pud);
 };
+
+#endif
