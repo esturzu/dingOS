@@ -38,17 +38,48 @@ extern "C" void kernelMain() {
   SD::init();
 
   setupTests();
-  fs_init();
+  uint8_t temp_buffer[512] = {0};
+  int res = SD::read(0, 1, temp_buffer);
+  debug_printf("Manual SD Read: %d bytes, first: 0x%02x 0x%02x\n", 
+            res, temp_buffer[0], temp_buffer[1]);
 
-  // Simple BFS test
-  fs_create("hello.txt", 12);
-  fs_write("hello.txt", "Hello, BFS!", 12);
   
-  char buffer[32] = {0};
-  fs_read("hello.txt", buffer);
-  printf("Read from file: %s\n", buffer);
+  fs_init();  // Initialize BFS (Baby File System)
 
-  fs_list(); 
+  // --- Simple FS Test ---
+  const char* test_filename = "testfile";
+  const char* test_data = "Hello from DingOS!";
+  char read_buffer[64] = {0};  // Buffer for reading back
+
+  // Create the file
+  if (fs_create(test_filename, 32) == 0) {
+      printf("File '%s' created successfully.\n", test_filename);
+  } else {
+      printf("ERROR: File creation failed.\n");
+  }
+
+  // Write to file
+  if (fs_write(test_filename, test_data, 18) == 0) {
+      printf("File '%s' written successfully.\n", test_filename);
+  } else {
+      printf("ERROR: File write failed.\n");
+  }
+
+  printf("DEBUG: Attempting to read file '%s'\n", test_filename);
+  // Read from file
+  printf("DEBUG: Before fs_read(): test_filename=%s\n", test_filename);
+  int read_response = fs_read(test_filename, read_buffer);
+  printf("DEBUG: After fs_read(): test_filename=%s\n", test_filename);
+
+  printf("read respone %s", read_response);
+  if (read_response > 0) {
+      printf("Read from %s\n", read_buffer);
+  } else {
+      printf("ERROR: File read failed.\n");
+  }
+  // List files
+  printf("about to list the files, though idk if it will work bc read eats the file name");
+  fs_list();
 
   event_loop();
 
