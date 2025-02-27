@@ -18,7 +18,8 @@ GDB := $(ARMBIN)/aarch64-none-linux-gnu-gdb 					# GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64 								# QEMU
 
 # QEMU flags and params
-QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4
+QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4 -drive file=../test.dd,if=sd,format=raw -cpu cortex-a72 -m 1G \
+	# --trace "sd*" 
 
 # Optional kernel output log file
 QEMU_LOG ?=
@@ -88,6 +89,7 @@ debug: OPT_FLAGS = -O0
 debug: CCFLAGS += $(DEBUG_FLAGS)
 debug: CXXFLAGS += $(DEBUG_FLAGS)
 debug: ASFLAGS += $(DEBUG_FLAGS)
+debug: DEBUG_ENABLED = 1
 debug: $(IMG)
 	@echo "To debug via gdb:"
 	@echo "   $(GDB) $(EXEC)"

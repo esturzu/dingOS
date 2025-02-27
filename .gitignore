@@ -1,4 +1,7 @@
 kernel/build
 .gdb_history
 qemu_log.log
+test.dd
+test.hex
+expectedFS/*
 kernel_output.log

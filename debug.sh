@@ -17,3 +17,9 @@ make clean debug > qemu_log.log 2>&1 &
 
 # Start debugging
 exec "$GDB_PATH" -x "$GDB_SCRIPT" "$KERNEL_ELF"
+
+
+# if you get a nfs error, try running the following command:
+# lsof +D ...{path to your nfs lingering file directory}...
+# find the pid of the process that has it in its Name column (will most likely be a aarch64-n...) 
+# use kill -9 {pid} to kill it

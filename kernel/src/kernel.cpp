@@ -7,9 +7,11 @@
 #include "crti.h"
 #include "event_loop.h"
 #include "heap.h"
+#include "interrupts.h"
 #include "machine.h"
 #include "physmem.h"
 #include "printf.h"
+#include "sd.h"
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
@@ -29,20 +31,9 @@ extern "C" void kernelMain() {
 
   SMP::bootCores();
 
+  SD::init();
+
   setupTests();
-
-  SystemTimer::setup_timer(0);
-  schedule_event([=]() {
-    uint64_t last_time = current_time;
-    while (true) {
-      if (last_time != current_time) {
-        debug_printf("Heartbeat: %u\n", current_time);
-        last_time = current_time;
-      }
-    }
-  });
-
-  run_page_tests();
 
   event_loop();
 
