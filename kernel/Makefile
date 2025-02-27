@@ -70,10 +70,9 @@ OBJS 		:= $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
 
 # The specialized CRT files must come first/last
 CRTI := $(BUILD)/crti.o
-CRTN := $(BUILD)/crtn.o
 
 # Filter them out of the main OBJ list
-OTHER_OBJS := $(filter-out $(CRTI) $(CRTN), $(OBJS))
+OTHER_OBJS := $(filter-out $(CRTI), $(OBJS))
 
 EXEC 		:= $(BUILD)/kernel.elf
 IMG 		:= $(BUILD)/kernel8.img
@@ -102,7 +101,7 @@ qemu: $(IMG)
 
 # How to build the final ELF from all objects + linker script
 $(EXEC): linker.ld $(OBJS)
-	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS) -Wl,--end-group $(CRTN)
+	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS)
 
 # How to produce the .img from the ELF
 $(IMG): $(EXEC)
