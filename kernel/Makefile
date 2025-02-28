@@ -27,11 +27,12 @@ ifneq ($(QEMU_LOG),)
 QEMU_FLAGS += -serial file:../$(QEMU_LOG)
 endif
 
-CCFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib
-CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib \
-						-mno-outline-atomics -fno-builtin -fno-stack-protector \
-						-fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles \
-						-DDEBUG_ENABLED=$(DEBUG_ENABLED)
+CCFLAGS := -std=c++20 -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib - 
+CXXFLAGS := -std=c++20 -fcoroutines \
+			-march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib \
+			-mno-outline-atomics -fno-builtin -fno-stack-protector \
+			-fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles \
+			-DDEBUG_ENABLED=$(DEBUG_ENABLED) \
 
 # Enable debug prints
 DEBUG_ENABLED ?= 0

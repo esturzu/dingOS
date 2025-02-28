@@ -16,6 +16,8 @@
 #include "system_timer.h"
 #include "tester.h"
 
+#include "coroutines/coroutine.h"
+
 extern "C" void kernelMain() {
   // Handled uart Init
   CRTI::_init();
@@ -31,11 +33,15 @@ extern "C" void kernelMain() {
 
   SMP::bootCores();
 
-  SD::init();
+  test_coroutine();
 
-  setupTests();
+  // SD::init();
 
-  event_loop();
+  // setupTests();
+
+
+  // event_loop();
+  
 
   while (1)
     ;
