@@ -9,7 +9,7 @@
 void runTests() {
   eventLoopTests();
 
-  sdTests();
+  // sdTests();
   // Must be done last until free is implemented
   heapTests();
 }

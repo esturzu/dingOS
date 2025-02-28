@@ -66,7 +66,6 @@ int fs_create(const char* name, uint32_t size) {
 // Read a file (copies data into `buffer`)
 int fs_read(const char* name, char* buffer) {
     for (int i = 0; i < MAX_FILES; i++) {
-        printf("DEBUG: file_table[%d] = '%s'\n", i, file_table[i].name);
         if (streq(name, file_table[i].name)) {
             return SD::read(file_table[i].inode_index, 1, (uint8_t*)buffer);
 
@@ -104,7 +103,6 @@ int fs_write(const char* name, const char* data, uint32_t size) {
 void fs_list() {
     printf("Filesystem contents:\n");
     for (int i = 0; i < MAX_FILES; i++) {
-        printf("DEBUG: file_table[%d] = '%s'\n", i, file_table[i].name);
         if (file_table[i].name[0] != '\0') {
             printf(" - %s (%d bytes)\n", file_table[i].name, inode_table[i].size);
         }
