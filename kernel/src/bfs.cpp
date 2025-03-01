@@ -29,11 +29,6 @@ void strncpy(char* dest, const char* src, uint32_t n) {
 void fs_init() {
     printf("Initializing Minimal Filesystem...\n");
 
-    // if (SD::init() != SD::SUCCESS) {
-    //     printf("ERROR: SD card initialization failed!\n");
-    //     return;
-    // }
-
     // Initialize superblock
     superblock.magic = MAGIC_NUMBER;
     superblock.total_blocks = 1024;

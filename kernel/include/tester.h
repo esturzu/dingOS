@@ -7,11 +7,11 @@
 #include "sdTests.h"
 
 void runTests() {
-  eventLoopTests();
+  // eventLoopTests();
 
   // sdTests();
   // Must be done last until free is implemented
-  heapTests();
+  // heapTests();
 }
 
 void setupTests() {

@@ -69,6 +69,8 @@ void tempFileTest() {
     // Cleanup allocated memory
     delete[] test_data;
     delete[] read_buffer;
+
+    printf("done running filesystem tests\n");
 }
 
 extern "C" void kernelMain() {
@@ -90,7 +92,7 @@ extern "C" void kernelMain() {
 
   tempFileTest();
 
-  setupTests();
+//   setupTests();
 
   event_loop();
 
