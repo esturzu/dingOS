@@ -6,6 +6,7 @@
 
 #include "heap.h"
 #include "queue.h"
+#include "printf.h"
 
 struct Event {
   // General Event data goes here
@@ -23,18 +24,6 @@ struct EventWithWork : public Event {
   virtual void run() override { work(); }
 };
 
-template <typename Work, typename T>
-struct EventWithWorkAndValue : public EventWithWork<Work> {
-  T* value;
-
-  explicit inline EventWithWorkAndValue(Work const work)
-      : EventWithWork<Work>(work) {}
-  virtual void run() override {
-    work(value);
-    // delete value; need memory management
-  }
-};
-
 extern LocklessQueue<Event*>* ready_queue;
 
 void init_event_loop();
@@ -42,6 +31,7 @@ void event_loop();
 
 template <typename Work>
 void schedule_event(Work work) {
+  debug_printf("Scheduling event\n");
   Event* event = new EventWithWork<Work>(work);
   ready_queue->enqueue(event);
 }

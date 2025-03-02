@@ -33,14 +33,14 @@ extern "C" void kernelMain() {
 
   SMP::bootCores();
 
-  test_coroutine();
+  schedule_event(test_coroutine);
 
   // SD::init();
 
   // setupTests();
 
 
-  // event_loop();
+  event_loop();
   
 
   while (1)
