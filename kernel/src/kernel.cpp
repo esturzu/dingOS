@@ -31,11 +31,13 @@ extern "C" void kernelMain() {
 
   SMP::bootCores();
 
+  run_page_tests();
+
   SD::init();
 
   setupTests();
 
-  event_loop();
+  // event_loop();
 
   while (1)
     ;
