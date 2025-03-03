@@ -36,10 +36,8 @@ void mark_allocated(size_t position, size_t block_size) {
 // Also marks the last 8 bytes to make it easier to get the 
 // "head" address of the region during coalescing
 void mark_free(size_t position, size_t block_size) {
-  char* block_temp = (char*) position;
-  for (int i = 0; i < block_size; i++) {
-    block_temp[i] = 0;
-  }
+  // debug_printf("freeing block: 0x%X\n", position);
+
   long* block_start = (long*)position;
   block_start[0] = block_size;
   block_start[block_size / 8 - 1] = block_size;
@@ -153,11 +151,12 @@ void* malloc(size_t size, size_t alignment) {
             mark_free(chosen_block + size, leftover);
         } else {
             mark_allocated(chosen_block, min_size);
+            size = min_size;
         }
         // Set the return value AFTER the metadata
         tgt_block = (void*)(chosen_block + 8);
     }
-    debug_printf("tgt_block: 0x%X\n", tgt_block);
+    // debug_printf("tgt_block: 0x%X, block end: 0x%X\n", tgt_block, tgt_block + size);
     return tgt_block;
 }
 
@@ -183,7 +182,7 @@ extern "C" void free(void* ptr) {
     long block_size = block[0] * -1;
 
     // Make sure block is actually allocated
-    if (block_size < 0) {
+    if (block_size <= 0) {
         debug_printf("Freeing free block 0x%X\n", block);
         return;
     }
@@ -211,14 +210,16 @@ extern "C" void free(void* ptr) {
 
     // Repeat for right side
     if (right_block_size > 0) {
-        debug_printf("Here, Right Block: 0x%X, Right block Size: 0x%X\n", right_block, right_block_size);
         remove((uint64_t)right_block);
         new_region_size += right_block_size;
     }
 
     // Mark the pointer where the block was as free so any attempts to free it again result
     // in failure
-    block[0] = block_size;
+    char* block_temp = (char*) new_start_block;
+    for (int i = 0; i < new_region_size; i++) {
+        block_temp[i] = 0;
+    }
     mark_free(new_start_block, new_region_size);
 }
 
@@ -241,7 +242,7 @@ void operator delete(void* ptr) noexcept {
 }
 
 void operator delete[](void* ptr) noexcept { 
-    debug_printf("Freeing address 0x%X\n", ptr); 
+    // debug_printf("Freeing address 0x%X\n", ptr); 
     free(ptr); 
 }
 
