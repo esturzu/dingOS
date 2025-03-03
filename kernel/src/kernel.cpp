@@ -15,6 +15,7 @@
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
+#include "bfs.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -34,6 +35,8 @@ extern "C" void kernelMain() {
   run_page_tests();
 
   SD::init();
+
+  fs_init();
 
   setupTests();
 
