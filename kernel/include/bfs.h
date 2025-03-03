@@ -33,6 +33,7 @@ struct FileEntry {
 };
 
 // Public API
+void strncpy(char* dest, const char* src, uint32_t n);
 void fs_init();  // Initialize the filesystem
 int fs_create(const char* name, uint32_t size);  // Create a file
 int fs_read(const char* name, char* buffer);  // Read a file
