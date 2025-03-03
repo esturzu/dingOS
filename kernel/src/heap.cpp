@@ -36,6 +36,10 @@ void mark_allocated(size_t position, size_t block_size) {
 // Also marks the last 8 bytes to make it easier to get the 
 // "head" address of the region during coalescing
 void mark_free(size_t position, size_t block_size) {
+  char* block_temp = (char*) position;
+  for (int i = 0; i < block_size; i++) {
+    block_temp[i] = 0;
+  }
   long* block_start = (long*)position;
   block_start[0] = block_size;
   block_start[block_size / 8 - 1] = block_size;
@@ -85,7 +89,13 @@ void remove(size_t position) {
 // Initialize the heap by checking locations to ensure proper setup
 // Also sets guard regions and makes entire heap the start of the free list
 void heap_init() {
+    char* heap = (char*) &_heap_start;
+
     heap_size = (size_t)&_heap_end - (size_t)&_heap_start;
+
+    for (int i = 0; i < heap_size; i++) {
+        heap[i] = 0;
+    }
 
     debug_printf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", (size_t) &_heap_start,
                 heap_size, (size_t)&_heap_end);
@@ -147,6 +157,7 @@ void* malloc(size_t size, size_t alignment) {
         // Set the return value AFTER the metadata
         tgt_block = (void*)(chosen_block + 8);
     }
+    debug_printf("tgt_block: 0x%X\n", tgt_block);
     return tgt_block;
 }
 
@@ -200,6 +211,7 @@ extern "C" void free(void* ptr) {
 
     // Repeat for right side
     if (right_block_size > 0) {
+        debug_printf("Here, Right Block: 0x%X, Right block Size: 0x%X\n", right_block, right_block_size);
         remove((uint64_t)right_block);
         new_region_size += right_block_size;
     }
@@ -223,9 +235,15 @@ void* operator new(size_t count, align_val_t al) { return malloc(count, al); }
 
 void* operator new[](size_t count, align_val_t al) { return malloc(count, al); }
 
-void operator delete(void* ptr) noexcept { free(ptr); }
+void operator delete(void* ptr) noexcept {
+    // debug_printf("Freeing address 0x%X\n", ptr); 
+    free(ptr); 
+}
 
-void operator delete[](void* ptr) noexcept { free(ptr); }
+void operator delete[](void* ptr) noexcept { 
+    debug_printf("Freeing address 0x%X\n", ptr); 
+    free(ptr); 
+}
 
 void operator delete(void* ptr, size_t sz) noexcept { free(ptr); }
 

@@ -116,7 +116,7 @@ namespace PhysMem {
             uint64_t word = bitmap[i / 64];
             uint64_t offset = i % 64;
             bitmap[i / 64] |= (1ULL << offset);
-            debug_printf("Page %d of bitmap allocated for bitmapping\n");
+            debug_printf("Page %d of bitmap allocated for bitmapping\n", i);
         }
         
         // Set the start of the frame region to after bitmap

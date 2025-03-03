@@ -68,8 +68,8 @@ void sdTests() {
       compareBuffers(expectedBuffer, readBuffer, blocks * SD::BLOCKSIZE);
   testsResult("Read from inital disk (3 blocks)",
               res == blocks * SD::BLOCKSIZE && compareRes);
-  // delete[] readBuffer; // TODO: once delete[] works again
-  // delete[] expectedBuffer; // TODO: once delete[] works again
+  delete[] readBuffer; // TODO: once delete[] works again
+  delete[] expectedBuffer; // TODO: once delete[] works again
 
   // Test 2: Read from inital disk (1 block)
   startBlock = 3;
@@ -87,8 +87,8 @@ void sdTests() {
   testsResult("Read from inital disk (1 block)",
               res == blocks * SD::BLOCKSIZE && compareRes);
 
-  // delete[] readBuffer; // TODO: once delete[] works again
-  // delete[] expectedBuffer; // TODO: once delete[] works again
+  delete[] readBuffer; // TODO: once delete[] works again
+  delete[] expectedBuffer; // TODO: once delete[] works again
 
   // Test 3: Write 3 and read back
   startBlock = 20;
@@ -101,8 +101,8 @@ void sdTests() {
   for (int i = 0; i < blocks * SD::BLOCKSIZE; i++) {
     expectedBuffer[i] = (i + startAddress) % 0x100;
   }
-  // delete[] readBuffer; // TODO: once delete[] works again
-  // delete[] expectedBuffer; // TODO: once delete[] works again
+  delete[] readBuffer; // TODO: once delete[] works again
+  delete[] expectedBuffer; // TODO: once delete[] works again
 
   // writing the buffer to the disk
   res = SD::write(startBlock, blocks, expectedBuffer);
@@ -142,8 +142,8 @@ void sdTests() {
               res == blocks * SD::BLOCKSIZE && compareRes);
   clearBuffer(readBuffer, blocks * SD::BLOCKSIZE);
 
-  // delete[] readBuffer; // TODO: once delete[] works again
-  // delete[] expectedBuffer; // TODO: once delete[] works again
+  delete[] readBuffer; // TODO: once delete[] works again
+  delete[] expectedBuffer; // TODO: once delete[] works again
 }
 
 #endif
