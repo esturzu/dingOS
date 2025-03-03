@@ -3,21 +3,18 @@
 
 #include "kernel.h"
 
-#include "atomics.h"
 #include "cores.h"
 #include "crti.h"
-#include "definitions.h"
 #include "event_loop.h"
 #include "heap.h"
 #include "interrupts.h"
-#include "crti.h"
-#include "physmem.h"
 #include "machine.h"
+#include "physmem.h"
 #include "printf.h"
+#include "sd.h"
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
-#include "uart.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -32,24 +29,16 @@ extern "C" void kernelMain() {
   printf("DingOS is Booting!\n");
   debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
-  // SMP::bootCores();
-
-  // setupTests();
-
-//   SystemTimer::setup_timer(0);
-//   schedule_event([=]() {
-//     uint64_t last_time = current_time;
-//     while (true) {
-//       if (last_time != current_time) {
-//         debug_printf("Heartbeat: %u\n", current_time);
-//         last_time = current_time;
-//       }
-//     }
-//   });
+  SMP::bootCores();
 
   run_page_tests();
 
+  SD::init();
+
+  setupTests();
+
   // event_loop();
 
-  while (1);
+  while (1)
+    ;
 }

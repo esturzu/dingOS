@@ -3,7 +3,7 @@
 #include "printf.h"
 
 #define PAGE_SIZE 4096  // 4KB
-#define TOTAL_MEMORY 0x10000000  // 256MB reserved for pages
+#define TOTAL_MEMORY 0x20000000  // 256MB reserved for pages
 #define TOTAL_PAGES (TOTAL_MEMORY / PAGE_SIZE)  // 65536 pages
 #define BITMAP_SIZE (TOTAL_PAGES / 8)  // 8192 bytes (2 pages)
 
@@ -13,6 +13,9 @@ static uint64_t* bitmap;
 extern "C" char* _frame_start;
 extern "C" char* _frame_end;
 
+// TODO, keep count of current number of pages and then calculate the number of pages needed to
+// allocate an entire region (in some heap extend function)? IF not enough pages, then we can 
+// auto reject.
 namespace PhysMem {
 
     static SpinLock lock{};
@@ -125,8 +128,8 @@ namespace PhysMem {
 
 // Simple debugging tests right now.
 void run_page_tests() {
-    for (int i = 0; i < 100; i++) {
-        debug_printf("Finished loop %d\n", i);
-        void* ptr = PhysMem::allocate_frame();
-    }
+    // for (int i = 0; i < 100; i++) {
+    //     debug_printf("Finished loop %d\n", i);
+    //     void* ptr = PhysMem::allocate_frame();
+    // }
 }
