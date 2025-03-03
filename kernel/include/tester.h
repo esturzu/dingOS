@@ -5,11 +5,15 @@
 #include "eventTests.h"
 #include "heapTests.h"
 #include "sdTests.h"
+#include "bfsTests.h"
 
 void runTests() {
   eventLoopTests();
 
-  sdTests();
+  // when running the bfs tests, you have to remake test.dd so that it isn't messed up
+  // also calling delete makes heap dead hang generally
+  sdTests();  
+  bfsTests();
   // Must be done last until free is implemented
   heapTests();
 }
