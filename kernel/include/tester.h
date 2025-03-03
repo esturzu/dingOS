@@ -6,6 +6,7 @@
 #include "heapTests.h"
 #include "sdTests.h"
 #include "bfsTests.h"
+#include "ipc_tests.h"
 
 void runTests() {
   eventLoopTests();
@@ -16,6 +17,8 @@ void runTests() {
   bfsTests();
   // Must be done last until free is implemented
   heapTests();
+  ipcTests();
+  
 }
 
 void setupTests() {
