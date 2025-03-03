@@ -24,6 +24,7 @@ extern "C" void kernelMain() {
   debug_printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
+  init_message_queue();
   PhysMem::page_init();
   init_event_loop();
 
