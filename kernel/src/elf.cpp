@@ -22,8 +22,8 @@ uint64_t loadELF(const char* data, uint64_t size) {
     if (_assertions() == UNEG1) return UNEG1;
 
     const ELFHeader64* header = (const ELFHeader64*) data;
-    constexpr uint64_t ehsz = sizeof(ELFHeader64),
-                       phsz = sizeof(ProgramHeader64);
+    constexpr uint64_t ehsz = sizeof(ELFHeader64);
+    constexpr uint64_t phsz = sizeof(ProgramHeader64);
     if (size < ehsz)               return _error("invalid file size");
     if (header->magic[0] != 0x7F)  return _error("magic[0] mismatch");
     if (header->magic[1] != 'E')   return _error("magic[1] mismatch");
@@ -41,8 +41,8 @@ uint64_t loadELF(const char* data, uint64_t size) {
     uint64_t phendoff = phoff + phsz * (uint64_t) phnum;
     if (phoff > phendoff || phendoff > size) return _error("wrong PH offset");
 
-    const ProgramHeader64* ph = (const ProgramHeader64*) (data + phoff),
-                           phend = (const ProgramHeader64*) (data + phendoff);
+    const ProgramHeader64* ph = (const ProgramHeader64*) (data + phoff);
+    const ProgramHeader64* phend = (const ProgramHeader64*) (data + phendoff);
     for (; ph < phend; ph++) {
         uint32_t type = ph->type;
         uint64_t offset = ph->p_offset;

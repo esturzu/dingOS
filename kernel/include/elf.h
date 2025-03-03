@@ -41,7 +41,7 @@ struct ELFHeader64 {
 } __attribute__((packed));
 
 struct ProgramHeader64 {
-    uint32_t type;          // Segment type (see OSDev)
+    uint32_t type;          // Segment type (see OSDev); supports 0 and 1
     uint32_t flags;         // 1: executable; 2: writable; 4: readable
     uint64_t p_offset;      // Offset of data within file
     uint64_t p_vaddr;       // Virtual address to put data
