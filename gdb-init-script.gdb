@@ -2,7 +2,7 @@
 target remote :1234
 
 # load symbols
-add-symbol-file kernel/build/kernel.elf 0x80000
+add-symbol-file kernel/build/kernel.elf 0xFFFF000000080000
 
 # set breakpoints
 b kernelMain
