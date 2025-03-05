@@ -34,21 +34,21 @@ extern "C" void _start_core2();
 extern "C" void _start_core3();
 
 extern "C" void initCore1() {
-  dPrintf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
+  debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
   event_loop();
 }
 
 extern "C" void initCore2() {
-  dPrintf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
+  debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
   event_loop();
 }
 
 extern "C" void initCore3() {
-  dPrintf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
+  debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
   event_loop();

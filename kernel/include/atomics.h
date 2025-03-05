@@ -101,8 +101,11 @@ template <typename T>
 class LockGuard {
   T* lock;
 
- public:
-  LockGuard(T& lk) : lock(&lk) { lock->lock(); }
+public:
+  LockGuard(T &lk) : lock(&lk)
+  {
+    lock->lock();
+  }
 
   ~LockGuard() { lock->unlock(); }
 };

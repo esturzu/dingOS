@@ -124,11 +124,14 @@ int fctprintf(void (*out)(char character, void* arg), void* arg,
 
 // Our additions
 #if defined(DEBUG_ENABLED) && (DEBUG_ENABLED + 0)
-#define dPrintf(...) Debug::printf_(__VA_ARGS__) 
+#define debug_printf(...) Debug::printf_(__VA_ARGS__) 
 #else
-#define dPrintf(...) 
+#define debug_printf(...) 
 #endif
 
 #define printf(...) Debug::printf_(__VA_ARGS__)
+
+// TODO: decide on when to have error_printf and what to do with it
+#define error_printf(...) Debug::printf_(__VA_ARGS__)
 
 #endif  // _PRINTF_H_
