@@ -83,7 +83,7 @@ void Interrupts::Disable_All_Base(uint8_t Offset) {
   *Disable_basic_IRQ_register = 0xFFFFFFFF;
 }
 
-extern "C" void irq_handler() {
+extern "C" void irq_handler(){
   uint32_t irq_pending_1 = Interrupts::get_IRQ_pending_1_register();
 
   // System Timer 1 Interrupt
@@ -93,4 +93,8 @@ extern "C" void irq_handler() {
     SystemTimer::set_compare_register(0, current_lower + 1000000);
     SystemTimer::clear_compare(0);
   }
+}
+
+extern "C" void synchronous_handler(uint64_t ){
+  
 }

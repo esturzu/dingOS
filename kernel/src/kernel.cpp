@@ -16,6 +16,7 @@
 #include "system_timer.h"
 #include "tester.h"
 #include "bfs.h"
+#include "vmm.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
