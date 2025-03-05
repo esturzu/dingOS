@@ -2,8 +2,8 @@
 #define ELF_TESTS_H
 
 #include "elf.h"
+#include "bfs.h"
 #include "heap.h"
-#include "printf.h"
 #include "testFramework.h"
 
 typedef uint32_t (*VPLFunction)();
@@ -29,6 +29,13 @@ char ELF_FILE[] = {
     0x60, 0x0F, 0x80, 0x52, 0xC0, 0x03, 0x5F, 0xD6
 };
 
+bool equal(const char* a, const char* b, size_t size) {
+  for (size_t i = 0; i < size; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
+}
+
 void elfTests() {
   initTests("ELF Tests");
   void* text = malloc(32);
@@ -36,13 +43,17 @@ void elfTests() {
   pointer[3] = (uint64_t) text;
   pointer[10] = (uint64_t) text;
 
-  uint64_t result = loadELF(ELF_FILE, sizeof(ELF_FILE));
+  fs_create("sample.elf", 0);
+  fs_write("sample.elf", ELF_FILE, sizeof(ELF_FILE));
+  char buffer[sizeof(ELF_FILE)];
+  fs_read("sample.elf", buffer);
+  testsResult("File Write + Read", equal(ELF_FILE, buffer, sizeof(ELF_FILE)));
+
+  uint64_t result = loadELF(buffer, sizeof(buffer));
   testsResult("ELF Load", result != (uint64_t) -1);
   VPLFunction function = (VPLFunction) result;
   uint32_t code = function();
-  printf("Code: %u\n", code);
   testsResult("Run File", code == 123);
-  printf("Passed!\n");
 }
 
 #endif // ELF_TESTS_H

@@ -18,7 +18,6 @@ uint64_t _assertions() {
 }
 
 uint64_t loadELF(const char* data, uint64_t size) {
-    printf("Loading ELF!\n");
     if (_assertions() == UNEG1) return UNEG1;
 
     const ELFHeader64* header = (const ELFHeader64*) data;
@@ -63,7 +62,6 @@ uint64_t loadELF(const char* data, uint64_t size) {
         while (vmemLoc < memEnd) *(vmemLoc++) = 0;
     }
 
-    printf("Loaded ELF!\n");
     return header->entry;
 }
 
