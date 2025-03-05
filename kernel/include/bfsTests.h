@@ -17,6 +17,31 @@ bool compareBuffers(const uint8_t* a, const uint8_t* b, uint32_t size) {
   return true;
 }
 
+// Helper function to print buffer contents (hex + ASCII)
+void printBuffer(const char* label, const uint8_t* buffer, uint32_t size, uint32_t max_display = 256) {
+  debug_printf("%s (showing %d/%d bytes):\n", label, max_display, size);
+  
+  for (uint32_t i = 0; i < size && i < max_display; i += 16) { // 16 bytes per line
+      debug_printf("%08x: ", i);
+      
+      // Print hex values
+      for (uint32_t j = 0; j < 16 && (i + j) < size; j++) {
+          debug_printf("%02x ", buffer[i + j]);
+      }
+
+      debug_printf(" | ");
+
+      // Print ASCII values
+      for (uint32_t j = 0; j < 16 && (i + j) < size; j++) {
+          char c = buffer[i + j];
+          debug_printf("%c", (c >= 32 && c <= 126) ? c : '.'); // Printable or dot
+      }
+      
+      debug_printf("\n");
+  }
+}
+
+
 // BFS Tests
 void bfsTests() {
   initTests("BFS Tests");
@@ -24,15 +49,13 @@ void bfsTests() {
   debug_printf("BFS Tests: Initializing filesystem...\n");
   fs_init();
 
-  uint8_t* write_buffer = new uint8_t[BLOCK_SIZE * 4];  // Changed! Now supports multi-block tests! Changed!
+  uint8_t* write_buffer = new uint8_t[BLOCK_SIZE * 4];
   uint8_t* read_buffer = new uint8_t[BLOCK_SIZE * 4]();
 
-  // Fill the write buffer with a repeating pattern of A-Z.
   for (size_t i = 0; i < BLOCK_SIZE * 4; i++) {
     write_buffer[i] = 'A' + (i % 26);
   }
 
-  // === TEST 1: Create and Fill File System ===
   char filename[MAX_FILENAME];
   int files_created = 0;
   bool create_success = true;
@@ -52,10 +75,8 @@ void bfsTests() {
       break;
     }
   }
-
   testsResult("Create and Fill File System", create_success);
 
-  // === TEST 2: Write to All Files ===
   bool write_success = true;
   debug_printf("BFS Tests: Writing to all files...\n");
 
@@ -65,59 +86,56 @@ void bfsTests() {
 
     int write_result = fs_write(filename, reinterpret_cast<char*>(write_buffer), BLOCK_SIZE);
     debug_printf("BFS Tests: Writing to %s, result=%d\n", filename, write_result);
+    // printBuffer("Write Buffer", write_buffer, BLOCK_SIZE);
     if (write_result != BLOCK_SIZE) {
       write_success = false;
       break;
     }
   }
-
   testsResult("Write to All Files", write_success);
 
-  // === TEST 3: Read Back and Verify Data ===
   bool read_success = true;
   debug_printf("BFS Tests: Reading and verifying files...\n");
 
   for (int i = 0; i < files_created; i++) {
     filename[4] = '0' + (i / 10);
     filename[5] = '0' + (i % 10);
-
     for (size_t j = 0; j < BLOCK_SIZE; j++) {
       read_buffer[j] = 0;
     }
 
     int read_result = fs_read(filename, reinterpret_cast<char*>(read_buffer), BLOCK_SIZE);
     debug_printf("BFS Tests: Read from %s, result=%d\n", filename, read_result);
-
+    // printBuffer("Read Buffer", read_buffer, BLOCK_SIZE);
     if (read_result != BLOCK_SIZE || !compareBuffers(write_buffer, read_buffer, BLOCK_SIZE)) {
       read_success = false;
       break;
     }
   }
-
   testsResult("Read and Verify Data Integrity", read_success);
 
-  // === TEST 4: Multi-Block Write ===
   debug_printf("BFS Tests: Multi-Block Write Test starting...\n");
-
   strncpy(filename, "bigfile", MAX_FILENAME);
   bool multi_write_success = (fs_create(filename, BLOCK_SIZE * 4) == 0) &&
                              (fs_write(filename, reinterpret_cast<char*>(write_buffer), BLOCK_SIZE * 4) == BLOCK_SIZE * 4);
-
   debug_printf("BFS Tests: Multi-Block Write result = %d\n", multi_write_success);
+  // printBuffer("Multi-Block Write Buffer", write_buffer, BLOCK_SIZE * 4);
   testsResult("Multi-Block Write", multi_write_success);
 
-  // === TEST 5: Multi-Block Read ===
   debug_printf("BFS Tests: Multi-Block Read Test starting...\n");
-
   for (size_t i = 0; i < BLOCK_SIZE * 4; i++) {
     read_buffer[i] = 0;
   }
-
   int multi_read_result = fs_read(filename, reinterpret_cast<char*>(read_buffer), BLOCK_SIZE * 4);
   bool multi_read_success = (multi_read_result == BLOCK_SIZE * 4) && compareBuffers(write_buffer, read_buffer, BLOCK_SIZE * 4);
-
   debug_printf("BFS Tests: Multi-Block Read result=%d\n", multi_read_result);
+  // printBuffer("Multi-Block Read Buffer", read_buffer, BLOCK_SIZE * 4);
   testsResult("Multi-Block Read and Verify", multi_read_success);
+  
+  // Final Test: Listing Files
+  debug_printf("BFS Tests: Listing Files...\n");
+  fs_list();
+  testsResult("List Files Test", true);
 }
 
 #endif  // BFS_TESTS_H

@@ -1,6 +1,6 @@
 #include "bfs.h"
 #include "physmem.h"
-#include "block_io.h"  // Changed! Use BlockIO wrapper! Changed!
+#include "block_io.h"  // Use BlockIO wrapper!
 
 // Global file system state
 // This is where we keep track of everything for the filesystem. 
@@ -23,8 +23,6 @@ bool streq(const char* a, const char* b) {
 }
 
 // copies strings, duhhhh
-// The simplest string copy function possible, without using `memcpy` (which I don’t have).
-// It copies characters from `src` into `dest` up to `n - 1` characters and then manually null-terminates the result.
 void strncpy(char* dest, const char* src, uint32_t n) {
     uint32_t i;
     for (i = 0; i < n - 1 && src[i] != '\0'; i++) {
@@ -45,11 +43,11 @@ void fs_init() {
     superblock.magic = MAGIC_NUMBER;
     superblock.total_blocks = 1024;
     superblock.free_blocks = superblock.total_blocks - 2;
-    superblock.block_size = BLOCK_SIZE;  // Fixed block size, currently hardcoded.
+    superblock.block_size = BLOCK_SIZE;  // Fixed block size from sd
 
     // Initialize file table, will be simplified when new is better i think...
     // Right now, we're treating this as a flat array. 
-    // Later, this should be dynamically allocated, probably with a better memory management strategy.
+    // Later, this should be dynamically allocated
     for (int i = 0; i < MAX_FILES; i++) {
         file_table[i].name[0] = '\0';  // Mark as empty.
         inode_table[i].size = 0;  // Default file size is 0 (makes sense).
@@ -84,12 +82,11 @@ int fs_read(const char* name, char* buffer, uint32_t size) {
 
             debug_printf("fs_read: Reading %d blocks from %s (inode %d)\n", num_blocks, name, file_table[i].inode_index);
 
-            // Changed! Read multiple blocks properly! Changed!
+            // Read multiple blocks properly! 
             BlockIO::read(file_table[i].inode_index, num_blocks, buffer);
             
             debug_printf("fs_read: Successfully read %d bytes from %s\n", size, name);
             return size;  // Return the requested size (assuming full read success)
-            // Changed!
         }
     }
     debug_printf("fs_read: File %s not found!\n", name);
@@ -106,12 +103,11 @@ int fs_write(const char* name, const char* data, uint32_t size) {
 
             debug_printf("fs_write: Writing %d blocks to %s (inode %d)\n", num_blocks, name, file_table[i].inode_index);
 
-            // Changed! Write multiple blocks properly! Changed!
+            // Write multiple blocks properly! 
             BlockIO::write(file_table[i].inode_index, num_blocks, data);
             
             debug_printf("fs_write: Successfully wrote %d bytes to %s\n", size, name);
             return size;  // Return the requested size (assuming full write success)
-            // Changed!
         }
     }
     debug_printf("fs_write: File %s not found!\n", name);
