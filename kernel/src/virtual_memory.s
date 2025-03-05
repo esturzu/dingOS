@@ -13,23 +13,18 @@ kernel_vm_level_1_table:
   .word 0x0
 
 .balign 4096
-.globl uart_vm_level_1_table
-kernel_vm_level_1_table:
-  .word 0x0
-
-.balign 4096
 .globl setup_kernel_vm
 setup_kernel_vm:
   adrp x0, :pg_hi21:kernel_vm_base_table   // Get Address for VMM Tables
   adrp x1, :pg_hi21:kernel_vm_level_1_table
-  movz x3, #0x0003, lsl #0    // Setup Attribute BitMask
-  movk x3, #0x0000, lsl #48
-  orr x3, x1, x3
-  str x3, [x0]
-  movz x3, #0x0401, lsl #0  // Setup Attribute BitMask
-  movk x3, #0x0000, lsl #16
-  movk x3, #0x0000, lsl #48
-  str x3, [x1]
+  movz x2, #0x0003, lsl #0    // Setup Attribute BitMask
+  movk x2, #0x0000, lsl #48
+  orr x2, x1, x2
+  str x2, [x0]
+  movz x2, #0x0401, lsl #0  // Setup Attribute BitMask
+  movk x2, #0x0000, lsl #16
+  movk x2, #0x0000, lsl #48
+  str x2, [x1]
   ret
 
 .globl enable_kernel_vm

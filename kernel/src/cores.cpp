@@ -57,10 +57,10 @@ extern "C" void initCore3() {
 void bootCores() {
   startedCores.add_fetch(1);
   // Boot other cores
-  uint64_t* core_wakeup_base = (uint64_t*)216;
-  *(core_wakeup_base + 1) = (uint64_t)&_start_core1;
-  *(core_wakeup_base + 2) = (uint64_t)&_start_core2;
-  *(core_wakeup_base + 3) = (uint64_t)&_start_core3;
+  uint64_t* core_wakeup_base = (uint64_t*)0xFFFF0000000000D8;
+  *(core_wakeup_base + 1) = 0xFFFF000000000000 ^ ((uint64_t)&_start_core1);
+  *(core_wakeup_base + 2) = 0xFFFF000000000000 ^ (uint64_t)&_start_core2;
+  *(core_wakeup_base + 3) = 0xFFFF000000000000 ^ ((uint64_t)&_start_core3);
 }
 
 /**
