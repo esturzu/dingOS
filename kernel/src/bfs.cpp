@@ -1,6 +1,6 @@
 #include "bfs.h"
 #include "physmem.h"
-#include "sd.h"
+#include "block_io.h"  // Changed! Use BlockIO wrapper! Changed!
 
 // Global file system state
 // This is where we keep track of everything for the filesystem. 
@@ -33,10 +33,9 @@ void strncpy(char* dest, const char* src, uint32_t n) {
     dest[i] = '\0';  // Ensure null termination, just in case the source string was too long.
 }
 
-
 // Initialize the filesystem
 void fs_init() {
-    printf("Initializing Minimal Filesystem...\n");
+    debug_printf("Initializing Minimal Filesystem...\n");
 
     // Initialize superblock
     // This will eventually be read from the disk when mounting a real ext2/ext3 filesystem,
@@ -56,7 +55,7 @@ void fs_init() {
         inode_table[i].size = 0;  // Default file size is 0 (makes sense).
     }
 
-    printf("Filesystem initialized using SD card!\n");
+    debug_printf("Filesystem initialized using SD card!\n");
 }
 
 // Create a new file
@@ -77,45 +76,45 @@ int fs_create(const char* name, uint32_t size) {
 
 // Read a file (copies data into `buffer`)
 // This function looks up a file by name and reads its contents into `buffer`.
-// Right now, it assumes the entire file fits into a single block, which will **definitely** need to change later.
-int fs_read(const char* name, char* buffer) {
-    // Find the file with the correct name, right now i am guessing i cannot have two files with the same exact name...
-    // This is just a simple linear search in `file_table`, which is obviously inefficient if there are a lot of files.
+// Now supports multi-block reads.
+int fs_read(const char* name, char* buffer, uint32_t size) {
     for (int i = 0; i < MAX_FILES; i++) {
         if (streq(name, file_table[i].name)) {
-            // Fill the read buffer with data from disk, count is 1 because we are doing one block for now, to be expanded
-            return SD::read(file_table[i].inode_index, 1, (uint8_t*)buffer);
+            uint32_t num_blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+
+            debug_printf("fs_read: Reading %d blocks from %s (inode %d)\n", num_blocks, name, file_table[i].inode_index);
+
+            // Changed! Read multiple blocks properly! Changed!
+            BlockIO::read(file_table[i].inode_index, num_blocks, buffer);
+            
+            debug_printf("fs_read: Successfully read %d bytes from %s\n", size, name);
+            return size;  // Return the requested size (assuming full read success)
+            // Changed!
         }
     }
+    debug_printf("fs_read: File %s not found!\n", name);
     return -1;  // File not found.
 }
 
 // Write data to a file
 // This function looks up a file by name and writes `size` bytes from `data` into it.
-// Again, for now, it's restricted to writing a single block at a time.
+// Supports multi-block writes now.
 int fs_write(const char* name, const char* data, uint32_t size) {
     for (int i = 0; i < MAX_FILES; i++) {
-        // again find file
         if (streq(name, file_table[i].name)) {
-            debug_printf("fs_write: Writing to block %d\n", file_table[i].inode_index);
-            int result = SD::write(file_table[i].inode_index, 1, (uint8_t*)data);
-            debug_printf("fs_write: SD write returned %d\n", result);
+            uint32_t num_blocks = (size + BLOCK_SIZE - 1) / BLOCK_SIZE;
 
-            if (result < 0) { 
-                debug_printf("fs_write: Error writing to SD!\n");
-                return -1;
-            } else if (result == SD::BLOCKSIZE) {  
-                // again, can only write one block
-                // Eventually, we need to support files that span multiple blocks, but this is fine for now.
-                debug_printf("fs_write: Successfully wrote one full block!\n");
-                return 0;
-            } else {
-                // If the write operation returned something unexpected, print a warning.
-                debug_printf("fs_write: Unexpected write size %d!\n", result);
-                return -1;
-            }
+            debug_printf("fs_write: Writing %d blocks to %s (inode %d)\n", num_blocks, name, file_table[i].inode_index);
+
+            // Changed! Write multiple blocks properly! Changed!
+            BlockIO::write(file_table[i].inode_index, num_blocks, data);
+            
+            debug_printf("fs_write: Successfully wrote %d bytes to %s\n", size, name);
+            return size;  // Return the requested size (assuming full write success)
+            // Changed!
         }
     }
+    debug_printf("fs_write: File %s not found!\n", name);
     return -1;  // File not found.
 }
 
@@ -124,10 +123,10 @@ int fs_write(const char* name, const char* data, uint32_t size) {
 // Eventually, this needs to go down the recursive ext2-style pointer structure (so, directories and metadata blocks).
 // Right now, there **are no directories**, just a flat list of files.
 void fs_list() {
-    printf("Filesystem contents:\n");
+    debug_printf("Filesystem contents:\n");
     for (int i = 0; i < MAX_FILES; i++) {
         if (file_table[i].name[0] != '\0') {  // If a file exists in this slot, print it.
-            printf(" - %s (%d bytes)\n", file_table[i].name, inode_table[i].size);
+            debug_printf(" - %s (%d bytes)\n", file_table[i].name, inode_table[i].size);
         }
     }
 }

@@ -4,10 +4,11 @@
 #include "physmem.h"
 #include "printf.h"
 #include "stdint.h"
-#include "sd.h"  // Now directly using SD instead of BlockIO
+#include "sd.h"
+#include "block_io.h" 
 
 // Filesystem constants
-#define BLOCK_SIZE 4096
+#define BLOCK_SIZE BlockIO::BLOCK_SIZE  
 #define MAX_FILES 32
 #define MAX_FILENAME 32
 #define MAGIC_NUMBER 0xDEADBEEF  // Magic number for FS verification
@@ -36,7 +37,7 @@ struct FileEntry {
 void strncpy(char* dest, const char* src, uint32_t n);
 void fs_init();  // Initialize the filesystem
 int fs_create(const char* name, uint32_t size);  // Create a file
-int fs_read(const char* name, char* buffer);  // Read a file
+int fs_read(const char* name, char* buffer, uint32_t size);  // read
 int fs_write(const char* name, const char* data, uint32_t size);  // Write to a file
 void fs_list();  // List all files
 
