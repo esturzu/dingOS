@@ -2,9 +2,9 @@
 #define _HEAP_H_
 
 #include "definitions.h"
-#include "stdint.h"  // Or your equivalent file with size_t defined
+#include "stdint.h"
 
-extern "C" uint64_t* _end; 
+extern "C" uint64_t* _end;
 extern "C" uint64_t* _heap_start;
 extern "C" uint64_t* _heap_end;
 

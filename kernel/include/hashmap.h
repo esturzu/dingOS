@@ -63,6 +63,11 @@ class HashMap {
    */
   bool erase(K const& key);
 
+  /**
+   * @brief Returns the number of key-value pairs.
+   */
+  size_t size() const;
+
  private:
   void resize();
 
@@ -115,6 +120,9 @@ class HashMap {
   RWLock mutable global_lock;    // Global lock for resizing
 };
 
+////////////////////
+// Implementation //
+////////////////////
 template <typename K, typename V, typename Hash>
 HashMap<K, V, Hash>::HashMap(int num_buckets, double max_load_factor,
                              Hash const& hash)
@@ -122,7 +130,6 @@ HashMap<K, V, Hash>::HashMap(int num_buckets, double max_load_factor,
       num_entries(0),
       max_load_factor(max_load_factor),
       hash(hash) {
-  dPrintf("OK IM PRINTING HERE IN THE CONSTRUCTOR!!!!!!!!\n");
   buckets = new Bucket[num_buckets];
 }
 
@@ -177,6 +184,10 @@ void HashMap<K, V, Hash>::resize() {
 
       cur = next;
     }
+
+    // Set old_buckets[i] to own no nodes so those nodes aren't freed by
+    // old_buckets' destructor (the new buckets now own those nodes)
+    old_buckets[i].head = nullptr;
   }
 
   // Exit global exclusive section
@@ -318,6 +329,11 @@ bool HashMap<K, V, Hash>::erase(K const& key) {
   global_lock.read_unlock();
 
   return false;
+}
+
+template <typename K, typename V, typename Hash>
+size_t HashMap<K, V, Hash>::size() const {
+  return num_entries.load();
 }
 
 #endif  // HASHMAP_H
