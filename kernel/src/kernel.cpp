@@ -20,12 +20,15 @@
 
 extern "C" void kernelMain() {
   // Handled uart Init
+  PhysMem::page_init();
+
   CRTI::_init();
+
+  VMM::init();
 
   debug_printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
-  PhysMem::page_init();
   init_event_loop();
 
   printf("DingOS is Booting!\n");
