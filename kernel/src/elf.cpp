@@ -1,67 +1,57 @@
 #include "elf.h"
 #include "printf.h"
 
-#define UNEG1 ((uint64_t) -1)
+#define INVALID(start, end, size) ((start) > (end) || (end) > (size))
 
-uint64_t _error(const char* message) {
-    printf("Error while loading ELF: %s\n", message);
-    return UNEG1;
-}
+ELFLoader::Result ELFLoader::load(const char* data, uint64_t size) {
+  const ELFHeader64* header = (const ELFHeader64*) data;
+  constexpr uint64_t ehsz = sizeof(ELFHeader64);
+  constexpr uint64_t phsz = sizeof(ProgramHeader64);
+  if (size < ehsz)               return Result(INVALID_FILE_SIZE);
+  if (header->magic[0] != 0x7F)  return Result(INVALID_ELF_SIGNATURE);
+  if (header->magic[1] != 'E')   return Result(INVALID_ELF_SIGNATURE);
+  if (header->magic[2] != 'L')   return Result(INVALID_ELF_SIGNATURE);
+  if (header->magic[3] != 'F')   return Result(INVALID_ELF_SIGNATURE);
+  if (header->mode != 2)         return Result(UNSUPPORTED_BIT_MODE);
+  if (header->encoding != 1)     return Result(UNSUPPORTED_ENDIANNESS);
+  if (header->type != 2)         return Result(UNSUPPORTED_ELF_TYPE);
+  if (header->isa != 0xB7)       return Result(UNSUPPORTED_ARCH_ISA);
+  if (header->ehsize != ehsz)    return Result(INVALID_ELF_HEADER_SIZE);
+  if (header->phentsize != phsz) return Result(INVALID_PROGRAM_HEADER_SIZE);
+  if (header->shnum != 0)        return Result(UNSUPPORTED_SECTIONS);
 
-uint64_t _assertions() {
-    // Verifies that the system is using little-endianness
-    uint16_t value = 0x0102;
-    uint8_t firstByte = *((uint8_t*) &value);
-    uint8_t secondByte = *(((uint8_t*) &value) + 1);
-    return firstByte == 0x02 && secondByte == 0x01 ? 0 :
-        _error("invalid system endianness");
-}
+  uint64_t phoff = header->phoff;
+  uint16_t phnum = header->phnum;
+  uint64_t phendoff = phoff + phsz * (uint64_t) phnum;
+  if (phnum == 0) return Result(header->entry);
+  if (INVALID(phoff, phendoff, size)) {
+    return Result(INVALID_PROGRAM_HEADER_OFFSET);
+  }
 
-uint64_t loadELF(const char* data, uint64_t size) {
-    if (_assertions() == UNEG1) return UNEG1;
+  const ProgramHeader64* ph = (const ProgramHeader64*) (data + phoff);
+  const ProgramHeader64* phend = (const ProgramHeader64*) (data + phendoff);
+  for (; ph < phend; ph++) {
+    uint32_t type = ph->type;
+    if (type == 0) continue;
+    if (type != 1) return Result(UNSUPPORTED_PROGRAM_HEADER_TYPE);
 
-    const ELFHeader64* header = (const ELFHeader64*) data;
-    constexpr uint64_t ehsz = sizeof(ELFHeader64);
-    constexpr uint64_t phsz = sizeof(ProgramHeader64);
-    if (size < ehsz)               return _error("invalid file size");
-    if (header->magic[0] != 0x7F)  return _error("magic[0] mismatch");
-    if (header->magic[1] != 'E')   return _error("magic[1] mismatch");
-    if (header->magic[2] != 'L')   return _error("magic[2] mismatch");
-    if (header->magic[3] != 'F')   return _error("magic[3] mismatch");
-    if (header->mode != 2)         return _error("not 64 bit mode");
-    if (header->encoding != 1)     return _error("not little endian");
-    if (header->isa != 0xB7)       return _error("not aarch64");
-    if (header->ehsize != ehsz)    return _error("ELF header wrong size");
-    if (header->phentsize != phsz) return _error("program header wrong size");
-    if (header->shnum != 0)        return _error("sections not supported");
-
-    uint64_t phoff = header->phoff;
-    uint16_t phnum = header->phnum;
-    uint64_t phendoff = phoff + phsz * (uint64_t) phnum;
-    if (phoff > phendoff || phendoff > size) return _error("wrong PH offset");
-
-    const ProgramHeader64* ph = (const ProgramHeader64*) (data + phoff);
-    const ProgramHeader64* phend = (const ProgramHeader64*) (data + phendoff);
-    for (; ph < phend; ph++) {
-        uint32_t type = ph->type;
-        uint64_t offset = ph->p_offset;
-        uint64_t filesz = ph->p_filesz;
-        uint64_t memsz = ph->p_memsz;
-        uint64_t end = offset + filesz;
-
-        if (type > 1) return _error("unsupported program header type");
-        if (memsz < filesz) return _error("memsz < filesz");
-        if (offset > end || end > size) return _error("invalid PH offset");
-        if (ph->type == 0) continue;
-
-        const char* dataLoc = (const char*) (data + offset);
-        char* vmemLoc = (char*) ph->p_vaddr;
-        char* fileEnd = vmemLoc + filesz;
-        char* memEnd = vmemLoc + memsz;
-        while (vmemLoc < fileEnd) *(vmemLoc++) = *(dataLoc++);
-        while (vmemLoc < memEnd) *(vmemLoc++) = 0;
+    uint64_t off = ph->p_offset;
+    uint64_t filesz = ph->p_filesz;
+    uint64_t memsz = ph->p_memsz;
+    uint64_t end = off + filesz;
+    if (memsz < filesz) return Result(INVALID_MEM_SIZE);
+    if (INVALID(off, end, size)) {
+      return Result(INVALID_PROGRAM_HEADER_DATA_OFFSET);
     }
 
-    return header->entry;
+    const char* dataLoc = (const char*) (data + off);
+    char* vmemLoc = (char*) ph->p_vaddr;
+    char* fileEnd = vmemLoc + filesz;
+    char* memEnd = vmemLoc + memsz;
+    while (vmemLoc < fileEnd) *(vmemLoc++) = *(dataLoc++);
+    while (vmemLoc < memEnd) *(vmemLoc++) = 0;
+  }
+
+  return Result(header->entry);
 }
 

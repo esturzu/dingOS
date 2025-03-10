@@ -3,22 +3,51 @@
 
 #include "stdint.h"
 
-/*
-// add virtual memory mapping pointer (and other process stuff) here
-class ELFLoadResult {
-    // add other error codes
-    enum ErrorCode { SUCCESS = 0, FAIL = 1 };
-    const ErrorCode error;
+namespace ELFLoader {
+  enum ErrorCode {
+    // Successful code(s): 0x00 through 0x3F inclusive: if this code is
+    // received, then the ELF loaded correctly into memory, and it is ready
+    SUCCESS = 0,
+
+    // Unsupported code(s): 0x40 through 0x7F inclusive: these codes signify
+    // that a particular ELF configuration may be valid, but that it is not
+    // currently supported by this ELF loader (for example, dynamic loading)
+    UNSUPPORTED_BIT_MODE            = 0x40,
+    UNSUPPORTED_ENDIANNESS          = 0x41,
+    UNSUPPORTED_ELF_TYPE            = 0x42,
+    UNSUPPORTED_ARCH_ISA            = 0x43,
+    UNSUPPORTED_SECTIONS            = 0x44,
+    UNSUPPORTED_PROGRAM_HEADER_TYPE = 0x45,
+
+    // Invalid code(s): 0x80 through 0xBF inclusive: these codes signify
+    // that an ELF file has an invalid configuration
+    INVALID_FILE_SIZE                  = 0x80,
+    INVALID_ELF_SIGNATURE              = 0x81,
+    INVALID_ELF_HEADER_SIZE            = 0x82,
+    INVALID_PROGRAM_HEADER_SIZE        = 0x83,
+    INVALID_PROGRAM_HEADER_OFFSET      = 0x84,
+    INVALID_MEM_SIZE                   = 0x85,
+    INVALID_PROGRAM_HEADER_DATA_OFFSET = 0x86
+  };
+
+  class Result {
+  public:
+    Result(ErrorCode code) : code(code), entry(0) {}
+    Result(uint64_t entry) : code(SUCCESS), entry(entry) {}
+    bool success() const { return (int) code < 0x40; }
+    bool unsupported() const { return 0x40 <= (int) code && (int) code < 0x80; }
+    bool invalid() const { return 0x80 <= (int) code && (int) code < 0xC0; }
+    ErrorCode getError() const { return code; }
+    uint64_t getEntry() const { return entry; }
+
+  private:
+    const ErrorCode code;
     const uint64_t entry;
+  };
 
-public:
-    ErrorCode getError() const;
-    uint64_t getEntry() const;
-}; */
+  Result load(const char* data, size_t size);
 
-uint64_t loadELF(const char* data, size_t size);
-
-struct ELFHeader64 {
+  struct ELFHeader64 {
     uint8_t magic[4];       // Magic number: 0x7F, 'E', 'L', 'F'
     uint8_t mode;           // 1: 32 bit; 2: 64 bit
     uint8_t encoding;       // 1: little endian; 2: big endian
@@ -38,10 +67,10 @@ struct ELFHeader64 {
     uint16_t shentsize;     // Section header entry size
     uint16_t shnum;         // Number of section headers
     uint16_t shstrndx;      // Section header index to string table
-} __attribute__((packed));
+  } __attribute__((packed));
 
-struct ProgramHeader64 {
-    uint32_t type;          // Segment type (see OSDev); supports 0 and 1
+  struct ProgramHeader64 {
+    uint32_t type;          // Segment type (see OSDev)
     uint32_t flags;         // 1: executable; 2: writable; 4: readable
     uint64_t p_offset;      // Offset of data within file
     uint64_t p_vaddr;       // Virtual address to put data
@@ -49,10 +78,8 @@ struct ProgramHeader64 {
     uint64_t p_filesz;      // Size of segment in file
     uint64_t p_memsz;       // Size of segment in memory (>= p_filesz)
     uint64_t align;         // Required alignment
-} __attribute__((packed));
-
-static_assert(sizeof(ELFHeader64) == 64, "ELF Header Size != 64 B");
-static_assert(sizeof(ProgramHeader64) == 56, "Program Header Size != 56 B");
+  } __attribute__((packed));
+};
 
 #endif // ELF_H
 
