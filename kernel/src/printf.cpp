@@ -964,6 +964,25 @@ int fctprintf(void (*out)(char character, void* arg), void* arg,
 
 void _putchar(char character) { uart_putc(character); }
 
+// Panic function
+[[noreturn]] void vpanic(const char* format, va_list ap) {
+  debug_printf("\n\n*** KERNEL PANIC ***\n");
+  vprintf_(format, ap);
+  debug_printf("\nSystem halted.\n");
+
+  // ARM64-specific halt: Enter an infinite loop
+  while (true) {
+      asm volatile("wfi");  // Wait-for-interrupt (lowers power consumption)
+  }
+}
+
+[[noreturn]] void panic(const char* format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  vpanic(format, ap);
+  va_end(ap);
+}
+
 // #ifdef __cplusplus
 // }
 // #endif

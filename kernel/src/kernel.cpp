@@ -34,6 +34,11 @@ extern "C" void kernelMain() {
   printf("DingOS is Booting!\n");
   debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
+  debug_printf("this is a weird thing\n");
+  printf("this should show up everytime\n");
+  int x = 0;
+  ASSERT(x > 0);  // This will trigger panic
+
   SMP::bootCores();
 
   run_page_tests();
