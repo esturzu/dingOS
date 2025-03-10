@@ -2,6 +2,7 @@
 // Armv8 A-profile Architecture Reference Manual
 
 #include "stdint.h"
+#include "machine.h"
 
 #ifndef VMM_H
 #define VMM_H
@@ -13,28 +14,24 @@ namespace VMM
     enum Attribute : uint8_t
     {
       NormalMemory = 0,
-      NonCachable = 3,
-      Device_GRE = 4,
-      Device_nGRE = 5,
-      Device_nGnRE = 6,
-      Device_nGnRnE = 7
+      Device_nGnRnE = 1
     };
-
-    static constexpr int memory_attributes[8] = { 0b01110111 /*Normal memory, Outer Write-Back Transient, Outer Read-Allocate, Outer Write-Allocate, Inner Write-Back Transient, Inner Read-Allocate, Inner Write-Allocate*/, 
-                                                  0b00000000 /*Unused*/, 
-                                                  0b00000000 /*Unused*/, 
-                                                  0b01000100 /*Normal memory, Outer Non-cacheable, Inner Non-cacheable*/, 
-                                                  0b00000000 /*Device-GRE memory*/, 
-                                                  0b00000100 /*Device-nGRE memory*/, 
-                                                  0b00001000 /*Device-nGnRE memory*/, 
-                                                  0b00001100 /*Device-nGnRnE memory*/};
 
     static void setup_mair_el1()
     {
+      int memory_attributes[8] = { 0b01110111 /*Normal memory, Outer Write-Back Transient, Outer Read-Allocate, Outer Write-Allocate, Inner Write-Back Transient, Inner Read-Allocate, Inner Write-Allocate*/, 
+                                    0b00001100 /*Device-nGnRnE memory*/, 
+                                    0b00000000 /*Unused*/, 
+                                    0b00000000 /*Unused*/, 
+                                    0b00000000 /*Unused*/, 
+                                    0b00000000 /*Unused*/, 
+                                    0b00000000 /*Unused*/, 
+                                    0b00000000 /*Unused*/};
+
       uint64_t mair_value = 0;
       for (uint8_t attr = 0; attr < 8 /*number of attributes*/; attr++)
       {
-        mair_value = memory_attributes[attr] << (attr * 8);
+        mair_value |= memory_attributes[attr] << (attr * 8);
       }
       set_MAIR_EL1(mair_value);
     }
@@ -99,17 +96,29 @@ namespace VMM
     bool map_address(uint64_t virtual_address, uint64_t physical_address, PageSize pg_sz = PageSize::NONE);
     bool map_address(uint64_t virtual_address, PageSize pg_sz = PageSize::NONE);
 
-    
+    void set_ttbr1_el1();
   };
 
   extern void init();
 
+  /**
+   * @brief Changes a pointer to the kernel into a physical address pointer
+   *
+   * @param ptr  pointer to kernel space
+   * @return T   pointer to virtual space
+   */
   template <typename T>
   inline T kernel_to_phys_ptr(T ptr)
   {
     return reinterpret_cast<T>(reinterpret_cast<uint64_t>(ptr) ^ 0xFFFF000000000000);
   }
 
+  /**
+   * @brief Changes a pointer to the physical address into a kernel pointer
+   *
+   * @param ptr  pointer to virtual space
+   * @return T   pointer to kernel space
+   */
   template <typename T>
   inline T phys_to_kernel_ptr(T ptr)
   {

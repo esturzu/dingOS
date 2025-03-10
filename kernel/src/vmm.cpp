@@ -12,9 +12,11 @@ namespace VMM
 
     if (gran == Granule::KB_4)
     {
+      uint64_t* kernel_base_address = phys_to_kernel_ptr(base_address);
+
       for (uint32_t entry = 0; entry < 512 /*4096 bytes / 8 bytes*/; entry++)
       {
-        base_address[entry] = 0;
+        kernel_base_address[entry] = 0;
       }
     }
     else if (gran == Granule::KB_16)
@@ -130,54 +132,56 @@ namespace VMM
 
     if (granule_size == Granule::KB_4)
     {
-      uint64_t* stage_0_descriptor = get_stage_descriptor(virtual_address, 0, base_address);
+      uint64_t* stage_0_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 0, base_address));
       
       if (!is_valid_descriptor(*stage_0_descriptor))
       {
-        if (!is_page_descriptor(*stage_0_descriptor))
-        {
-          // PANIC: Invalid Level for Block Descriptor
-          return false;
-        }
-
         create_page_descriptor(stage_0_descriptor);
       }
 
+      if (!is_page_descriptor(*stage_0_descriptor))
+      {
+        // PANIC: Invalid Level for Block Descriptor
+        return false;
+      }
+
       uint64_t* stage_1_base_address = get_next_level(*stage_0_descriptor);
-      uint64_t* stage_1_descriptor = get_stage_descriptor(virtual_address, 1, stage_1_base_address);
+      uint64_t* stage_1_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 1, stage_1_base_address));
 
       if (!is_valid_descriptor(*stage_1_descriptor))
       {
-        if (!is_page_descriptor(*stage_1_descriptor))
-        {
-          // PANIC: Invalid Level for Block Descriptor
-          return false;
-        }
-
         create_page_descriptor(stage_1_descriptor);
       }
 
+      if (!is_page_descriptor(*stage_1_descriptor))
+      {
+        // PANIC: Invalid Level for Block Descriptor
+        return false;
+      }
+
       uint64_t* stage_2_base_address = get_next_level(*stage_1_descriptor);
-      uint64_t* stage_2_descriptor = get_stage_descriptor(virtual_address, 2, stage_2_base_address);
+      uint64_t* stage_2_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 2, stage_2_base_address));
 
       if (!is_valid_descriptor(*stage_2_descriptor))
       {
-        if (!is_page_descriptor(*stage_2_descriptor))
-        {
-          // PANIC: Invalid Level for Block Descriptor
-          return false;
-        }
-
         create_page_descriptor(stage_2_descriptor);
+        *stage_2_descriptor = *stage_2_descriptor; 
+      }
+
+      if (!is_page_descriptor(*stage_2_descriptor))
+      {
+        // PANIC: Invalid Level for Block Descriptor
+        return false;
       }
 
       uint64_t* stage_3_base_address = get_next_level(*stage_2_descriptor);
-      uint64_t* stage_3_descriptor = get_stage_descriptor(virtual_address, 3, stage_3_base_address);
+      uint64_t* stage_3_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 3, stage_3_base_address));
 
       *stage_3_descriptor = physical_address
-                            | 0b10000000000 /*access flag*/
-                            | (MAIR::get_mair_mask(MAIR::Attribute::Device_nGnRnE) << 2)
-                            | 0b1/*valid page*/;
+                            | (1 << 10) /*access flag*/
+                            | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
+                            | 0b10 /*page entry*/
+                            | 0b1 /*valid descriptor*/;
       return true;
     }
     else if (granule_size == Granule::KB_16)
@@ -213,7 +217,7 @@ namespace VMM
         return false;
       }
 
-      uint64_t* stage_0_descriptor = get_stage_descriptor(virtual_address, 0, base_address);
+      uint64_t* stage_0_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 0, base_address));
       
       if (!is_valid_descriptor(*stage_0_descriptor))
       {
@@ -226,8 +230,8 @@ namespace VMM
         return false;
       }
 
-      uint64_t* stage_1_base_address = get_next_level(*stage_0_descriptor);
-      uint64_t* stage_1_descriptor = get_stage_descriptor(virtual_address, 1, stage_1_base_address);
+      uint64_t* stage_1_base_address = phys_to_kernel_ptr(get_next_level(*stage_0_descriptor));
+      uint64_t* stage_1_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 1, stage_1_base_address));
 
       if (!is_valid_descriptor(*stage_1_descriptor))
       {
@@ -250,8 +254,8 @@ namespace VMM
         }
       }
 
-      uint64_t* stage_2_base_address = get_next_level(*stage_1_descriptor);
-      uint64_t* stage_2_descriptor = get_stage_descriptor(virtual_address, 2, stage_2_base_address);
+      uint64_t* stage_2_base_address = phys_to_kernel_ptr(get_next_level(*stage_1_descriptor));
+      uint64_t* stage_2_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 2, stage_2_base_address));
 
       if (!is_valid_descriptor(*stage_2_descriptor))
       {
@@ -274,8 +278,8 @@ namespace VMM
         }
       }
 
-      uint64_t* stage_3_base_address = get_next_level(*stage_2_descriptor);
-      uint64_t* stage_3_descriptor = get_stage_descriptor(virtual_address, 3, stage_3_base_address);
+      uint64_t* stage_3_base_address = phys_to_kernel_ptr(get_next_level(*stage_2_descriptor));
+      uint64_t* stage_3_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 3, stage_3_base_address));
 
       if (!is_valid_descriptor(*stage_3_descriptor))
       {
@@ -316,11 +320,17 @@ namespace VMM
     }
   }
 
+  void TranslationTable::set_ttbr1_el1()
+  {
+    set_TTBR1_EL1(reinterpret_cast<uint64_t>(base_address));
+    tlb_invalidate_all();
+  }
+
   TranslationTable kernel_translation_table{TranslationTable::Granule::KB_4};
 
   void init()
   {
-    printf("Setting Up Virtual Memory\n");
+    debug_printf("Setting Up Virtual Memory\n");
 
     // Allocate First 1 GB
     for (uint64_t virtual_address = 0xFFFF000000001000; virtual_address < 0xFFFF000040000000; virtual_address += 0x1000)
@@ -328,7 +338,11 @@ namespace VMM
       kernel_translation_table.map_address(virtual_address, kernel_to_phys_ptr(virtual_address), TranslationTable::PageSize::KB_4);
     }
 
-    printf("Finished Initializing Tables\n");
+    MAIR::setup_mair_el1();
+
+    kernel_translation_table.set_ttbr1_el1();
+
+    debug_printf("Finished Initializing Tables\n");
   }
 }
 

@@ -106,5 +106,8 @@ set_TCR_EL1:
   ret
 
 .globl tlb_invalidate_all
-  tlbi alle1
+tlb_invalidate_all:
+  isb
+  tlbi vmalle1
+  isb
   ret
