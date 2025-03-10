@@ -333,7 +333,7 @@ namespace VMM
     debug_printf("Setting Up Virtual Memory\n");
 
     // Allocate First 1 GB
-    for (uint64_t virtual_address = 0xFFFF000000001000; virtual_address < 0xFFFF000040000000; virtual_address += 0x1000)
+    for (uint64_t virtual_address = 0xFFFF000000000000; virtual_address < 0xFFFF000040000000; virtual_address += 0x1000)
     {
       kernel_translation_table.map_address(virtual_address, kernel_to_phys_ptr(virtual_address), TranslationTable::PageSize::KB_4);
     }
@@ -343,6 +343,17 @@ namespace VMM
     kernel_translation_table.set_ttbr1_el1();
 
     debug_printf("Finished Initializing Tables\n");
+  }
+
+  void init_core()
+  {
+    debug_printf("Setting Up Virtual Memory Core\n");
+
+    MAIR::setup_mair_el1();
+
+    kernel_translation_table.set_ttbr1_el1();
+
+    debug_printf("Finished Initializing Core\n");
   }
 }
 

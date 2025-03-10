@@ -51,6 +51,6 @@ SECTIONS
     _heap_start = ALIGN(8);
     _heap_end = _heap_start + 0x10000000; /* 256 MB for heap space */
 
-    _frame_start = ALIGN(4096);
+    _frame_start = ALIGN(_heap_end, 4096);
     _frame_end = _heap_end + 0x20000000; /* 512 MB for page space */
 }

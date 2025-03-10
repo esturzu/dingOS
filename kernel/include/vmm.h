@@ -100,6 +100,7 @@ namespace VMM
   };
 
   extern void init();
+  extern void init_core();
 
   /**
    * @brief Changes a pointer to the kernel into a physical address pointer

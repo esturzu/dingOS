@@ -96,5 +96,6 @@ extern "C" void irq_handler(){
 }
 
 extern "C" void synchronous_handler(uint64_t ){
-  
+  printf("PANIC: Entered Synchronous Handler\n");
+  while(1){}
 }
