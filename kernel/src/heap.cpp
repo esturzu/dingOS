@@ -91,13 +91,9 @@ void heap_init() {
 
     heap_size = (size_t)&_heap_end - (size_t)&_heap_start;
 
-    printf("%lx\n", heap_size);
-
     for (int i = 0; i < heap_size; i++) {
       heap[i] = 0;
     }
-
-    printf("Here\n");
 
     debug_printf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", (size_t) &_heap_start,
                 heap_size, (size_t)&_heap_end);

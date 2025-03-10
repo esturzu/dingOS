@@ -35,7 +35,7 @@ extern "C" void kernelMain() {
   debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
   SMP::bootCores();
-  
+
   run_page_tests();
 
   SD::init();
