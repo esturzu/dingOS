@@ -19,6 +19,7 @@ QEMU := $(QEMUBIN)/qemu-system-aarch64 								# QEMU
 
 # QEMU flags and params
 QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4 -drive file=../test.dd,if=sd,format=raw -cpu cortex-a72 -m 1G \
+    -usb -device usb-kbd
 	# --trace "sd*" 
 
 # Optional kernel output log file
@@ -34,7 +35,7 @@ CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib \
 						-DDEBUG_ENABLED=$(DEBUG_ENABLED)
 
 # Enable debug prints
-DEBUG_ENABLED ?= 0
+DEBUG_ENABLED ?= 1
 
 ASFLAGS :=
 DEBUG_FLAGS := -g
@@ -101,7 +102,7 @@ qemu: $(IMG)
 
 # How to build the final ELF from all objects + linker script
 $(EXEC): linker.ld $(OBJS)
-	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS)
+	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS) -Wl,--end-group
 
 # How to produce the .img from the ELF
 $(IMG): $(EXEC)

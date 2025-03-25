@@ -6,6 +6,7 @@
 #include "event_loop.h"
 #include "printf.h"
 #include "system_timer.h"
+#include "usb.h"
 
 uint32_t Interrupts::get_basic_pending_register() {
   volatile uint32_t* IRQ_basic_pending_register =
@@ -38,14 +39,21 @@ void Interrupts::disable_fiq_interrupt() {
 }
 
 void Interrupts::Enable_IRQ(uint8_t IRQ_num) {
+  printf("IRQ: Enabling IRQ %d\n", IRQ_num);
   if (IRQ_num < 32) {
     volatile uint32_t* Enable_IRQ_1_register =
         (volatile uint32_t*)(interrupt_base_address + Enable_IRQ_1_offset);
+    printf("IRQ: Writing to 0x%X\n", (uint64_t)Enable_IRQ_1_register);
+    uint32_t test_read = *Enable_IRQ_1_register;
+    printf("IRQ: Read IRQ_ENABLE_1 = 0x%X\n", test_read);
     *Enable_IRQ_1_register = (1 << IRQ_num);
+    printf("IRQ: IRQ %d enabled\n", IRQ_num);
   } else {
     volatile uint32_t* Enable_IRQ_2_register =
         (volatile uint32_t*)(interrupt_base_address + Enable_IRQ_2_offset);
+    printf("IRQ: Writing to 0x%X\n", (uint64_t)Enable_IRQ_2_register);
     *Enable_IRQ_2_register = (1 << (IRQ_num - 32));
+    printf("IRQ: IRQ %d enabled\n", IRQ_num);
   }
 }
 
@@ -86,11 +94,14 @@ void Interrupts::Disable_All_Base(uint8_t Offset) {
 extern "C" void irq_handler() {
   uint32_t irq_pending_1 = Interrupts::get_IRQ_pending_1_register();
 
-  // System Timer 1 Interrupt
-  if (irq_pending_1 & 0b1) {
-    current_time += 1;
-    uint32_t current_lower = SystemTimer::get_lower_running_counter_value();
-    SystemTimer::set_compare_register(0, current_lower + 1000000);
-    SystemTimer::clear_compare(0);
+  if (irq_pending_1 & (1 << 0)) {
+      current_time += 1;
+      uint32_t current_lower = SystemTimer::get_lower_running_counter_value();
+      SystemTimer::set_compare_register(0, current_lower + 1000000);
+      SystemTimer::clear_compare(0);
+  }
+
+  if (irq_pending_1 & (1 << USB_IRQ)) {
+      g_usb.handle_interrupt();  
   }
 }

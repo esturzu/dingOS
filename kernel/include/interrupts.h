@@ -1,6 +1,8 @@
 // Citations
 // https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
 // https://developer.arm.com/documentation/dui0203/j/handling-processor-exceptions/armv6-and-earlier--armv7-a-and-armv7-r-profiles/interrupt-handlers
+#ifndef INTERRUPTS_H
+#define INTERRUPTS_H
 
 #include "stdint.h"
 
@@ -30,3 +32,5 @@ class Interrupts {
   static void Disable_All_IRQ();
   static void Disable_All_Base(uint8_t Offset);
 };
+
+#endif // INTERRUPTS_H
