@@ -7,6 +7,13 @@
 #include "printf.h"
 #include "system_timer.h"
 
+#define INTERRUPT_STACK_SIZE 4096
+
+uint8_t cpu0_interrupt_stack[INTERRUPT_STACK_SIZE] __attribute__((aligned(16)));
+uint8_t cpu1_interrupt_stack[INTERRUPT_STACK_SIZE] __attribute__((aligned(16)));
+uint8_t cpu2_interrupt_stack[INTERRUPT_STACK_SIZE] __attribute__((aligned(16)));
+uint8_t cpu3_interrupt_stack[INTERRUPT_STACK_SIZE] __attribute__((aligned(16)));
+
 uint32_t Interrupts::get_basic_pending_register() {
   volatile uint32_t* IRQ_basic_pending_register =
       (volatile uint32_t*)(interrupt_base_address + IRQ_basic_pending_offset);
@@ -83,6 +90,16 @@ void Interrupts::Disable_All_Base(uint8_t Offset) {
   *Disable_basic_IRQ_register = 0xFFFFFFFF;
 }
 
+extern "C" void serror_handler()
+{
+
+}
+
+extern "C" void fiq_handler()
+{
+ 
+}
+
 extern "C" void irq_handler(){
   uint32_t irq_pending_1 = Interrupts::get_IRQ_pending_1_register();
 
@@ -95,7 +112,8 @@ extern "C" void irq_handler(){
   }
 }
 
-extern "C" void synchronous_handler(uint64_t ){
-  printf("PANIC: Entered Synchronous Handler\n");
+extern "C" void synchronous_handler(uint64_t error_syndrome_register, uint64_t fault_address)
+{
+  printf("PANIC: Entered Synchronous Handler 0x%lx %p\n", error_syndrome_register, fault_address);
   while(1){}
 }

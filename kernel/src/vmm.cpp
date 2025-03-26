@@ -84,7 +84,7 @@ namespace VMM
   inline void TranslationTable::create_page_descriptor(uint64_t* entry)
   {
     uint64_t next_level_address = reinterpret_cast<uint64_t>(PhysMem::allocate_frame());
-    *entry = next_level_address 
+    *entry = next_level_address
               | 0b10 /*page descriptor flag*/ 
               | 0b1 /*valid descriptor flag*/;
   }
@@ -177,11 +177,20 @@ namespace VMM
       uint64_t* stage_3_base_address = get_next_level(*stage_2_descriptor);
       uint64_t* stage_3_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 3, stage_3_base_address));
 
-      *stage_3_descriptor = physical_address
-                            | (1 << 10) /*access flag*/
-                            | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
-                            | 0b10 /*page entry*/
-                            | 0b1 /*valid descriptor*/;
+      if (virtual_address >= 0xFFFF000000000000)
+        *stage_3_descriptor = physical_address
+                              | (1 << 10) /*access flag*/
+                              | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
+                              | 0b10 /*page entry*/
+                              | 0b1 /*valid descriptor*/;
+      else
+        *stage_3_descriptor = physical_address
+          | (1 << 10) /*access flag*/
+          | (0b01 << 6) /*permissions*/
+          | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
+          | 0b10 /*page entry*/
+          | 0b1 /*valid descriptor*/;
+
       return true;
     }
     else if (granule_size == Granule::KB_16)
@@ -230,7 +239,7 @@ namespace VMM
         return false;
       }
 
-      uint64_t* stage_1_base_address = phys_to_kernel_ptr(get_next_level(*stage_0_descriptor));
+      uint64_t* stage_1_base_address = get_next_level(*stage_0_descriptor);
       uint64_t* stage_1_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 1, stage_1_base_address));
 
       if (!is_valid_descriptor(*stage_1_descriptor))
@@ -254,7 +263,7 @@ namespace VMM
         }
       }
 
-      uint64_t* stage_2_base_address = phys_to_kernel_ptr(get_next_level(*stage_1_descriptor));
+      uint64_t* stage_2_base_address = get_next_level(*stage_1_descriptor);
       uint64_t* stage_2_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 2, stage_2_base_address));
 
       if (!is_valid_descriptor(*stage_2_descriptor))
@@ -278,7 +287,7 @@ namespace VMM
         }
       }
 
-      uint64_t* stage_3_base_address = phys_to_kernel_ptr(get_next_level(*stage_2_descriptor));
+      uint64_t* stage_3_base_address = get_next_level(*stage_2_descriptor);
       uint64_t* stage_3_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 3, stage_3_base_address));
 
       if (!is_valid_descriptor(*stage_3_descriptor))
@@ -320,6 +329,34 @@ namespace VMM
     }
   }
 
+  void TranslationTable::set_ttbr0_el1()
+  {
+    // Setup Translation Control Register
+    uint64_t prev_tcr_el1 = get_TCR_EL1();
+    prev_tcr_el1 &= 0xFFFFFFFFFFFF0000;
+
+    uint64_t tg0;
+
+    if (granule_size == Granule::KB_4)
+      tg0 = 0b00;
+    else if (granule_size == Granule::KB_64)
+      tg0 = 0b01;
+    else if (granule_size == Granule::KB_16)
+      tg0 = 0b10;
+    else
+      tg0 = 0b11; // Panic, Unknown Granularity
+
+
+    uint64_t new_tcr_el1 = prev_tcr_el1
+                            | (tg0 << 14) /*TG0*/
+                            | 16; /*Settting T0 SZ*/
+
+    set_TCR_EL1(new_tcr_el1);
+
+    set_TTBR0_EL1(reinterpret_cast<uint64_t>(base_address));
+    tlb_invalidate_all();
+  }
+
   void TranslationTable::set_ttbr1_el1()
   {
     set_TTBR1_EL1(reinterpret_cast<uint64_t>(base_address));
@@ -343,7 +380,6 @@ namespace VMM
 
   void init_core()
   {
-
     MAIR::setup_mair_el1();
 
     kernel_translation_table.set_ttbr1_el1();

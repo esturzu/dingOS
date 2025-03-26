@@ -19,4 +19,10 @@ extern "C" void set_VBAR_EL1(void* val);
 
 extern "C" void tlb_invalidate_all();
 
+extern "C" void set_SPSR_EL1(uint64_t val);
+extern "C" void set_ELR_EL1(uint64_t val);
+extern "C" void set_SP_EL0(uint64_t val);
+
+extern "C" void exception_return();
+
 extern "C" void* el1_vector_table;

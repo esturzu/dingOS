@@ -40,7 +40,7 @@ enable_kernel_vm:
   msr MAIR_EL1, x0
   isb
   mrs x0, SCTLR_EL1   // Setup SCTLR_EL1
-  orr x0, x0, #0x1
+  orr x0, x0, #0x7
   msr SCTLR_EL1, x0
   isb
   ret

@@ -11,6 +11,7 @@
 #include "machine.h"
 #include "physmem.h"
 #include "printf.h"
+#include "process.h"
 #include "sd.h"
 #include "stdint.h"
 #include "system_timer.h"
@@ -26,7 +27,7 @@ extern "C" void kernelMain() {
 
   VMM::init();
 
-  debug_printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
+  printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
   init_event_loop();
@@ -34,17 +35,20 @@ extern "C" void kernelMain() {
   printf("DingOS is Booting!\n");
   debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
-  SMP::bootCores();
+  // SMP::bootCores();
 
-  run_page_tests();
+  // run_page_tests();
 
-  SD::init();
+  // SD::init();
 
-  fs_init();
+  // fs_init();
 
-  setupTests();
+  // setupTests();
 
   // event_loop();
+
+  ProcessContext pc{};
+  pc.enter_process();
 
   while (1)
     ;
