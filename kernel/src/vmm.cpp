@@ -122,7 +122,7 @@ namespace VMM
     }
   }
 
-  bool TranslationTable::map_address(uint64_t virtual_address, uint64_t physical_address, PageSize pg_sz)
+  bool TranslationTable::map_address(uint64_t virtual_address, uint64_t physical_address, uint32_t flags, PageSize pg_sz)
   {
     if (pg_sz == PageSize::NONE || pg_sz == PageSize::KB_16 || pg_sz == PageSize::KB_64 || pg_sz == PageSize::MB_2 || pg_sz == PageSize::GB_1)
     {
@@ -177,19 +177,22 @@ namespace VMM
       uint64_t* stage_3_base_address = get_next_level(*stage_2_descriptor);
       uint64_t* stage_3_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 3, stage_3_base_address));
 
-      if (virtual_address >= 0xFFFF000000000000)
-        *stage_3_descriptor = physical_address
-                              | (1 << 10) /*access flag*/
-                              | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
-                              | 0b10 /*page entry*/
-                              | 0b1 /*valid descriptor*/;
-      else
-        *stage_3_descriptor = physical_address
-          | (1 << 10) /*access flag*/
-          | (0b01 << 6) /*permissions*/
-          | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
-          | 0b10 /*page entry*/
-          | 0b1 /*valid descriptor*/;
+      uint64_t bit_mask = (1 << 10); // Set Access Flag
+
+      if (flags & ExecuteNever)
+        bit_mask |= (1 << 54);
+      
+      if (flags & ReadOnlyPermission)
+        bit_mask |= (1 << 7);
+
+      if (flags & UnprivilegedAccess)
+        bit_mask |= (1 << 6);
+      
+      *stage_3_descriptor = physical_address
+        | bit_mask
+        | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
+        | 0b10 /*page entry*/
+        | 0b1 /*valid descriptor*/;
 
       return true;
     }
@@ -210,9 +213,9 @@ namespace VMM
     }
   }
 
-  bool TranslationTable::map_address(uint64_t virtual_address, PageSize pg_sz)
+  bool TranslationTable::map_address(uint64_t virtual_address, uint32_t flags, PageSize pg_sz)
   {
-    return map_address(virtual_address, reinterpret_cast<uint64_t>(PhysMem::allocate_frame()), pg_sz);
+    return map_address(virtual_address, reinterpret_cast<uint64_t>(PhysMem::allocate_frame()), flags, pg_sz);
   }
 
 
@@ -370,7 +373,7 @@ namespace VMM
     // Allocate First 1 GB
     for (uint64_t virtual_address = 0xFFFF000000000000; virtual_address < 0xFFFF000040000000; virtual_address += 0x1000)
     {
-      kernel_translation_table.map_address(virtual_address, kernel_to_phys_ptr(virtual_address), TranslationTable::PageSize::KB_4);
+      kernel_translation_table.map_address(virtual_address, kernel_to_phys_ptr(virtual_address), 0, TranslationTable::PageSize::KB_4);
     }
 
     MAIR::setup_mair_el1();

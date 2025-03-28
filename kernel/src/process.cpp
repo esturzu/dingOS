@@ -12,7 +12,7 @@ ProcessContext::ProcessContext() : translation_table(VMM::TranslationTable::Gran
   // Basic Sanity Mapping
   for (uint64_t virtual_address = 0; virtual_address < 0x40000000; virtual_address += 0x1000)
   {
-    translation_table.map_address(virtual_address, VMM::kernel_to_phys_ptr(virtual_address), VMM::TranslationTable::PageSize::KB_4);
+    translation_table.map_address(virtual_address, VMM::kernel_to_phys_ptr(virtual_address), VMM::TranslationTable::UnprivilegedAccess, VMM::TranslationTable::PageSize::KB_4);
   }
 
   saved_state.pc = VMM::kernel_to_phys_ptr((uint64_t) user_mode);

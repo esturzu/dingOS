@@ -64,6 +64,10 @@ namespace VMM
       GB_1
     };
 
+    constexpr static uint32_t ExecuteNever = 0b1;
+    constexpr static uint32_t ReadOnlyPermission = 0b10;
+    constexpr static uint32_t UnprivilegedAccess = 0b100;
+
   private:
 
     enum Granule granule_size;
@@ -93,8 +97,8 @@ namespace VMM
     ~TranslationTable();
 
     bool unmap_address(uint64_t virtual_address, PageSize pg_sz = PageSize::NONE);
-    bool map_address(uint64_t virtual_address, uint64_t physical_address, PageSize pg_sz = PageSize::NONE);
-    bool map_address(uint64_t virtual_address, PageSize pg_sz = PageSize::NONE);
+    bool map_address(uint64_t virtual_address, uint64_t physical_address, uint32_t flags, PageSize pg_sz = PageSize::NONE);
+    bool map_address(uint64_t virtual_address, uint32_t flags, PageSize pg_sz = PageSize::NONE);
 
     void set_ttbr0_el1();
     void set_ttbr1_el1();
