@@ -112,7 +112,7 @@ namespace VMM
   template <typename T>
   inline T kernel_to_phys_ptr(T ptr)
   {
-    return reinterpret_cast<T>(reinterpret_cast<uint64_t>(ptr) ^ 0xFFFF000000000000);
+    return reinterpret_cast<T>(reinterpret_cast<uint64_t>(ptr) & 0xFFFFFFFFFFFF);
   }
 
   /**
@@ -124,7 +124,7 @@ namespace VMM
   template <typename T>
   inline T phys_to_kernel_ptr(T ptr)
   {
-    return reinterpret_cast<T>(reinterpret_cast<uint64_t>(ptr) ^ 0xFFFF000000000000);
+    return reinterpret_cast<T>(reinterpret_cast<uint64_t>(ptr) | 0xFFFF000000000000);
   }
 }
 

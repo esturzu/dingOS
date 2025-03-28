@@ -36,5 +36,7 @@ void ProcessContext::enter_process()
   // x = x + 1;
   // *((uint8_t*)0x0) = 5;
 
+  printf("%lu\n", get_TTBR0_EL1());
+
   exception_return();
 }
