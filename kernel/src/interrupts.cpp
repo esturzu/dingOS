@@ -1,9 +1,11 @@
 // Citations
 // https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
+// https://developer.arm.com/documentation/ddi0601/2025-03/AArch64-Registers/ESR-EL1--Exception-Syndrome-Register--EL1-
 
 #include "interrupts.h"
 
 #include "event_loop.h"
+#include "machine.h"
 #include "printf.h"
 #include "system_timer.h"
 
@@ -112,8 +114,248 @@ extern "C" void irq_handler(){
   }
 }
 
-extern "C" void synchronous_handler(uint64_t error_syndrome_register, uint64_t fault_address)
+extern "C" void synchronous_handler()
 {
-  printf("PANIC: Entered Synchronous Handler 0x%lx %p\n", error_syndrome_register, fault_address);
+  uint64_t error_syndrome_register = get_ESR_EL1();
+  uint64_t exception_class = (error_syndrome_register >> 26) & 0x3F;
+  bool trapped_32_bit_instruction = error_syndrome_register & (1 << 25);
+
+  switch (exception_class)
+  {
+    case 0b000000:
+      {
+        printf("ESR_EL1 Unknown Reason\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b000001:
+      {
+        printf("Trapped WF* instruction\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b000011:
+      {
+        printf("Trapped MCR\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b000100:
+      {
+        printf("Trapped MCRR\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b000101:
+      {
+        printf("Trapped MCR\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b000110:
+      {
+        printf("Trapped LDC or STC access\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b000111:
+      {
+        printf("Access to SME, SVE, Advanced SIMD, or floating-point\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b001010:
+      {
+        printf("Not covered error class\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b001100:
+      {
+        printf("Trapped MRRC\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b001101:
+      {
+        printf("Branch Target Exception\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b001110:
+      {
+        printf("Illegal Execution State\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b010001:
+      {
+        printf("SVC Instruction Execution in AArch32 state\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b010100:
+      {
+        printf("Trapped MSRR, MRRS, or System Instruction Execution\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b010101:
+      {
+        printf("SVC instruction execution in AArch64 state\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b011000:
+      {
+        printf("Trapped MSRR, MRRS, or System Instruction Execution\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b011001:
+      {
+        printf("Access to SVE functionality\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b011011:
+      {
+        printf("Exception from an access to a TSTART instruction\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b011100:
+      {
+        printf("Exception from a PAC Fail\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b011101:
+      {
+        printf("Access to SME functionality\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b100000:
+      {
+        printf("Instruction Abort from a lower exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b100001:
+      {
+        printf("Instruction Abort taken without a change in exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b100010:
+      {
+        printf("PC alignment fault exception\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b100100:
+      {
+        printf("Data Abort exception from a lower exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b100101:
+      {
+        printf("Data Abort exception taken without a change in exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b100110:
+      {
+        printf("SP alignment fault exception\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b100111:
+      {
+        printf("Memory Operation Exception\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b101000:
+      {
+        printf("Trapped floating-point exception taken from AArch32 state\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b101100:
+      {
+        printf("Trapped floating-point exception taken from AArch64 state\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b101101:
+      {
+        printf("GCS exception\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b101111:
+      {
+        printf("SError exception\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b110000:
+      {
+        printf("Breakpoint exception from a lower exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b110001:
+      {
+        printf("Breakpoint exception taken without a change in exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b110010:
+      {
+        printf("Software Step exception from a lower exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b110011:
+      {
+        printf("Software step exception take without a change in exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b110100:
+      {
+        printf("Watchpoint exception from a lower exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b110101:
+      {
+        printf("Watchpoint exception taken without a change in exception level\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b111000:
+      {
+        printf("BKPT instruction execution in AArch32 state\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    case 0b111100:
+      {
+        printf("BKPT instruction execution in AArch64 state\n");
+        while(1){} // Replace with PANIC
+      }
+      break;
+    default:
+      {
+        printf("Unknown ESR_EL1 Value\n");
+        while(1){} // Replace with PANIC
+      }
+  }
+
   while(1){}
 }

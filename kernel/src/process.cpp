@@ -31,5 +31,7 @@ void Process::run()
   
   translation_table.set_ttbr0_el1();
 
+  printf("Here\n");
+
   enter_process(&context);
 }
