@@ -47,8 +47,8 @@ extern "C" void kernelMain() {
 
   // event_loop();
 
-  ProcessContext pc{};
-  pc.enter_process();
+  Process proc{};
+  proc.run();
 
   while (1)
     ;

@@ -180,7 +180,7 @@ namespace VMM
       uint64_t bit_mask = (1 << 10); // Set Access Flag
 
       if (flags & ExecuteNever)
-        bit_mask |= (1 << 54);
+        bit_mask |= (1UL << 54);
       
       if (flags & ReadOnlyPermission)
         bit_mask |= (1 << 7);

@@ -3,26 +3,60 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
-class ProcessContext
+struct ProcessContext
 {
+  uint64_t pc;
+  uint64_t sp;
+  uint64_t status_register = {0x0};
+  uint64_t x0 {0};
+  uint64_t x1 {0};
+  uint64_t x2 {0};
+  uint64_t x3 {0};
+  uint64_t x4 {0};
+  uint64_t x5 {0};
+  uint64_t x6 {0};
+  uint64_t x7 {0};
+  uint64_t x8 {0};
+  uint64_t x9 {0};
+  uint64_t x10 {0};
+  uint64_t x11 {0};
+  uint64_t x12 {0};
+  uint64_t x13 {0};
+  uint64_t x14 {0};
+  uint64_t x15 {0};
+  uint64_t x16 {0};
+  uint64_t x17 {0};
+  uint64_t x18 {0};
+  uint64_t x19 {0};
+  uint64_t x20 {0};
+  uint64_t x21 {0};
+  uint64_t x22 {0};
+  uint64_t x23 {0};
+  uint64_t x24 {0};
+  uint64_t x25 {0};
+  uint64_t x26 {0};
+  uint64_t x27 {0};
+  uint64_t x28 {0};
+  uint64_t x29 {0};
+  uint64_t x30 {0};
+  uint64_t x31 {0}; // Link Register
 
+  ProcessContext() : pc(0), sp(0) {}
+  ProcessContext(uint64_t entry_point, uint64_t initial_sp) : pc(entry_point), sp(initial_sp) {}
+};
+
+class Process
+{
   VMM::TranslationTable translation_table;
 
-  struct
-  {
-    uint64_t pc;
-    uint64_t x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;
-    uint64_t x16, x17, x18, x19, x20, x21, x22, x23, x24, x25, x26, x27, x28, x29, x30;
-    uint64_t sp;
-  } saved_state;
+  ProcessContext context;
 
 public:
 
-  ProcessContext();
-  ~ProcessContext();
+  Process();
+  ~Process();
 
-  void enter_process ();
-
+  void run();
 };
 
 #endif
