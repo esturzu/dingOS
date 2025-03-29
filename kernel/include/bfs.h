@@ -13,12 +13,36 @@
 #define MAGIC_NUMBER 0xDEADBEEF  // Magic number for FS verification
 
 // Superblock structure (keeps metadata)
-struct Superblock {
-    uint32_t magic;
-    uint32_t total_blocks;
-    uint32_t free_blocks;
-    uint32_t block_size;
-};
+struct super_block {
+    uint32_t num_iNodes;             // 0x00
+    uint32_t num_Blocks;             // 0x04
+    char pad0[16];                   // 0x08–0x17 (reserved blocks, etc.)
+    uint32_t block_size;             // 0x18
+    char pad1[4];                    // 0x1C
+    uint32_t num_blocks_pergroup;   // 0x20
+    char pad2[4];                    // 0x24
+    uint32_t num_iNode_pergroup;    // 0x28
+    char pad3[12];                   // 0x2C–0x37
+    uint16_t magic;                 // 0x38 ← EXT2 magic number (0xEF53)
+    char pad4[30];                   // 0x3A–0x57 (whatever follows)
+    uint16_t iNode_size;             // 0x58
+} __attribute__((packed));
+
+struct group_descriptor {
+    uint32_t block_bitmap;      // Block ID of block bitmap
+    uint32_t inode_bitmap;      // Block ID of inode bitmap
+    uint32_t inode_table;       // Block ID of inode table ← we want this
+    char unused[52];            // Padding to match ext2 size (64 bytes)
+} __attribute__((packed));
+
+
+struct ext2_dir_entry {
+    uint32_t inode;
+    uint16_t rec_len;
+    uint8_t  name_len;
+    uint8_t  file_type;
+    char name[255]; // not null-terminated
+} __attribute__((packed));
 
 // Inode structure (stores file metadata)
 struct Inode {
