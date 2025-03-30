@@ -217,6 +217,8 @@ extern "C" void free(void* ptr) {
     // Mark the pointer where the block was as free so any attempts to free it again result
     // in failure
     char* block_temp = (char*) new_start_block;
+
+    // Zeroes out region to avoid possible region interference
     for (int i = 0; i < new_region_size; i++) {
         block_temp[i] = 0;
     }
