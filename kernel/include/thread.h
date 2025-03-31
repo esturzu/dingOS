@@ -36,6 +36,7 @@ struct TCB {
 LocklessQueue<TCB*> userQueue;
 
 // Currently running thread (initially NULL or IDLE thread)
+// Will have to be set on a per-core basis with an initial value, could be a dummy thread whose only purpose is to yield, but not entirely required.
 TCB* currentThread = nullptr;
 
 void schedule_event(std::function<void()> work) {
@@ -45,8 +46,10 @@ void schedule_event(std::function<void()> work) {
 
 // Basic thread context switch (stub for illustration purposes)
 void context_switch(TCB* from, TCB* to) {
+    currentThread = to;
     save_context(from);
     restore_context(to);
+    currentThread = from;
 }
 
 // Basic thread yield (for voluntary yielding)
