@@ -50,13 +50,15 @@ void context_switch(TCB* from, TCB* to) {
 }
 
 // Basic thread yield (for voluntary yielding)
-void thread_yield() {
+void thread_yield(bool to_block) {
     if (currentThread != nullptr) {
         // Mark current thread as ready
         currentThread->state = ThreadState::READY;
 
-        // Place it back in the ready queue
-        userQueue.enqueue(currentThread);
+        if (to_block) {
+            // Place it back in the ready queue
+            userQueue.enqueue(currentThread);
+        }
 
         // Pick the next thread to run
         if (!userQueue.is_empty()) {
@@ -78,8 +80,9 @@ void thread_block(LocklessQueue<TCB*>& target_queue, SpinLock& lock) {
         // Place it on the target queue (per-semaphore queue)
         target_queue.enqueue(currentThread);
 
+        lock.unlock();
         // Switch to another ready thread
-        thread_yield();
+        thread_yield(true);
     }
 }
 
