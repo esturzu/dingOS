@@ -4,7 +4,7 @@
 #include "physmem.h"
 #include "printf.h"
 #include "stdint.h"
-#include "sd.h"  // Now directly using SD instead of BlockIO
+#include "sd.h"  
 
 // Filesystem constants
 #define BLOCK_SIZE 1024
@@ -13,22 +13,22 @@
 #define MAGIC_NUMBER 0xDEADBEEF  // Magic number for FS verification
 
 // Superblock structure (keeps metadata)
-struct super_block {
-    uint32_t num_iNodes;             // 0x00
-    uint32_t num_Blocks;             // 0x04
-    char pad0[16];                   // 0x08–0x17 (reserved blocks, etc.)
-    uint32_t block_size;             // 0x18
-    char pad1[4];                    // 0x1C
-    uint32_t num_blocks_pergroup;   // 0x20
-    char pad2[4];                    // 0x24
-    uint32_t num_iNode_pergroup;    // 0x28
-    char pad3[12];                   // 0x2C–0x37
-    uint16_t magic;                 // 0x38 ← EXT2 magic number (0xEF53)
-    char pad4[30];                   // 0x3A–0x57 (whatever follows)
-    uint16_t iNode_size;             // 0x58
+struct super_block_bfs {
+    uint32_t num_iNodes;
+    uint32_t num_Blocks;
+    char pad0[16];
+    uint32_t block_size;
+    char pad1[4];
+    uint32_t num_blocks_pergroup;
+    char pad2[4];
+    uint32_t num_iNode_pergroup;
+    char pad3[12];
+    uint16_t magic;
+    char pad4[30];
+    uint16_t iNode_size;
 } __attribute__((packed));
 
-struct group_descriptor {
+struct group_descriptor_bfs {
     uint32_t bit_map_block_address;
     uint32_t bit_map_iNode_address;
     uint32_t startingBlockAddress;
@@ -38,8 +38,7 @@ struct group_descriptor {
     char pad0[14];
 }__attribute__((packed));
 
-
-struct ext2_dir_entry {
+struct ext2_dir_entry_bfs {
     uint32_t iNodeNum;
     uint16_t size_entry;
     uint8_t name_length;
@@ -47,8 +46,7 @@ struct ext2_dir_entry {
     char* name_characters;
 };
 
-
-struct Inode {
+struct Inode_bfs {
     uint16_t types_plus_perm;
     char pad0[2];
     uint32_t size_of_iNode;
@@ -62,18 +60,17 @@ struct Inode {
     char pad3[28];
 };
 
-// File table entry (maps filenames to inodes)
-struct FileEntry {
+struct FileEntry_bfs {
     char name[MAX_FILENAME];
     uint32_t inode_index;
 };
 
 // Public API
-void strncpy(char* dest, const char* src, uint32_t n);
-void fs_init();  // Initialize the filesystem
-int fs_create(const char* name, uint32_t size);  // Create a file
-int fs_read(const char* name, char* buffer);  // Read a file
-int fs_write(const char* name, const char* data, uint32_t size);  // Write to a file
-void fs_list();  // List all files
+void strncpy_bfs(char* dest, const char* src, uint32_t n);
+void fs_init_bfs();
+int fs_create_bfs(const char* name, uint32_t size);
+int fs_read_bfs(const char* name, char* buffer);
+int fs_write_bfs(const char* name, const char* data, uint32_t size);
+void fs_list_bfs();
 
 #endif  // _BFS_H_

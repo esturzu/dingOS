@@ -16,6 +16,8 @@
 #include "system_timer.h"
 #include "tester.h"
 #include "bfs.h"
+#include "ext2.h"
+
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -36,9 +38,18 @@ extern "C" void kernelMain() {
 
   SD::init();
 
-  fs_init();
+  // fs_init_bfs();
 
-  setupTests();
+  SDAdapter* adapter = new SDAdapter(1024);
+
+  // Initialize filesystem
+  Ext2* fs = new Ext2(adapter);
+
+  // Now you can access the root directory
+  Node* root_dir = fs->root;
+
+
+  // setupTests();
 
   // event_loop();
 

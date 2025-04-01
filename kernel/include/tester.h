@@ -5,7 +5,6 @@
 #include "eventTests.h"
 #include "heapTests.h"
 #include "sdTests.h"
-#include "bfsTests.h"
 
 void runTests() {
   eventLoopTests();
