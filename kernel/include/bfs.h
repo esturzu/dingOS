@@ -7,7 +7,7 @@
 #include "sd.h"  // Now directly using SD instead of BlockIO
 
 // Filesystem constants
-#define BLOCK_SIZE 4096
+#define BLOCK_SIZE 1024
 #define MAX_FILES 32
 #define MAX_FILENAME 32
 #define MAGIC_NUMBER 0xDEADBEEF  // Magic number for FS verification
@@ -29,25 +29,37 @@ struct super_block {
 } __attribute__((packed));
 
 struct group_descriptor {
-    uint32_t block_bitmap;      // Block ID of block bitmap
-    uint32_t inode_bitmap;      // Block ID of inode bitmap
-    uint32_t inode_table;       // Block ID of inode table ← we want this
-    char unused[52];            // Padding to match ext2 size (64 bytes)
-} __attribute__((packed));
+    uint32_t bit_map_block_address;
+    uint32_t bit_map_iNode_address;
+    uint32_t startingBlockAddress;
+    uint16_t num_unallocated_blocks;
+    uint16_t num_unallocated_iNodes;
+    uint16_t num_unallocated_directories;
+    char pad0[14];
+}__attribute__((packed));
 
 
 struct ext2_dir_entry {
-    uint32_t inode;
-    uint16_t rec_len;
-    uint8_t  name_len;
-    uint8_t  file_type;
-    char name[255]; // not null-terminated
-} __attribute__((packed));
+    uint32_t iNodeNum;
+    uint16_t size_entry;
+    uint8_t name_length;
+    uint8_t type_indicator;
+    char* name_characters;
+};
 
-// Inode structure (stores file metadata)
+
 struct Inode {
-    uint32_t size;
-    uint32_t direct_blocks[12];
+    uint16_t types_plus_perm;
+    char pad0[2];
+    uint32_t size_of_iNode;
+    char pad1[18];
+    uint16_t num_Hard_Links;
+    char pad2[12];
+    uint32_t directLinked[12];
+    uint32_t singleIndirect;
+    uint32_t doubleIndirect;
+    uint32_t tripleIndirect;
+    char pad3[28];
 };
 
 // File table entry (maps filenames to inodes)
