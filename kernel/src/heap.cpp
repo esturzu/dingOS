@@ -3,6 +3,7 @@
 #include "printf.h"
 #include "stdint.h"
 #include "definitions.h"
+#include "vmm.h"
 
 // For any sort of reference, you can look up implict free list or use
 // this PDF to understand: https://my.eng.utah.edu/~cs4400/malloc-2.pdf
@@ -95,7 +96,7 @@ void heap_init() {
       heap[i] = 0;
     }
 
-    debug_printf("Heap Start: 0x%X, Heap Size: 0x%X, Heap End: 0x%X\n", (size_t) &_heap_start,
+    debug_printf("Heap Start: 0x%lx, Heap Size: 0x%lx, Heap End: 0x%lx\n", (size_t) &_heap_start,
                 heap_size, (size_t)&_heap_end);
 
     // Sets guard regions and free space

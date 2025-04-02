@@ -4,11 +4,17 @@
 
 void user_mode()
 {
-  printf("Hello User Space\n");
+  while(1)
+  {
+    asm volatile (
+      "svc 0" 
+    );
+  }
 }
 
 Process::Process() : translation_table(VMM::TranslationTable::Granule::KB_4), context(VMM::kernel_to_phys_ptr((uint64_t) user_mode), 0x800000)
 {
+  printf("Here\n");
   // Basic Sanity Mapping
   for (uint64_t virtual_address = 0; virtual_address < 0x40000000; virtual_address += 0x1000)
   {

@@ -3,6 +3,7 @@
 
 #include "kernel.h"
 
+#include "arm_timer.h"
 #include "cores.h"
 #include "crti.h"
 #include "event_loop.h"
@@ -29,6 +30,8 @@ extern "C" void kernelMain() {
 
   printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
+  // ARMTimer::setup_timer();
+
   heap_init();
   init_event_loop();
 
@@ -45,10 +48,12 @@ extern "C" void kernelMain() {
 
   // setupTests();
 
-  // event_loop();
+  schedule_event([]{
+    Process* proc = new Process();
+    proc->run();
+  });
 
-  Process proc{};
-  proc.run();
+  event_loop();
 
   while (1)
     ;

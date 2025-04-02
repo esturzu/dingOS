@@ -187,12 +187,23 @@ namespace VMM
 
       if (flags & UnprivilegedAccess)
         bit_mask |= (1 << 6);
-      
-      *stage_3_descriptor = physical_address
-        | bit_mask
-        | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
-        | 0b10 /*page entry*/
-        | 0b1 /*valid descriptor*/;
+
+      if (flags & DeviceMemory)
+      {
+        *stage_3_descriptor = physical_address
+          | bit_mask
+          | (MAIR::get_mair_mask(MAIR::Attribute::Device_nGnRnE) << 2)
+          | 0b10 /*page entry*/
+          | 0b1 /*valid descriptor*/;
+      }
+      else
+      {
+        *stage_3_descriptor = physical_address
+          | bit_mask
+          | (MAIR::get_mair_mask(MAIR::Attribute::NormalMemory) << 2)
+          | 0b10 /*page entry*/
+          | 0b1 /*valid descriptor*/;
+      }
 
       return true;
     }
@@ -375,6 +386,9 @@ namespace VMM
     {
       kernel_translation_table.map_address(virtual_address, kernel_to_phys_ptr(virtual_address), 0, TranslationTable::PageSize::KB_4);
     }
+
+    kernel_translation_table.map_address(0xFFFF000040000000, kernel_to_phys_ptr(0xFFFF000040000000), TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
+    kernel_translation_table.map_address(0xFFFF000040001000, kernel_to_phys_ptr(0xFFFF000040001000), TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
 
     MAIR::setup_mair_el1();
 

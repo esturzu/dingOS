@@ -7,6 +7,7 @@
 #include "event_loop.h"
 #include "machine.h"
 #include "printf.h"
+#include "system_call.h"
 #include "system_timer.h"
 
 #define INTERRUPT_STACK_SIZE 4096
@@ -103,6 +104,8 @@ extern "C" void fiq_handler()
 }
 
 extern "C" void irq_handler(){
+  printf("Here\n");
+
   uint32_t irq_pending_1 = Interrupts::get_IRQ_pending_1_register();
 
   // System Timer 1 Interrupt
@@ -114,7 +117,7 @@ extern "C" void irq_handler(){
   }
 }
 
-extern "C" void synchronous_handler()
+extern "C" void synchronous_handler(uint64_t* saved_state)
 {
   uint64_t error_syndrome_register = get_ESR_EL1();
   uint64_t exception_class = (error_syndrome_register >> 26) & 0x3F;
@@ -203,6 +206,8 @@ extern "C" void synchronous_handler()
     case 0b010101:
       {
         printf("SVC instruction execution in AArch64 state\n");
+        uint16_t syscall_type = error_syndrome_register & 0xFFFF;
+        system_call_handler(syscall_type, saved_state);
         while(1){} // Replace with PANIC
       }
       break;

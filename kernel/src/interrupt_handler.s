@@ -95,9 +95,10 @@ irq_handler_:
   add sp, sp, #248
   eret
 
+.extern cpu0_interrupt_stack
 .extern synchronous_handler
 synchronous_handler_:
-  sub sp, sp, #248                    // Save State
+  sub sp, sp, #256                    // Save State
   stp x0, x1, [sp, #0x0]
   stp x2, x3, [sp, #0x10]
   stp x4, x5, [sp, #0x20]
@@ -114,7 +115,8 @@ synchronous_handler_:
   stp x26, x27, [sp, #0xd0]
   stp x28, x29, [sp, #0xe0]
   str x30, [sp, #0xf0]
-
+  
+  mov x0, sp
   bl synchronous_handler              // Call Handler
 
   ldp x0, x1, [sp, #0x0]              // Return State
@@ -133,6 +135,6 @@ synchronous_handler_:
   ldp x26, x27, [sp, #0xd0]
   ldp x28, x29, [sp, #0xe0]
   ldr x30, [sp, #0xf0]
-  add sp, sp, #248
+  add sp, sp, #256
 
   eret

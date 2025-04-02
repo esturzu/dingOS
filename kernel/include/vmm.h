@@ -67,6 +67,7 @@ namespace VMM
     constexpr static uint32_t ExecuteNever = 0b1;
     constexpr static uint32_t ReadOnlyPermission = 0b10;
     constexpr static uint32_t UnprivilegedAccess = 0b100;
+    constexpr static uint32_t DeviceMemory = 0b1000;
 
   private:
 
