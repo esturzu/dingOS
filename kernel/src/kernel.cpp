@@ -3,6 +3,7 @@
 
 #include "kernel.h"
 
+#include "local_timer.h"
 #include "cores.h"
 #include "crti.h"
 #include "event_loop.h"
@@ -11,20 +12,25 @@
 #include "machine.h"
 #include "physmem.h"
 #include "printf.h"
+#include "process.h"
 #include "sd.h"
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
 #include "bfs.h"
+#include "vmm.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
+  PhysMem::page_init();
+
   CRTI::_init();
 
-  debug_printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
+  VMM::init();
+
+  printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
   heap_init();
-  PhysMem::page_init();
   init_event_loop();
 
   printf("DingOS is Booting!\n");
@@ -32,15 +38,24 @@ extern "C" void kernelMain() {
 
   SMP::bootCores();
 
-  run_page_tests();
+  LocalTimer::setup_timer();
 
-  SD::init();
+  while (true) {}
 
-  fs_init();
+  // run_page_tests();
 
-  setupTests();
+  // SD::init();
 
-  // event_loop();
+  // fs_init();
+
+  // setupTests();
+
+  schedule_event([]{
+    Process* proc = new Process();
+    proc->run();
+  });
+
+  event_loop();
 
   while (1)
     ;
