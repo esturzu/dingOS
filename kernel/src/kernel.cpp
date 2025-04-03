@@ -3,7 +3,7 @@
 
 #include "kernel.h"
 
-#include "arm_timer.h"
+#include "local_timer.h"
 #include "cores.h"
 #include "crti.h"
 #include "event_loop.h"
@@ -38,7 +38,9 @@ extern "C" void kernelMain() {
 
   SMP::bootCores();
 
-  ARMTimer::setup_timer();
+  LocalTimer::setup_timer();
+
+  while (true) {}
 
   // run_page_tests();
 

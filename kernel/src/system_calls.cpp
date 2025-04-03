@@ -16,4 +16,6 @@ uint64_t system_call_handler (uint16_t syscall_type, uint64_t* saved_state)
         while (true) {}
       }
   }
+
+  return 0;
 }
