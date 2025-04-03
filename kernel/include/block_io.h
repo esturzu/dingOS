@@ -19,6 +19,8 @@
 //      and block numbers are in bounds:
 //           block_number < number_of_blocks
 //           byte offset < size_in_bytes
+
+// citation: p much a copy paste of the blockio from 439
 //           
 //
 class BlockIO {

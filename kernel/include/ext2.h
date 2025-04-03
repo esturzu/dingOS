@@ -9,11 +9,11 @@
 /*
  * EXT2 Filesystem Implementation
  * 
- * This implementation provides read-only access to EXT2 filesystems on an SD card.
+ * This implementation provides access to EXT2 filesystems on an SD card.
  * It includes functionality to:
  * - Read the superblock and block group descriptor table
  * - Navigate the directory structure
- * - Read files
+ * - Read and write files
  * 
  * Design overview:
  * - SDAdapter: Bridges between BlockIO and SD card operations
@@ -123,10 +123,36 @@ public:
         }
     }
     
-    // Write a block to the SD card (stub implementation)
+    // Write a block to the SD card
     void write_block(uint32_t block_number, char* buffer, uint32_t offset, uint32_t n) override {
-        // Not implemented for read-only filesystem
-        printf("SDAdapter::write_block: Not implemented\n");
+        // Calculate SD card sector
+        uint32_t sd_block_count = block_size / SD::BLOCKSIZE;
+        uint32_t sd_start = block_number * sd_block_count;
+        
+        // If we need to modify part of a block, first read the entire block
+        if (offset > 0 || n < block_size) {
+            uint8_t* temp_buffer = new uint8_t[block_size];
+            SD::read(sd_start, sd_block_count, temp_buffer);
+            
+            // Update the portion that needs to change
+            for (uint32_t i = 0; i < n; i++) {
+                temp_buffer[offset + i] = buffer[i];
+            }
+            
+            // Write the modified block back
+            uint32_t bytes = SD::write(sd_start, sd_block_count, temp_buffer);
+            delete[] temp_buffer;
+            
+            if (bytes != block_size) {
+                printf("SDAdapter::write_block: Failed to write block %u\n", block_number);
+            }
+        } else {
+            // Simple case - writing an entire block
+            uint32_t bytes = SD::write(sd_start, sd_block_count, (uint8_t*)buffer);
+            if (bytes != block_size) {
+                printf("SDAdapter::write_block: Failed to write block %u\n", block_number);
+            }
+        }
     }
 };
 
@@ -184,7 +210,7 @@ public:
     // Returns the size of this node in bytes
     uint32_t size_in_bytes() override {
         if (is_dir()) {
-            // For directories, we'll count entries later
+            // For directories, use the stored size
             return node->size_of_iNode;
         } else if (is_file()) {
             // For files, return the file size
@@ -217,11 +243,14 @@ public:
         }
     }
     
-    // Write a block to this node (stub implementation)
-    void write_block(uint32_t block_number, char* buffer, uint32_t offset, uint32_t n) override {
-        // Not implemented for read-only filesystem
-        printf("Node::write_block: Not implemented\n");
-    }
+    // Write a block to this node
+    void write_block(uint32_t block_number, char* buffer, uint32_t offset, uint32_t n) override;
+
+    // Update inode on disk after changes
+    void update_inode_on_disk();
+
+    // Find and allocate a free block
+    uint32_t allocate_block();
     
     // Extract the file type from the mode/permissions field
     uint32_t get_type() {
@@ -258,9 +287,10 @@ public:
 class Ext2 {
 public:
     Node* root;  // Root directory node (always inode 2 in ext2)
+    SDAdapter* adapter; // Store the adapter for later use
     
     // Constructor mounts the filesystem
-    Ext2(SDAdapter* adapter) {
+    Ext2(SDAdapter* adapter) : adapter(adapter) {
         // Read the superblock
         supa = new super_block();
         adapter->read_all(EXT2_SB_OFFSET, sizeof(super_block), (char*)supa);
@@ -298,6 +328,13 @@ public:
             bgdt->num_unallocated_iNodes);
     }
     
+    // Destructor
+    ~Ext2() {
+        delete root;
+        delete supa;
+        delete bgdt;
+    }
+    
     // Returns the block size of the filesystem
     uint32_t get_block_size() {
         return 1024 << supa->block_size;
@@ -315,7 +352,14 @@ public:
  * These functions provide the main operations for navigating and reading
  * from the filesystem.
  */
+// Get string length (safe replacement for strlen)
+uint32_t strlen_ext(const char* str);
 
+// Fill memory with zeros (safe replacement for memset)
+void zero_memory(void* buffer, uint32_t size);
+
+// Dump a block's contents for debugging
+void dump_block(uint32_t block_number);
 // String comparison utility
 bool streq_ext(const char* a, const char* b);
 
@@ -328,8 +372,23 @@ Node* find_in_directory(Node* dir, const char* name);
 // Read a file's contents into a buffer
 int read_file(Node* file, char* buffer, uint32_t max_size);
 
+// Create a new file in a directory
+Node* create_file(Node* dir, const char* name);
+
+// Allocate a new inode from the inode bitmap
+uint32_t allocate_inode(Node* dir);
+
+// Initialize a new inode with the given type
+void create_inode(uint32_t inode_num, uint16_t type, SDAdapter* adapter);
+
+// Add a directory entry for a new file/directory
+void add_dir_entry(Node* dir, const char* name, uint32_t inode_num);
+
 // Test the directory traversal functionality
 void test_directory_traversal();
+
+// Test creating and writing to a file
+void test_file_creation();
 
 // Initialize the filesystem
 void init_ext2();
