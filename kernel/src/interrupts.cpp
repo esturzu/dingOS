@@ -4,6 +4,7 @@
 
 #include "interrupts.h"
 
+#include "arm_timer.h"
 #include "event_loop.h"
 #include "machine.h"
 #include "printf.h"
@@ -103,8 +104,13 @@ extern "C" void fiq_handler()
  
 }
 
-extern "C" void irq_handler(){
-  printf("Here\n");
+extern "C" void irq_handler(uint64_t* saved_state)
+{
+  printf("XD\n");
+
+  volatile uint32_t* timer_clear_reload_register =
+    (volatile uint32_t*)(ARMTimer::system_timer_base_address + ARMTimer::timer_clear_reload_offset);
+  *timer_clear_reload_register = (1 << 31) | (1 << 30);
 
   uint32_t irq_pending_1 = Interrupts::get_IRQ_pending_1_register();
 

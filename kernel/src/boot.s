@@ -19,8 +19,8 @@ _start:
   msr CPACR_EL1, x0
   bl setup_kernel_vm
   bl enable_kernel_vm
-  adrp x0, :pg_hi21:el1_vector_table   // Enable Interrupts
-  add x0, x0, :lo12:el1_vector_table
+  adrp x0, :pg_hi21:core_0_el1_vector_table   // Enable Interrupts
+  add x0, x0, :lo12:core_0_el1_vector_table
   orr x0, x0, 0xFFFF000000000000
   msr VBAR_EL1, x0
   eret
@@ -41,8 +41,8 @@ _start_core1:
   mov x0, #0x100000   // Allows el1 to execute floating point unit without exception
   msr CPACR_EL1, x0
   bl enable_kernel_vm
-  adrp x0, :pg_hi21:el1_vector_table   // Enable Interrupts
-  add x0, x0, :lo12:el1_vector_table
+  adrp x0, :pg_hi21:core_1_el1_vector_table   // Enable Interrupts
+  add x0, x0, :lo12:core_1_el1_vector_table
   orr x0, x0, 0xFFFF000000000000
   msr VBAR_EL1, x0
   eret
@@ -63,8 +63,8 @@ _start_core2:
   mov x0, #0x100000   // Allows el1 to execute floating point unit without exception
   msr CPACR_EL1, x0
   bl enable_kernel_vm
-  adrp x0, :pg_hi21:el1_vector_table   // Enable Interrupts
-  add x0, x0, :lo12:el1_vector_table
+  adrp x0, :pg_hi21:core_2_el1_vector_table   // Enable Interrupts
+  add x0, x0, :lo12:core_2_el1_vector_table
   orr x0, x0, 0xFFFF000000000000
   msr VBAR_EL1, x0
   eret
@@ -85,8 +85,8 @@ _start_core3:
   mov x0, #0x100000   // Allows el1 to execute floating point unit without exception
   msr CPACR_EL1, x0
   bl enable_kernel_vm
-  adrp x0, :pg_hi21:el1_vector_table   // Enable Interrupts
-  add x0, x0, :lo12:el1_vector_table
+  adrp x0, :pg_hi21:core_3_el1_vector_table   // Enable Interrupts
+  add x0, x0, :lo12:core_3_el1_vector_table
   orr x0, x0, 0xFFFF000000000000
   msr VBAR_EL1, x0
   eret

@@ -30,15 +30,15 @@ extern "C" void kernelMain() {
 
   printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
 
-  // ARMTimer::setup_timer();
-
   heap_init();
   init_event_loop();
 
   printf("DingOS is Booting!\n");
   debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
-  // SMP::bootCores();
+  SMP::bootCores();
+
+  ARMTimer::setup_timer();
 
   // run_page_tests();
 
