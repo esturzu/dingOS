@@ -52,7 +52,7 @@ void mark_free(size_t position, size_t block_size) {
   // If there is a free list already built, add this to the head and mark it as the 
   // next free block for the previous head.
   if (prev_block != 0) {
-    int* previous_block_start = (int*)prev_block;
+    int* previous_block_start = (int*)(VMM::phys_to_kernel_ptr(prev_block));
     previous_block_start[3] = position;
   }
   prev_block = position;
@@ -74,13 +74,13 @@ void remove(size_t position) {
     // If it is not the head, cut it out of the list (aim next's previous at
     // the current block's previous)
     else {
-        int* next_block = (int*)next;
+        int* next_block = (int*)(VMM::phys_to_kernel_ptr(next));
         next_block[2] = previous;
     }
 
     // If a previous exists, aim its next at the current block's next
     if (previous != 0) {
-        int* previous_block = (int*)previous;
+        int* previous_block = (int*)(VMM::phys_to_kernel_ptr(previous));
         previous_block[3] = next;
     }
 }
@@ -122,7 +122,7 @@ void* malloc(size_t size, size_t alignment) {
 
     // Loops through the free list to try to identify the best fit block.
     // Maybe improve by limiting amount of searches if fragmentation becomes too high
-    while (current != 0) {
+    while (VMM::kernel_to_phys_ptr(current) != 0) {
         long* current_block = (long*) current;
         // If the current block is already allocated, we have a problem
         if (current_block[0] < 0) {
@@ -138,7 +138,7 @@ void* malloc(size_t size, size_t alignment) {
             }
         }
         // Go to the next block in the list.
-        current = ((int*)current)[2];
+        current = VMM::phys_to_kernel_ptr((uint64_t) ((int*)current)[2]);
     }
 
     // If there is a block that will fit
