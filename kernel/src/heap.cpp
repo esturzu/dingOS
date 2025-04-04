@@ -207,14 +207,12 @@ extern "C" void free(void* ptr) {
         remove((uint64_t)left_block);
         new_start_block = (uint64_t)left_block;
         new_region_size += left_block_size + 16;
-        printf("Col Left\n");
     }
 
     // Repeat for right side
     if (right_block_size > 0) {
         remove((uint64_t)right_block);
         new_region_size += right_block_size + 16;
-        printf("Col Right\n");
     }
 
     // Mark the pointer where the block was as free so any attempts to free it again result

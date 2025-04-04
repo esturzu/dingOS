@@ -304,7 +304,7 @@ extern "C" void synchronous_handler(uint64_t* saved_state)
       break;
     case 0b100101:
       {
-        printf("Data Abort exception taken without a change in exception level\n");
+        printf("Data Abort exception taken without a change in exception level %lx %lx\n", get_ESR_EL1(), get_FAR_EL1());
         while(1){} // Replace with PANIC
       }
       break;

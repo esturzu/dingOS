@@ -1,61 +1,62 @@
 
 #include "sd.h"
+#include "vmm.h"
 
 // SD emmc registers
 volatile uint32_t* const SD::EMMC_BASE =
-    (volatile uint32_t*)0x3F300000;  // 0x3F300000 + 0x00
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300000);  // 0x3F300000 + 0x00
 volatile uint32_t* const SD::EMMC_ARG2 =
-    (volatile uint32_t*)0x3F300000;  // 0x3F300000 + 0x00
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300000);  // 0x3F300000 + 0x00
 volatile uint32_t* const SD::EMMC_BLKSIZECNT =
-    (volatile uint32_t*)0x3F300004;  // 0x3F300000 + 0x04
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300004);  // 0x3F300000 + 0x04
 volatile uint32_t* const SD::EMMC_ARG1 =
-    (volatile uint32_t*)0x3F300008;  // 0x3F300000 + 0x08
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300008);  // 0x3F300000 + 0x08
 volatile uint32_t* const SD::EMMC_CMDTM =
-    (volatile uint32_t*)0x3F30000C;  // 0x3F300000 + 0x0C
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F30000C);  // 0x3F300000 + 0x0C
 volatile uint32_t* const SD::EMMC_RESP0 =
-    (volatile uint32_t*)0x3F300010;  // 0x3F300000 + 0x10
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300010);  // 0x3F300000 + 0x10
 volatile uint32_t* const SD::EMMC_RESP1 =
-    (volatile uint32_t*)0x3F300014;  // 0x3F300000 + 0x14
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300014);  // 0x3F300000 + 0x14
 volatile uint32_t* const SD::EMMC_RESP2 =
-    (volatile uint32_t*)0x3F300018;  // 0x3F300000 + 0x18
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300018);  // 0x3F300000 + 0x18
 volatile uint32_t* const SD::EMMC_RESP3 =
-    (volatile uint32_t*)0x3F30001C;  // 0x3F300000 + 0x1C
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F30001C);  // 0x3F300000 + 0x1C
 volatile uint32_t* const SD::EMMC_DATA =
-    (volatile uint32_t*)0x3F300020;  // 0x3F300000 + 0x20
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300020);  // 0x3F300000 + 0x20
 volatile uint32_t* const SD::EMMC_STATUS =
-    (volatile uint32_t*)0x3F300024;  // 0x3F300000 + 0x24
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300024);  // 0x3F300000 + 0x24
 volatile uint32_t* const SD::EMMC_CONTROL0 =
-    (volatile uint32_t*)0x3F300028;  // 0x3F300000 + 0x28
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300028);  // 0x3F300000 + 0x28
 volatile uint32_t* const SD::EMMC_CONTROL1 =
-    (volatile uint32_t*)0x3F30002C;  // 0x3F300000 + 0x2C
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F30002C);  // 0x3F300000 + 0x2C
 volatile uint32_t* const SD::EMMC_INTERRUPT =
-    (volatile uint32_t*)0x3F300030;  // 0x3F300000 + 0x30
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300030);  // 0x3F300000 + 0x30
 volatile uint32_t* const SD::EMMC_IRPT_MASK =
-    (volatile uint32_t*)0x3F300034;  // 0x3F300000 + 0x34
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300034);  // 0x3F300000 + 0x34
 volatile uint32_t* const SD::EMMC_IPRT_EN =
-    (volatile uint32_t*)0x3F300038;  // 0x3F300000 + 0x38
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300038);  // 0x3F300000 + 0x38
 volatile uint32_t* const SD::EMMC_CONTROL2 =
-    (volatile uint32_t*)0x3F30003C;  // 0x3F300000 + 0x3c
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F30003C);  // 0x3F300000 + 0x3c
 volatile uint32_t* const SD::EMMC_FORCE_IRPT =
-    (volatile uint32_t*)0x3F300050;  // 0x3F300000 + 0x50
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300050);  // 0x3F300000 + 0x50
 volatile uint32_t* const SD::EMMC_BOOT_TIMEOUT =
-    (volatile uint32_t*)0x3F300070;  // 0x3F300000 + 0x70
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300070);  // 0x3F300000 + 0x70
 volatile uint32_t* const SD::EMMC_DBG_SEL =
-    (volatile uint32_t*)0x3F300074;  // 0x3F300000 + 0x74
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300074);  // 0x3F300000 + 0x74
 volatile uint32_t* const SD::EMMC_EXRDFIFIO_CFG =
-    (volatile uint32_t*)0x3F300080;  // 0x3F300000 + 0x80
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300080);  // 0x3F300000 + 0x80
 volatile uint32_t* const SD::EMMC_EXRDFIFO_EN =
-    (volatile uint32_t*)0x3F300084;  // 0x3F300000 + 0x84
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300084);  // 0x3F300000 + 0x84
 volatile uint32_t* const SD::EMMC_TUNE_STEP =
-    (volatile uint32_t*)0x3F300088;  // 0x3F300000 + 0x88
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300088);  // 0x3F300000 + 0x88
 volatile uint32_t* const SD::EMMC_TUNE_STEP_STD =
-    (volatile uint32_t*)0x3F30008C;  // 0x3F300000 + 0x8C
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F30008C);  // 0x3F300000 + 0x8C
 volatile uint32_t* const SD::EMMC_TUNE_STEP_DDR =
-    (volatile uint32_t*)0x3F300090;  // 0x3F300000 + 0x90
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F300090);  // 0x3F300000 + 0x90
 volatile uint32_t* const SD::EMMC_INT_SPI =
-    (volatile uint32_t*)0x3F3000F0;  // 0x3F300000 + 0xF0
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F3000F0);  // 0x3F300000 + 0xF0
 volatile uint32_t* const SD::EMMC_SLOTISR_VER =
-    (volatile uint32_t*)0x3F3000FC;  // 0x3F300000 + 0xFC
+    (volatile uint32_t*) VMM::phys_to_kernel_ptr((uint64_t)0x3F3000FC);  // 0x3F300000 + 0xFC
 
 // Initializing static variables
 uint32_t SD::SLOTISR_VER = 0;

@@ -64,7 +64,7 @@ class GPIO {
    * @param location    Memory location to apply the mask to
    * @param mask        Mask to apply to the location
    */
-  static void maskAnd(uint32_t location, uint32_t mask);
+  static void maskAnd(uint64_t location, uint32_t mask);
 
   /**
    * @brief Applies `or` mask to a location
@@ -72,14 +72,14 @@ class GPIO {
    * @param location   Memory location to apply the mask to
    * @param mask       Mask to apply to the location
    */
-  static void maskOr(uint32_t location, uint32_t mask);
+  static void maskOr(uint64_t location, uint32_t mask);
 
   /**
    * @brief Applies a mask to a location to set the value to 0
    *
    * @param location  Memory location to apply the mask to
    */
-  static void maskZero(uint32_t location);
+  static void maskZero(uint64_t location);
 
   /**
    * @brief Set the Pull object

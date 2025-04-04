@@ -5,6 +5,7 @@
 #define EVENT_LOOP_H
 
 #include "heap.h"
+#include "printf.h"
 #include "queue.h"
 
 struct Event {
