@@ -36,6 +36,8 @@ extern "C" void set_CNTP_CTL_EL0(uint64_t val);
 extern "C" void set_CNTP_CVAL_EL0(uint64_t val);
 extern "C" void set_CNTP_TVAL_EL0(uint64_t val);
 
+extern "C" void set_stack_pointer(uint8_t* val);
+
 extern "C" void exception_return();
 
 extern "C" void* el1_vector_table;
