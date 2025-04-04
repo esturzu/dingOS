@@ -46,14 +46,14 @@ void mark_free(size_t position, size_t block_size) {
   // Mark bytes 9 - 12 as the position of the previous head of the implicit
   // free list. Then, mark bytes 13 - 16 as 0 since the newly freed block
   // is the new head of our free list.
-  ((int*)position)[2] = prev_block;
-  ((int*)position)[3] = 0;
+  block_start[1] = prev_block;
+  block_start[2] = 0;
 
   // If there is a free list already built, add this to the head and mark it as the 
   // next free block for the previous head.
   if (prev_block != 0) {
-    int* previous_block_start = (int*)(VMM::phys_to_kernel_ptr(prev_block));
-    previous_block_start[3] = position;
+    long* previous_block_start = (long*) (VMM::phys_to_kernel_ptr(prev_block));
+    previous_block_start[2] = position;
   }
   prev_block = position;
 }
@@ -62,9 +62,9 @@ void mark_free(size_t position, size_t block_size) {
 // actually being freed in the 'free' method.
 void remove(size_t position) {
   // Get the current block we're removing and the addresses of its neighbors
-    int* free_block = (int*)position;
-    uint64_t previous = free_block[2];
-    uint64_t next = free_block[3];
+    long* free_block = (long*) position;
+    uint64_t previous = free_block[1];
+    uint64_t next = free_block[2];
 
     // If this is the current head of the free list, make its previous neighbor the new head
     if (next == 0) {
@@ -74,14 +74,14 @@ void remove(size_t position) {
     // If it is not the head, cut it out of the list (aim next's previous at
     // the current block's previous)
     else {
-        int* next_block = (int*)(VMM::phys_to_kernel_ptr(next));
-        next_block[2] = previous;
+        long* next_block = (long*)(VMM::phys_to_kernel_ptr(next));
+        next_block[1] = previous;
     }
 
     // If a previous exists, aim its next at the current block's next
     if (previous != 0) {
-        int* previous_block = (int*)(VMM::phys_to_kernel_ptr(previous));
-        previous_block[3] = next;
+        long* previous_block = (long*)(VMM::phys_to_kernel_ptr(previous));
+        previous_block[2] = next;
     }
 }
 
@@ -138,7 +138,7 @@ void* malloc(size_t size, size_t alignment) {
             }
         }
         // Go to the next block in the list.
-        current = VMM::phys_to_kernel_ptr((uint64_t) ((int*)current)[2]);
+        current = VMM::phys_to_kernel_ptr((uint64_t) ((long*)current)[1]);
     }
 
     // If there is a block that will fit
@@ -147,9 +147,9 @@ void* malloc(size_t size, size_t alignment) {
         uint64_t leftover = min_size - size;
         // If leftover is signficant enough that another block should be made
         // Mark the leftover area as free and the exact fit as requested
-        if (leftover > 16) {
+        if (leftover > 32) {
             mark_allocated(chosen_block, size);
-            mark_free(chosen_block + size, leftover);
+            mark_free(chosen_block + size, leftover - 16);
         } else {
             mark_allocated(chosen_block, min_size);
             size = min_size;
@@ -206,21 +206,21 @@ extern "C" void free(void* ptr) {
         // And set the values for our new region accordingly.
         remove((uint64_t)left_block);
         new_start_block = (uint64_t)left_block;
-        new_region_size += left_block_size;
+        new_region_size += left_block_size + 16;
         printf("Col Left\n");
     }
 
     // Repeat for right side
     if (right_block_size > 0) {
         remove((uint64_t)right_block);
-        new_region_size += right_block_size;
+        new_region_size += right_block_size + 16;
         printf("Col Right\n");
     }
 
     // Mark the pointer where the block was as free so any attempts to free it again result
     // in failure
     char* block_temp = (char*) new_start_block;
-    printf("%p %lu\n", block_temp, new_region_size);
+    //printf("%p %lu\n", block_temp, new_region_size);
     for (int i = 0; i < new_region_size; i++) {
         block_temp[i] = 0;
     }
@@ -250,9 +250,9 @@ void operator delete[](void* ptr) noexcept {
     free(ptr); 
 }
 
-void operator delete(void* ptr, size_t sz) noexcept { /*free(ptr);*/ }
+void operator delete(void* ptr, size_t sz) noexcept { free(ptr); }
 
-void operator delete[](void* ptr, size_t sz) noexcept { /*free(ptr);*/ }
+void operator delete[](void* ptr, size_t sz) noexcept { free(ptr); }
 
 // // Undefined Delete Reference Fix
 
