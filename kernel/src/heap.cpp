@@ -207,17 +207,20 @@ extern "C" void free(void* ptr) {
         remove((uint64_t)left_block);
         new_start_block = (uint64_t)left_block;
         new_region_size += left_block_size;
+        printf("Col Left\n");
     }
 
     // Repeat for right side
     if (right_block_size > 0) {
         remove((uint64_t)right_block);
         new_region_size += right_block_size;
+        printf("Col Right\n");
     }
 
     // Mark the pointer where the block was as free so any attempts to free it again result
     // in failure
     char* block_temp = (char*) new_start_block;
+    printf("%p %lu\n", block_temp, new_region_size);
     for (int i = 0; i < new_region_size; i++) {
         block_temp[i] = 0;
     }
@@ -247,9 +250,9 @@ void operator delete[](void* ptr) noexcept {
     free(ptr); 
 }
 
-void operator delete(void* ptr, size_t sz) noexcept { free(ptr); }
+void operator delete(void* ptr, size_t sz) noexcept { /*free(ptr);*/ }
 
-void operator delete[](void* ptr, size_t sz) noexcept { free(ptr); }
+void operator delete[](void* ptr, size_t sz) noexcept { /*free(ptr);*/ }
 
 // // Undefined Delete Reference Fix
 

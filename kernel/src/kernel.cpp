@@ -48,12 +48,8 @@ extern "C" void kernelMain() {
 
   // setupTests();
 
-  printf("XD\n");
-
   schedule_event([]{
-    printf("Here\n");
     Process* proc = new Process();
-    printf(":)\n");
     proc->run();
   });
 

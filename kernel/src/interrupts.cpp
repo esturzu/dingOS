@@ -245,13 +245,13 @@ extern "C" void synchronous_handler(uint64_t* saved_state)
       break;
     case 0b100000:
       {
-        printf("Instruction Abort from a lower exception level\n");
+        printf("Instruction Abort from a lower exception level %lx %lx\n", get_ESR_EL1(), get_FAR_EL1());
         while(1){} // Replace with PANIC
       }
       break;
     case 0b100001:
       {
-        printf("Instruction Abort taken without a change in exception level\n");
+        printf("Instruction Abort taken without a change in exception level %lx %lx\n", get_ESR_EL1(), get_FAR_EL1());
         while(1){} // Replace with PANIC
       }
       break;
