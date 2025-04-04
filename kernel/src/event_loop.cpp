@@ -14,6 +14,7 @@ extern "C" uint8_t* stack3_top;
 
 void init_event_loop() { ready_queue = new LocklessQueue<Event*>(); }
 
+[[noreturn]]
 void event_loop() {
 
   switch (SMP::whichCore())

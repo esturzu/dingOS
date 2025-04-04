@@ -11,7 +11,19 @@ uint64_t system_call_handler (uint16_t syscall_type, uint64_t* saved_state)
 
   switch (syscall_type)
   {
-    case 0: // Yield System Call
+    case 0: // Exit System Call
+      {
+        debug_printf("Exit System Call\n");
+
+        uint8_t current_core = SMP::whichCore();
+
+        Process* current_process = activeProcess[current_core];
+
+        activeProcess[current_core] = nullptr;
+
+        event_loop();
+      }
+    case 1: // Yield System Call
       {
         debug_printf("Yield System Call\n");
 
@@ -30,8 +42,6 @@ uint64_t system_call_handler (uint16_t syscall_type, uint64_t* saved_state)
         });
 
         event_loop();
-
-        break;
       }
     default:
       {
