@@ -36,81 +36,36 @@ extern "C" void kernelMain() {
 
   SD::init();
 
-  // Initialize filesystem with the working approach
-  SDAdapter* adapter = new SDAdapter(1024);
-  Ext2* fs = new Ext2(adapter);
 
-  // Now you can access the root directory
-  printf("Listing root directory contents:\n");
-  list_directory(fs->root);
-
-  // // Find and read hello.txt
-  // const char* filename = "hello.txt";
-  // printf("Looking for file: %s\n", filename);
+  // // I run this with this command make clean-fs;make fs-image;clear; make clean qemu DEBUG_ENABLED=0 to have the right disk, you also have to mkdir fs_root beforehand
+  // SDAdapter* adapter = new SDAdapter(1024);
+  // Ext2* fs = new Ext2(adapter);
+  // // Create a test file
+  // const char* test_filename = "example.txt";
+  // Node* test_file = create_file(fs->root, test_filename);
   
-  // Node* file = find_in_directory(fs->root, filename);
-  // if (file) {
-  //   printf("Found file '%s' (inode %u, size %u bytes)\n",
-  //          filename, file->number, file->node->size_of_iNode);
-    
-  //   // Read the file content
-  //   char buffer[1024];
-  //   int bytes_read = read_file(file, buffer, sizeof(buffer) - 1);
-    
-  //   if (bytes_read > 0) {
-  //     printf("File content (%d bytes):\n%s\n", bytes_read, buffer);
+  // if (test_file) {
+  //     const char* content = "Hello from DingOS EXT2 filesystem!";
+  //     test_file->write_all(0, strlen_ext(content), (char*)content);
+  //     printf("Successfully wrote to %s\n", test_filename);
+  //     delete test_file;
       
-  //     // Now try to modify the file (as a test for write functionality)
-  //     printf("Attempting to modify file...\n");
-  //     const char* new_content = "Modified by DingOS!";
-  //     int64_t bytes_written = file->write_all(0, strlen_ext(new_content), (char*)new_content);
-      
-  //     if (bytes_written > 0) {
-  //       printf("Successfully modified file - wrote %lld bytes\n", bytes_written);
-        
-  //       // Read it back to verify
-  //       bytes_read = read_file(file, buffer, sizeof(buffer) - 1);
-  //       if (bytes_read > 0) {
-  //         printf("Updated content: %s\n", buffer);
-  //       }
-  //     } else {
-  //       printf("Failed to modify file\n");
+  //     // Read the file back
+  //     Node* reading_test_file = find_in_directory(fs->root, test_filename);
+  //     if (reading_test_file) {
+  //         char buffer[256];
+  //         int bytes_read = read_file(reading_test_file, buffer, sizeof(buffer) - 1);
+  //         if (bytes_read > 0) {
+  //             printf("File contents: %s\n", buffer);
+  //         }
+  //         delete reading_test_file;
   //     }
-  //   } else {
-  //     printf("Error reading file or empty file\n");
-  //   }
-    
-  //   delete file;
-  // } else {
-  //   printf("File '%s' not found\n", filename);
   // }
   
-  // Now try creating a new file
-  printf("\nTesting file creation...\n");
-  const char* test_filename = "test_file.txt";
-  printf("Creating file: %s\n", test_filename);
-  
-  Node* test_file = create_file(fs->root, test_filename);
-  if (test_file) {
-    printf("File created successfully, writing content...\n");
-    
-    const char* test_data = "This is a test file created by DingOS.";
-    int64_t write_result = test_file->write_all(0, strlen_ext(test_data), (char*)test_data);
-    
-    if (write_result > 0) {
-      printf("Content written successfully (%lld bytes)\n", write_result);
-    } else {
-      printf("Failed to write content\n");
-    }
-    
-    delete test_file;
-    
-    // Verify by listing directory again
-    printf("\nUpdated directory contents:\n");
-    list_directory(fs->root);
-  } else {
-    printf("Failed to create test file\n");
-  }
+ 
+
+  setupTests();
+
 
   while (1);
 }

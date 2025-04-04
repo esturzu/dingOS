@@ -108,6 +108,9 @@ public:
     uint32_t size_in_bytes() override {
         return 0xFFFFFFFF; // Large value representing the whole SD card
     }
+    uint32_t local_min(uint32_t a, uint32_t b) {
+        return (a < b) ? a : b;
+    }
     
     // Read a block from the SD card
     void read_block(uint32_t block_number, char* buffer) override {
@@ -119,20 +122,29 @@ public:
         uint32_t bytes = SD::read(sd_start, sd_block_count, (uint8_t*)buffer);
         // Check if read was successful
         if (bytes != block_size) {
-            printf("SDAdapter::read_block: Failed to read block %u\n", block_number);
+            debug_printf("SDAdapter::read_block: Failed to read block %u\n", block_number);
         }
     }
     
     // Write a block to the SD card
     void write_block(uint32_t block_number, char* buffer, uint32_t offset, uint32_t n) override {
+        debug_printf("DEBUG: SDAdapter::write_block: block %u, offset %u, size %u\n", 
+              block_number, offset, n);
+        
         // Calculate SD card sector
         uint32_t sd_block_count = block_size / SD::BLOCKSIZE;
         uint32_t sd_start = block_number * sd_block_count;
         
         // If we need to modify part of a block, first read the entire block
         if (offset > 0 || n < block_size) {
+            debug_printf("DEBUG: SDAdapter::write_block: Partial block write, doing read-modify-write\n");
             uint8_t* temp_buffer = new uint8_t[block_size];
-            SD::read(sd_start, sd_block_count, temp_buffer);
+            uint32_t read_bytes = SD::read(sd_start, sd_block_count, temp_buffer);
+            
+            if (read_bytes != block_size) {
+                debug_printf("DEBUG: SDAdapter::write_block: Read failed (%u/%u bytes)\n", 
+                      read_bytes, block_size);
+            }
             
             // Update the portion that needs to change
             for (uint32_t i = 0; i < n; i++) {
@@ -144,16 +156,54 @@ public:
             delete[] temp_buffer;
             
             if (bytes != block_size) {
-                printf("SDAdapter::write_block: Failed to write block %u\n", block_number);
+                debug_printf("DEBUG: SDAdapter::write_block: Write failed (%u/%u bytes)\n", 
+                      bytes, block_size);
+            } else {
+                debug_printf("DEBUG: SDAdapter::write_block: Write successful\n");
             }
         } else {
             // Simple case - writing an entire block
+            debug_printf("DEBUG: SDAdapter::write_block: Full block write\n");
             uint32_t bytes = SD::write(sd_start, sd_block_count, (uint8_t*)buffer);
             if (bytes != block_size) {
-                printf("SDAdapter::write_block: Failed to write block %u\n", block_number);
+                debug_printf("DEBUG: SDAdapter::write_block: Write failed (%u/%u bytes)\n", 
+                      bytes, block_size);
+            } else {
+                debug_printf("DEBUG: SDAdapter::write_block: Write successful\n");
             }
         }
     }
+    int64_t write(uint32_t offset, uint32_t n, char* buffer) override {
+        debug_printf("DEBUG: SDAdapter::write: offset=%u, size=%u\n", offset, n);
+    
+        // Same logic as BlockIO::write p much
+        auto sz = size_in_bytes();
+        if (offset > sz) return -1;
+        if (offset == sz) return 0;
+    
+        auto actual_n = local_min(n, sz - offset);
+        auto block_number = offset / block_size;
+        auto offset_in_block = offset % block_size;
+        auto bytes_this_block = local_min(block_size - offset_in_block, actual_n);
+    
+        write_block(block_number, buffer, offset_in_block, bytes_this_block);
+        return bytes_this_block;
+    }
+    
+    int64_t write_all(uint32_t offset, uint32_t n, char* buffer) override {
+        debug_printf("DEBUG: SDAdapter::write_all: offset=%u, size=%u\n", offset, n);
+        int64_t total = 0;
+        while (n > 0) {
+            int64_t written = write(offset, n, buffer);
+            if (written <= 0) return (total > 0) ? total : written;
+            offset += written;
+            buffer += written;
+            n -= written;
+            total += written;
+        }
+        return total;
+    }
+    
 };
 
 /*
@@ -171,14 +221,16 @@ public:
     uint32_t containing_block;     // Block containing this inode
     uint32_t BGDT_index;           // Block index of the BGDT
     SDAdapter* sd_adapter;         // Pointer to the SD adapter
-    bool have_entry_before;        // Cache flag for directory entry count
-    uint32_t entry_result;         // Cached directory entry count
-    char* oldSym;                  // Cache for symlink content
+    bool have_entry_before;        // flag for directory entry count
+    uint32_t entry_result;         // directory entry count
+    char* oldSym;                  // symlink content
 
     // Constructor loads an inode from disk
     Node(uint32_t block_size, uint32_t number, SDAdapter* adapter) 
         : BlockIO(block_size), number(number), node(nullptr), 
           sd_adapter(adapter), have_entry_before(false), entry_result(0), oldSym(nullptr) {
+        
+        debug_printf("DEBUG: Node constructor: Creating Node for inode %u\n", number);
         
         // Allocate and initialize the inode
         node = new iNode();
@@ -198,7 +250,11 @@ public:
         // Read the inode data from disk
         uint32_t inode_offset = bgdt->startingBlockAddress * (1024 << supa->block_size) + 
                                index * supa->iNode_size;
+        
+        debug_printf("DEBUG: Node constructor: Reading inode data from offset 0x%x\n", inode_offset);
         sd_adapter->read_all(inode_offset, sizeof(iNode), (char*)node);
+        debug_printf("DEBUG: Node constructor: Inode loaded, type=0x%x, size=%u\n", 
+              node->types_plus_perm, node->size_of_iNode);
     }
     
     // Destructor cleans up allocated memory
@@ -224,26 +280,36 @@ public:
     
     // Read a block from this node
     void read_block(uint32_t block_number, char* buffer) override {
+        debug_printf("DEBUG: Node::read_block: inode %u, block %u\n", number, block_number);
+        
         // Calculate how many pointers fit in one block
         uint32_t N = (1024 << supa->block_size) / 4;
         
         if (block_number < 12) {
             // Direct block - directly referenced by the inode
+            if (node->directLinked[block_number] == 0) {
+                debug_printf("DEBUG: Node::read_block: Block is not allocated (zero)\n");
+                // zero_memory(buffer, block_size);
+                return;
+            }
+            
+            debug_printf("DEBUG: Node::read_block: Reading direct block at physical block %u\n", 
+                  node->directLinked[block_number]);
             sd_adapter->read_all(node->directLinked[block_number] * (1024 << supa->block_size), 
-                             (1024 << supa->block_size), buffer);
+                            (1024 << supa->block_size), buffer);
         } else if (block_number < (12 + N)) {
             // Single indirect block - referenced through a single indirection
-            printf("Node::read_block: Single indirect blocks not implemented\n");
+            debug_printf("DEBUG: Node::read_block: Single indirect blocks not implemented\n");
         } else if (block_number < (12 + N + (N * N))) {
             // Double indirect block - referenced through double indirection
-            printf("Node::read_block: Double indirect blocks not implemented\n");
+            debug_printf("DEBUG: Node::read_block: Double indirect blocks not implemented\n");
         } else {
             // Triple indirect block - referenced through triple indirection
-            printf("Node::read_block: Triple indirect blocks not implemented\n");
+            debug_printf("DEBUG: Node::read_block: Triple indirect blocks not implemented\n");
         }
     }
     
-    // Write a block to this node
+    // Write a block to this node (implementation in .cpp file)
     void write_block(uint32_t block_number, char* buffer, uint32_t offset, uint32_t n) override;
 
     // Update inode on disk after changes
@@ -254,7 +320,11 @@ public:
     
     // Extract the file type from the mode/permissions field
     uint32_t get_type() {
-        uint32_t type = (node->types_plus_perm >> 12) << 12;
+        // Print debug information
+        debug_printf("DEBUG: Types and permissions raw value: 0x%x\n", node->types_plus_perm);
+        
+        // Extract type bits (top 4 bits) using bitwise AND
+        uint32_t type = node->types_plus_perm & 0xF000;
         return type;
     }
     
@@ -266,14 +336,60 @@ public:
     
     // Check if this node is a regular file
     bool is_file() {
-        uint32_t file_code = 32768;  // 0x8000
-        return (get_type() == file_code);
+        uint32_t file_code = 0x8000;  // Regular file
+        uint32_t type = get_type();
+        debug_printf("DEBUG: is_file() type check: raw=0x%x, expected=0x%x\n", type, file_code);
+        return (type == file_code);
     }
     
     // Check if this node is a symbolic link
     bool is_symlink() {
         uint32_t sym_link = 40960;  // 0xA000
         return (get_type() == sym_link);
+    }
+    
+    // Override the write method to add debugging
+    int64_t write(uint32_t offset, uint32_t n, char* buffer) override {
+        debug_printf("DEBUG: Node::write: inode %u, offset %u, size %u\n", number, offset, n);
+        
+        // Calculate which block and offset within block
+        uint32_t block_number = offset / block_size;
+        uint32_t offset_in_block = offset % block_size;
+        
+        // Calculate how many bytes we can write in this block
+        uint32_t bytes_to_write = (n < block_size - offset_in_block) ? n : block_size - offset_in_block;
+        
+        debug_printf("DEBUG: Node::write: Writing to block %u, offset_in_block %u, bytes_to_write %u\n", 
+              block_number, offset_in_block, bytes_to_write);
+        
+        // Write to the block
+        write_block(block_number, buffer, offset_in_block, bytes_to_write);
+        
+        return bytes_to_write;
+    }
+    
+    // Override the write_all method to add debugging
+    int64_t write_all(uint32_t offset, uint32_t n, char* buffer) override {
+        debug_printf("DEBUG: Node::write_all: inode %u, offset %u, size %u\n", number, offset, n);
+        debug_printf("DEBUG: Node::write_all: Before write, inode size=%u\n", node->size_of_iNode);
+        
+        int64_t total_count = 0;
+        while (n > 0) {
+            int64_t cnt = write(offset, n, buffer);
+            debug_printf("DEBUG: Node::write_all: write returned %lld\n", cnt);
+            
+            if (cnt < 0) return cnt;
+            if (cnt == 0) break;
+            
+            total_count += cnt;
+            offset += cnt;
+            n -= cnt;
+            buffer += cnt;
+        }
+        
+        debug_printf("DEBUG: Node::write_all: After write, total bytes written=%lld, inode size=%u\n", 
+              total_count, node->size_of_iNode);
+        return total_count;
     }
 };
 
@@ -312,13 +428,13 @@ public:
         root = new Node(1024 << supa->block_size, 2, adapter);
         
         // Print superblock and BGDT info
-        printf("Blocks: %u | Inodes: %u | Block size = %u | Inodes per group = %u\n",
+        debug_printf("Blocks: %u | Inodes: %u | Block size = %u | Inodes per group = %u\n",
             supa->num_Blocks,
             supa->num_iNodes,
             1024 << supa->block_size,
             supa->num_iNode_pergroup);
         
-        printf("bit_map_block_address: %u | bit_map_iNode_address: %u | startingBlockAddress = %u | "
+        debug_printf("bit_map_block_address: %u | bit_map_iNode_address: %u | startingBlockAddress = %u | "
                "num_unallocated_blocks = %u | num_unallocated_directories = %u | num_unallocated_iNodes = %u |\n",
             bgdt->bit_map_block_address,
             bgdt->bit_map_iNode_address,
@@ -359,7 +475,7 @@ uint32_t strlen_ext(const char* str);
 void zero_memory(void* buffer, uint32_t size);
 
 // Dump a block's contents for debugging
-void dump_block(uint32_t block_number);
+void dump_blocks(SDAdapter* adapter, uint32_t block_start, uint32_t count);
 // String comparison utility
 bool streq_ext(const char* a, const char* b);
 
@@ -392,5 +508,7 @@ void test_file_creation();
 
 // Initialize the filesystem
 void init_ext2();
+
+void diagnose_block_bitmap(SDAdapter* adapter);
 
 #endif // _EXT2_H_
