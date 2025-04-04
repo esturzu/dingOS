@@ -4,10 +4,12 @@
 
 #include "interrupts.h"
 
+#include "cores.h"
 #include "local_timer.h"
 #include "event_loop.h"
 #include "machine.h"
 #include "printf.h"
+#include "process.h"
 #include "system_call.h"
 #include "system_timer.h"
 
@@ -106,7 +108,40 @@ extern "C" void fiq_handler()
 
 extern "C" void irq_handler(uint64_t* saved_state)
 {
-  LocalTimer::check_interrupt();
+  bool local_timer_trigger = LocalTimer::check_interrupt();
+
+  uint8_t current_core = SMP::whichCore();
+
+  if (local_timer_trigger && activeProcess[current_core] != nullptr)
+  {
+    // Need to Preempt Process
+    if (!(get_SPSR_EL1() & 0xF))
+    {
+      // EL0
+      debug_printf("Preempt Process In EL0\n");
+
+      Process* current_process = activeProcess[current_core];
+
+      current_process->save_state(saved_state);
+
+      activeProcess[current_core] = nullptr;
+
+      __asm__ volatile("dmb sy" ::: "memory");
+
+      schedule_event([current_process](){
+        current_process->run();
+      });
+
+      set_DAIFClr_all();
+
+      event_loop();
+    } 
+    else
+    {
+      // EL1
+      // todo: Handle Preemption in Kernel
+    }
+  }
 
   uint32_t irq_pending_1 = Interrupts::get_IRQ_pending_1_register();
 

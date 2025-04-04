@@ -53,6 +53,11 @@ set_CNTP_TVAL_EL0:
   msr CNTP_TVAL_EL0, x0
   ret
 
+.globl set_DAIFClr_all
+set_DAIFClr_all:
+  msr DAIFClr, #7
+  ret
+
 .extern 
 .globl set_stack_pointer
 set_stack_pointer:
