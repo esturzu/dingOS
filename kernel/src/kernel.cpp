@@ -50,10 +50,10 @@ extern "C" void kernelMain() {
 
   while (true) {}
 
-  schedule_event([]{
-    Process* proc = new Process();
-    proc->run();
-  });
+//   schedule_event([]{
+//     Process* proc = new Process();
+//     proc->run();
+//   });
 
   event_loop();
 

@@ -270,6 +270,7 @@ SD::RESPONSE SD::setClock(uint32_t freq) {
 void SD::eMMCinit() {
   // *** setting up the SD card detect pin (pin47) by masking out its 3
   // alternate clear out any alternate function selection for pin47
+
   GPIO::maskAnd(GPIO::GPFSEL4, ~(7 << (7 * 3)));
 
   // set pin47 to be pull up
@@ -301,7 +302,7 @@ uint32_t SD::init() {
 
   // *** this part starts to make a little more sense. we are now doing very
   // standard setup for EMMC
-
+  
   // first get info about the sd card
   SLOTISR_VER = (*EMMC_SLOTISR_VER);
   SLOT_STATUS = SLOTISR_VER & 0xFF;        // bits 0-7
