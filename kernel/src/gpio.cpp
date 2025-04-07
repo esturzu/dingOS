@@ -13,7 +13,6 @@ void GPIO::set_clock(uint8_t clock_num, uint32_t device_mask) {
 
 void GPIO::maskAnd(uint64_t location, uint32_t mask) {
   volatile uint32_t* locationPTR = (volatile uint32_t*)location;
-  debug_printf("location: 0x%lx\n", locationPTR);
   uint32_t temp = *locationPTR;
   *locationPTR &= mask;
 }
