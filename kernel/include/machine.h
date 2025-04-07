@@ -14,6 +14,12 @@ extern "C" uint64_t get_CNTP_CTL_EL0();
 extern "C" uint64_t get_CNTP_CVAL_EL0();
 extern "C" uint64_t get_CNTP_TVAL_EL0();
 
+extern "C" uint64_t get_SPSR_EL1();
+extern "C" uint64_t get_ELR_EL1();
+extern "C" uint64_t get_SP_EL0();
+
+extern "C" void set_DAIFClr_all();
+
 extern "C" void set_TTBR0_EL1(uint64_t val);
 extern "C" void set_TTBR1_EL1(uint64_t val);
 extern "C" void set_MAIR_EL1(uint64_t val);
@@ -31,6 +37,8 @@ extern "C" void set_CNTKCTL_EL1(uint64_t val);
 extern "C" void set_CNTP_CTL_EL0(uint64_t val);
 extern "C" void set_CNTP_CVAL_EL0(uint64_t val);
 extern "C" void set_CNTP_TVAL_EL0(uint64_t val);
+
+extern "C" void set_stack_pointer(uint8_t* val);
 
 extern "C" void exception_return();
 

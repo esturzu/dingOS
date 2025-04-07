@@ -47,9 +47,9 @@ struct ProcessContext
 
 class Process
 {
-  VMM::TranslationTable translation_table;
-
   ProcessContext context;
+
+  VMM::TranslationTable translation_table;
 
 public:
 
@@ -57,6 +57,9 @@ public:
   ~Process();
 
   void run();
+  void save_state(uint64_t* register_frame);
 };
+
+extern Process* activeProcess[4];
 
 #endif

@@ -35,11 +35,12 @@ irq_handler_:
   stp x28, x29, [sp, #0xe0]
   str x30, [sp, #0xf0]
   
+  mov x0, sp
+
   mov x19, sp
   and x19, x19, #0xF
   sub sp, sp, x19
 
-  mov x0, sp
   bl irq_handler                      // Call Handler
 
   add sp, sp, x19
@@ -85,12 +86,13 @@ synchronous_handler_:
   stp x26, x27, [sp, #0xd0]
   stp x28, x29, [sp, #0xe0]
   str x30, [sp, #0xf0]
-  
+
+  mov x0, sp
+
   mov x19, sp
   and x19, x19, #0xF
   sub sp, sp, x19
 
-  mov x0, sp
   bl synchronous_handler              // Call Handler
 
   add sp, sp, x19

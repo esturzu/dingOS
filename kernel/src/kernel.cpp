@@ -40,20 +40,20 @@ extern "C" void kernelMain() {
 
   LocalTimer::setup_timer();
 
+  run_page_tests();
+
+  SD::init();
+
+  fs_init();
+
+  setupTests();
+
   while (true) {}
 
-  // run_page_tests();
-
-  // SD::init();
-
-  // fs_init();
-
-  // setupTests();
-
-  schedule_event([]{
-    Process* proc = new Process();
-    proc->run();
-  });
+//   schedule_event([]{
+//     Process* proc = new Process();
+//     proc->run();
+//   });
 
   event_loop();
 

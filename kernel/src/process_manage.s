@@ -1,3 +1,18 @@
+.globl get_SPSR_EL1
+get_SPSR_EL1:
+  mrs x0, SPSR_EL1
+  ret
+
+.globl get_ELR_EL1
+get_ELR_EL1:
+  mrs x0, ELR_EL1
+  ret
+
+.globl get_SP_EL0
+get_SP_EL0:
+  mrs x0, SP_EL0
+  ret
+
 .globl set_SPSR_EL1
 set_SPSR_EL1:
   msr SPSR_EL1, x0
