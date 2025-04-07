@@ -76,6 +76,7 @@ void heap_init() {
 
 // Malloc, used to allocate blocks of variable size for external use
 void* malloc(size_t size, size_t alignment) {
+    __asm__ volatile("dsb sy" ::: "memory");
     if (heap_spinlock != nullptr) {
         heap_spinlock->lock();
     }
@@ -126,6 +127,7 @@ void* malloc(size_t size, size_t alignment) {
 // (Also need to add someone to make sure any pointer inside a free region
 // cannot be double freed. Maybe some loop/search)
 extern "C" void free(void* ptr) {
+    __asm__ volatile("dsb sy" ::: "memory");
     if (heap_spinlock != nullptr) {
         heap_spinlock->lock();
     }
