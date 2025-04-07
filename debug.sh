@@ -1,7 +1,7 @@
 #!/bin/bash
 GDB_PATH="/u/hill/Coursework/CS378/tools/arm-gnu-toolchain/bin/aarch64-none-elf-gdb"
 
-# Init script is a clean debuggin state
+# Init script is a clean debugging state
 GDB_SCRIPT="gdb-init-script.gdb"
 
 # This one is for setting predefined breakpoints for ease of debugging
