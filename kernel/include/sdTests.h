@@ -101,8 +101,6 @@ void sdTests() {
   for (int i = 0; i < blocks * SD::BLOCKSIZE; i++) {
     expectedBuffer[i] = (i + startAddress) % 0x100;
   }
-  delete[] readBuffer; // TODO: once delete[] works again
-  delete[] expectedBuffer; // TODO: once delete[] works again
 
   // writing the buffer to the disk
   res = SD::write(startBlock, blocks, expectedBuffer);
@@ -114,6 +112,9 @@ void sdTests() {
   testsResult("Write 3 and read back",
               res == blocks * SD::BLOCKSIZE && compareRes);
   clearBuffer(readBuffer, blocks * SD::BLOCKSIZE);
+
+  delete[] readBuffer; // TODO: once delete[] works again
+  delete[] expectedBuffer; // TODO: once delete[] works again
 
   // Test 4: Write 1 and read back
   startBlock = 25;
