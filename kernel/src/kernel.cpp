@@ -52,10 +52,11 @@ extern "C" void kernelMain() {
 //   Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
 //   int file_size = existing_test_file->size_in_bytes();
 //       if (existing_test_file) {
-//           char buffer[file_size];
-//           int bytes_read = read_file(existing_test_file, buffer, sizeof(buffer) - 1);
+//           char buffer[file_size + 1];
+//           int bytes_read = read_file(existing_test_file, buffer, file_size);
 //           if (bytes_read > 0) {
-//               printf("File contents: %s\n", buffer);
+//             buffer[bytes_read] = '\0';
+//             printf("File contents: %s\n", buffer);
 //           }
 //           delete existing_test_file;
 //       }
@@ -71,11 +72,13 @@ extern "C" void kernelMain() {
       
 //       // Read the file back
 //       Node* reading_test_file = find_in_directory(fs->root, test_filename);
+//       int file_size = reading_test_file->size_in_bytes();
 //       if (reading_test_file) {
-//           char buffer[256];
-//           int bytes_read = read_file(reading_test_file, buffer, sizeof(buffer) - 1);
+//           char buffer[file_size + 1];
+//           int bytes_read = read_file(reading_test_file, buffer, file_size);
 //           if (bytes_read > 0) {
-//               printf("File contents: %s\n", buffer);
+//             buffer[bytes_read] = '\0';
+//             printf("File contents: %s\n", buffer);
 //           }
 //           delete reading_test_file;
 //       }
