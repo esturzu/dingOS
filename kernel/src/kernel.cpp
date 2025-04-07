@@ -17,7 +17,7 @@
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
-#include "bfs.h"
+#include "ext2.h"
 #include "vmm.h"
 
 extern "C" void kernelMain() {
@@ -46,29 +46,39 @@ extern "C" void kernelMain() {
 
 
   // // I run this with this command make clean-fs;make fs-image;clear; make clean qemu DEBUG_ENABLED=0 to have the right disk, you also have to mkdir fs_root beforehand
-  // SDAdapter* adapter = new SDAdapter(1024);
-  // Ext2* fs = new Ext2(adapter);
-  // // Create a test file
-  // const char* test_filename = "example.txt";
-  // Node* test_file = create_file(fs->root, test_filename);
+  SDAdapter* adapter = new SDAdapter(1024);
+  Ext2* fs = new Ext2(adapter);
+  const char* existing_file_name = "hello.txt";
+  Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
+      if (existing_test_file) {
+          char buffer[256];
+          int bytes_read = read_file(existing_test_file, buffer, sizeof(buffer) - 1);
+          if (bytes_read > 0) {
+              printf("File contents: %s\n", buffer);
+          }
+          delete existing_test_file;
+      }
+  // Create a test file
+  const char* test_filename = "example.txt";
+  Node* test_file = create_file(fs->root, test_filename);
   
-  // if (test_file) {
-  //     const char* content = "Hello from DingOS EXT2 filesystem!";
-  //     test_file->write_all(0, strlen_ext(content), (char*)content);
-  //     printf("Successfully wrote to %s\n", test_filename);
-  //     delete test_file;
+  if (test_file) {
+      const char* content = "Hello from DingOS EXT2 filesystem!";
+      test_file->write_all(0, strlen_ext(content), (char*)content);
+      printf("Successfully wrote to %s\n", test_filename);
+      delete test_file;
       
-  //     // Read the file back
-  //     Node* reading_test_file = find_in_directory(fs->root, test_filename);
-  //     if (reading_test_file) {
-  //         char buffer[256];
-  //         int bytes_read = read_file(reading_test_file, buffer, sizeof(buffer) - 1);
-  //         if (bytes_read > 0) {
-  //             printf("File contents: %s\n", buffer);
-  //         }
-  //         delete reading_test_file;
-  //     }
-  // }
+      // Read the file back
+      Node* reading_test_file = find_in_directory(fs->root, test_filename);
+      if (reading_test_file) {
+          char buffer[256];
+          int bytes_read = read_file(reading_test_file, buffer, sizeof(buffer) - 1);
+          if (bytes_read > 0) {
+              printf("File contents: %s\n", buffer);
+          }
+          delete reading_test_file;
+      }
+  }
   
  
 
