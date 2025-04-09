@@ -3,9 +3,11 @@
 
 #include "kernel.h"
 
+#include "bfs.h"
 #include "cores.h"
 #include "crti.h"
 #include "event_loop.h"
+#include "framebuffer.h"
 #include "heap.h"
 #include "interrupts.h"
 #include "machine.h"
@@ -15,7 +17,6 @@
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
-#include "bfs.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -38,10 +39,22 @@ extern "C" void kernelMain() {
 
   fs_init();
 
-  setupTests();
+  // setupTests();
 
   // event_loop();
 
-  while (1)
-    ;
+  // Request a framebuffer at 800x600x32
+  FrameBufferInfo* fb = framebuffer_init(640, 480, 32);
+  if (!fb) {
+    debug_printf("Failed to init framebuffer!\n");
+    while (true) { /* spin */
+    }
+  }
+
+  // Fill the screen with a color
+  framebuffer_fill(fb, 0xFFFF00);
+
+  debug_printf("FILLED THE FRAME BUFFER!\n");
+
+  while (1);
 }
