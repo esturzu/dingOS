@@ -5,11 +5,11 @@
 ELFLoader::Result ELFLoader::load(const char* data, uint64_t size,
                                   Process* process) {
   // Verifies that the input data is non-null
-  if (data == NULL)    return INVALID_NULL_DATA;
-  if (process == NULL) return INVALID_NULL_PROCESS;
+  if (data == (const char*) 0) return INVALID_NULL_DATA;
+  if (process == (Process*) 0) return INVALID_NULL_PROCESS;
 
   // Verifies that the system is little-endian
-  constexpr uint64_t endianValueU64 = 0x0806060504030201;
+  constexpr uint64_t endianValueU64 = 0x0807060504030201;
   const uint8_t* endianPtrU8 = (uint8_t*) &endianValueU64;
   for (uint32_t i = 0; i < 8; i++) {
     if (endianPtrU8[i] != i + 1) return UNSUPPORTED_SYSTEM_ENDIANNESS;

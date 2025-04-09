@@ -97,7 +97,7 @@ namespace ELFLoader {
     /* Public Functions */
     public:
       constexpr Result(ErrorCode code) : code(code) {}
-      constexpr ErrorCode getErrorCode() { return code; }
+      constexpr ErrorCode getErrorCode() const { return code; }
       constexpr bool success() const { return (uint32_t) code < 0x40; }
       constexpr bool unsupported() const { return IN_U32(0x40, 0x80, code); }
       constexpr bool invalid() const { return IN_U32(0x80, 0xC0, code); }
@@ -110,7 +110,7 @@ namespace ELFLoader {
   };
 
   /* Load Function */
-  Result load(const char* data, size_t size);
+  Result load(const char* data, size_t size, Process* process);
 
   /* 64-Bit ELF Header */
   struct ELFHeader64 {
