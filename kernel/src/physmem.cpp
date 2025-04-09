@@ -1,4 +1,5 @@
 #include "atomics.h"
+#include "vmm.h"
 #include "stdint.h"
 #include "printf.h"
 
@@ -61,7 +62,8 @@ namespace PhysMem {
 
                         // Zeroes out the page
                         zero_out((char*) new_page, PAGE_SIZE);
-                        debug_printf("Frame found at 0x%X\n", new_page);
+                        new_page = VMM::kernel_to_phys_ptr(new_page);
+                        debug_printf("Frame found at 0x%lx\n", new_page);
                         return new_page;
                     }
                     // Look at the next bit
@@ -116,13 +118,13 @@ namespace PhysMem {
             uint64_t word = bitmap[i / 64];
             uint64_t offset = i % 64;
             bitmap[i / 64] |= (1ULL << offset);
-            debug_printf("Page %d of bitmap allocated for bitmapping\n", i);
+            // debug_printf("Page %d of bitmap allocated for bitmapping\n", i);
         }
         
         // Set the start of the frame region to after bitmap
         frame_start += BITMAP_SIZE;
 
-        debug_printf("Bitmap Location: 0x%X, Page Start: 0x%X, Page Range End: 0x%X\n", bitmap, frame_start, frame_range_end);
+        // debug_printf("Bitmap Location: 0x%X, Page Start: 0x%X, Page Range End: 0x%X\n", bitmap, frame_start, frame_range_end);
     }
 }
 

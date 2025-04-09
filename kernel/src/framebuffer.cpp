@@ -1,11 +1,12 @@
 #include "framebuffer.h"
 
+#include "definitions.h"
 #include "printf.h"
 
 // -----------------------------------------------------------------------------
 // Broadcom BCM2837 addresses
 // -----------------------------------------------------------------------------
-static constexpr uint32_t PERIPHERAL_BASE = 0x3F000000;
+static constexpr uint32_t PERIPHERAL_BASE = PERIPHERALS_BASE;
 static constexpr uint32_t MAILBOX_BASE = PERIPHERAL_BASE + 0xB880;
 
 static constexpr uint32_t MAILBOX_READ = MAILBOX_BASE + 0x00;
