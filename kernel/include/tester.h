@@ -5,8 +5,10 @@
 #include "eventTests.h"
 #include "heapTests.h"
 #include "sdTests.h"
+#include "elfTests.h"
 
 void runTests() {
+  elfTests();
   eventLoopTests();
 
   // when running the bfs tests, you have to remake test.dd so that it isn't messed up
