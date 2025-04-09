@@ -4,12 +4,14 @@
 #include "atomics.h"
 #include "stdint.h"
 #include "queue.h"
-#include "thread.h"
+#include "process.h"
+#include "event_loop.h"
+#include "cores.h"
 
 class Semaphore {
     uint64_t volatile count;
     SpinLock lock;
-    LocklessQueue<TCB*> waiting_queue;
+    LocklessQueue<Process*> waiting_queue;
 public: 
     Semaphore(const uint32_t count) : count(count), lock(), waiting_queue() {}
 
@@ -24,7 +26,7 @@ public:
         }
 
         else {
-            thread_block(waiting_queue, lock);
+            block();
         }
     }
 
@@ -33,13 +35,25 @@ public:
         lock.lock();
         if (!waiting_queue.is_empty()) {
             // Unblock the next thread from the per-semaphore queue
-            TCB* next = waiting_queue.dequeue();
+            Process* next = waiting_queue.dequeue();
             if (next != nullptr)  {
                 count++;
             }
-            thread_unblock(next);
+            unblock(next);
             lock.unlock();
         } 
+    }
+
+    void block() {
+        waiting_queue.enqueue(activeProcess[SMP::whichCore()]);
+        activeProcess[SMP::whichCore()] = nullptr;
+        event_loop();
+    }
+
+    void unblock(Process* next) {
+        schedule_event([next](){
+            next->run();
+        });
     }
 
 };
