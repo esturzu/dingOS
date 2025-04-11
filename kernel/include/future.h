@@ -10,7 +10,7 @@ class Future {
     bool volatile is_ready;
     T volatile t;
 public:
-    Future() : sem(), is_ready(false), t() {}
+    Future() : sem(0), is_ready(false), t() {}
 
     Future(const Future&) = delete;
     Future& operator=(const Future& rhs) = delete;
@@ -27,7 +27,7 @@ public:
     T get() {
         if (!is_ready) {
             sem.down();
-            sem.up()
+            sem.up();
         }
         return t;
     }

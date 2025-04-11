@@ -5,6 +5,7 @@
 
 Process* activeProcess[4] = {nullptr, nullptr, nullptr, nullptr};
 
+
 void user_mode()
 {
   while(1)

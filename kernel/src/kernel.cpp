@@ -19,6 +19,7 @@
 #include "tester.h"
 #include "bfs.h"
 #include "vmm.h"
+#include "primitives_tests.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -55,7 +56,7 @@ extern "C" void kernelMain() {
 //     proc->run();
 //   });
 
-  event_loop();
+  // event_loop();
 
   while (1)
     ;

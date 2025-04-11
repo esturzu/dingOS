@@ -10,19 +10,22 @@
 
 class Semaphore {
     uint64_t volatile count;
-    SpinLock lock;
-    LocklessQueue<Process*> waiting_queue;
+    SpinLock* lock;
+    LocklessQueue<Process*>* waiting_queue;
 public: 
-    Semaphore(const uint32_t count) : count(count), lock(), waiting_queue() {}
+    Semaphore(const uint32_t count) : count(count) {
+        lock = new SpinLock();
+        waiting_queue = new LocklessQueue<Process*>();
+    }
 
     Semaphore(const Semaphore&) = delete;
 
     void down() {
-        lock.lock();
+        lock->lock();
 
         if (count > 0) {
             count--;
-            lock.unlock();
+            lock->unlock();
         }
 
         else {
@@ -32,24 +35,32 @@ public:
 
     // Up operation (release semaphore and unblock a thread)
     void up() {
-        lock.lock();
-        if (!waiting_queue.is_empty()) {
+        lock->lock();
+        if (!waiting_queue->is_empty()) {
             // Unblock the next thread from the per-semaphore queue
-            Process* next = waiting_queue.dequeue();
-            if (next != nullptr)  {
+            Process* next = waiting_queue->dequeue();
+            if (next == nullptr)  {
                 count++;
             }
-            unblock(next);
-            lock.unlock();
+            lock->unlock();
+            if (next != nullptr) {
+                unblock(next);
+            }
         } 
+        else {
+            lock->unlock();
+        }
     }
 
+    // Puts current process on a per-sync-prim waiting queue, runs the next free process
     void block() {
-        waiting_queue.enqueue(activeProcess[SMP::whichCore()]);
+        waiting_queue->enqueue(activeProcess[SMP::whichCore()]);
         activeProcess[SMP::whichCore()] = nullptr;
+        lock->unlock();
         event_loop();
     }
 
+    // Schedules the passed in process for running
     void unblock(Process* next) {
         schedule_event([next](){
             next->run();

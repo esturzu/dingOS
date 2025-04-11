@@ -8,23 +8,21 @@
 
 class Barrier {
     Atomic<int> count;
-    Semaphore sem;
+    Semaphore* sem;
 public:
-    Barrier(uint64_t count) : count(count), sem(0) {}
+    Barrier(int count) : count(count) {
+        sem = new Semaphore(0);
+    }
 
     Barrier(const Barrier&) = delete;
 
     void sync() {
-        int r = count.add_fetch(-1);
-        if (r < 0) {
-            debug_printf("TOO MANY THREADS IN BARRIER!\n");
-        }
-        if (r == 0) {
-            sem.up();
+        if (count.add_fetch(-1) == 0) {
+            sem->up();
         }
         else {
-            sem.down();
-            sem.up();
+            sem->down();
+            sem->up();
         }
     }
 };
