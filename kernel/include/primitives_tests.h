@@ -1,7 +1,6 @@
 #include "semaphore.h"
 #include "barrier.h"
 #include "future.h"
-#include "printf.h"
 #include "testFramework.h"
 #include "atomics.h"
 #include "event_loop.h"

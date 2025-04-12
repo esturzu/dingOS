@@ -19,7 +19,6 @@
 #include "tester.h"
 #include "ext2.h"
 #include "vmm.h"
-#include "primitives_tests.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
