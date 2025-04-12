@@ -242,7 +242,6 @@ extern "C" void synchronous_handler(uint64_t* saved_state)
       break;
     case 0b010101:
       {
-        printf("SVC instruction execution in AArch64 state\n");
         uint16_t syscall_type = error_syndrome_register & 0xFFFF;
         system_call_handler(syscall_type, saved_state);
         while(1){} // Replace with PANIC
