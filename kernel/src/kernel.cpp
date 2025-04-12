@@ -95,7 +95,7 @@ extern "C" void kernelMain() {
 //     proc->run();
 //   });
 
-  event_loop();
+  // event_loop();
 
   while (1);
 }

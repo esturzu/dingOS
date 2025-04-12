@@ -6,6 +6,7 @@
 #include "heapTests.h"
 #include "sdTests.h"
 #include "elfTests.h"
+#include "primitives_tests.h"
 
 void runTests() {
   elfTests();
@@ -16,6 +17,7 @@ void runTests() {
   // sdTests();  
   // Must be done last until free is implemented
   heapTests();
+  primitives_tests();
 }
 
 void setupTests() {
