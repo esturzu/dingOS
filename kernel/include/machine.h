@@ -18,7 +18,8 @@ extern "C" uint64_t get_SPSR_EL1();
 extern "C" uint64_t get_ELR_EL1();
 extern "C" uint64_t get_SP_EL0();
 
-extern "C" void set_DAIFClr_all();
+extern "C" void set_DAIFClr_all();  // clears (un‑masks) A,I,F
+extern "C" void set_DAIFSet_all();  // sets   (masks)  A,I,F
 
 extern "C" void set_TTBR0_EL1(uint64_t val);
 extern "C" void set_TTBR1_EL1(uint64_t val);

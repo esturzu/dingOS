@@ -34,6 +34,7 @@
 #include "printf.h"
 
 #include "atomics.h"
+#include "machine.h"
 #include "uart.h"
 
 // #ifdef __cplusplus
@@ -46,58 +47,58 @@ namespace Debug {
 // printf_config.h header file
 // default: undefined
 #ifdef PRINTF_INCLUDE_CONFIG_H
-#include "printf_config.h"
+  #include "printf_config.h"
 #endif
 
 // 'ntoa' conversion buffer size, this must be big enough to hold one converted
 // numeric number including padded zeros (dynamically created on stack)
 // default: 32 byte
 #ifndef PRINTF_NTOA_BUFFER_SIZE
-#define PRINTF_NTOA_BUFFER_SIZE 32U
+  #define PRINTF_NTOA_BUFFER_SIZE 32U
 #endif
 
 // 'ftoa' conversion buffer size, this must be big enough to hold one converted
 // float number including padded zeros (dynamically created on stack)
 // default: 32 byte
 #ifndef PRINTF_FTOA_BUFFER_SIZE
-#define PRINTF_FTOA_BUFFER_SIZE 32U
+  #define PRINTF_FTOA_BUFFER_SIZE 32U
 #endif
 
 // support for the floating point type (%f)
 // default: activated
 #ifndef PRINTF_DISABLE_SUPPORT_FLOAT
-#define PRINTF_SUPPORT_FLOAT
+  #define PRINTF_SUPPORT_FLOAT
 #endif
 
 // support for exponential floating point notation (%e/%g)
 // default: activated
 #ifndef PRINTF_DISABLE_SUPPORT_EXPONENTIAL
-#define PRINTF_SUPPORT_EXPONENTIAL
+  #define PRINTF_SUPPORT_EXPONENTIAL
 #endif
 
 // define the default floating point precision
 // default: 6 digits
 #ifndef PRINTF_DEFAULT_FLOAT_PRECISION
-#define PRINTF_DEFAULT_FLOAT_PRECISION 6U
+  #define PRINTF_DEFAULT_FLOAT_PRECISION 6U
 #endif
 
 // define the largest float suitable to print with %f
 // default: 1e9
 #ifndef PRINTF_MAX_FLOAT
-#define PRINTF_MAX_FLOAT 1e9
+  #define PRINTF_MAX_FLOAT 1e9
 #endif
 
 // support for the long long types (%llu or %p)
 // default: activated
 #ifndef PRINTF_DISABLE_SUPPORT_LONG_LONG
-#define PRINTF_SUPPORT_LONG_LONG
+  #define PRINTF_SUPPORT_LONG_LONG
 #endif
 
 // support for the ptrdiff_t type (%t)
 // ptrdiff_t is normally defined in <stddef.h> as long or long long type
 // default: activated
 #ifndef PRINTF_DISABLE_SUPPORT_PTRDIFF_T
-#define PRINTF_SUPPORT_PTRDIFF_T
+  #define PRINTF_SUPPORT_PTRDIFF_T
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,7 +119,7 @@ namespace Debug {
 
 // import float.h for DBL_MAX
 #if defined(PRINTF_SUPPORT_FLOAT)
-#include <float.h>
+  #include <float.h>
 #endif
 
 // output function type
@@ -338,13 +339,13 @@ static size_t _ntoa_long_long(out_fct_type out, char* buffer, size_t idx,
 
 #if defined(PRINTF_SUPPORT_FLOAT)
 
-#if defined(PRINTF_SUPPORT_EXPONENTIAL)
+  #if defined(PRINTF_SUPPORT_EXPONENTIAL)
 // forward declaration so that _ftoa can switch to exp notation for values >
 // PRINTF_MAX_FLOAT
 static size_t _etoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen,
                     double value, unsigned int prec, unsigned int width,
                     unsigned int flags);
-#endif
+  #endif
 
 // internal ftoa for fixed decimal floating point
 static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen,
@@ -373,11 +374,11 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen,
   // standard printf behavior is to print EVERY whole number digit -- which
   // could be 100s of characters overflowing your buffers == bad
   if ((value > PRINTF_MAX_FLOAT) || (value < -PRINTF_MAX_FLOAT)) {
-#if defined(PRINTF_SUPPORT_EXPONENTIAL)
+  #if defined(PRINTF_SUPPORT_EXPONENTIAL)
     return _etoa(out, buffer, idx, maxlen, value, prec, width, flags);
-#else
+  #else
     return 0U;
-#endif
+  #endif
   }
 
   // test for negative
@@ -473,7 +474,7 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen,
   return _out_rev(out, buffer, idx, maxlen, buf, len, width, flags);
 }
 
-#if defined(PRINTF_SUPPORT_EXPONENTIAL)
+  #if defined(PRINTF_SUPPORT_EXPONENTIAL)
 // internal ftoa variant for exponential floating-point type, contributed by
 // Martijn Jasperse <m.jasperse@gmail.com>
 static size_t _etoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen,
@@ -588,8 +589,8 @@ static size_t _etoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen,
   }
   return idx;
 }
-#endif  // PRINTF_SUPPORT_EXPONENTIAL
-#endif  // PRINTF_SUPPORT_FLOAT
+  #endif  // PRINTF_SUPPORT_EXPONENTIAL
+#endif    // PRINTF_SUPPORT_FLOAT
 
 SpinLock vsnprintf_spinlock;
 
@@ -815,7 +816,7 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen,
                     width, flags);
         format++;
         break;
-#if defined(PRINTF_SUPPORT_EXPONENTIAL)
+  #if defined(PRINTF_SUPPORT_EXPONENTIAL)
       case 'e':
       case 'E':
       case 'g':
@@ -826,8 +827,8 @@ static int _vsnprintf(out_fct_type out, char* buffer, const size_t maxlen,
                     width, flags);
         format++;
         break;
-#endif  // PRINTF_SUPPORT_EXPONENTIAL
-#endif  // PRINTF_SUPPORT_FLOAT
+  #endif  // PRINTF_SUPPORT_EXPONENTIAL
+#endif    // PRINTF_SUPPORT_FLOAT
       case 'c': {
         unsigned int l = 1U;
         // pre padding
@@ -944,7 +945,11 @@ int snprintf_(char* buffer, size_t count, const char* format, ...) {
 
 int vprintf_(const char* format, va_list va) {
   char buffer[1];
-  return _vsnprintf(_out_char, buffer, (size_t)-1, format, va);
+  va_list ap_copy;
+  va_copy(ap_copy, va);  // 1 — duplicate
+  int ret = _vsnprintf(_out_char, buffer, (size_t)-1, format, ap_copy);
+  va_end(ap_copy);  // 2 — free the copy
+  return ret;
 }
 
 int vsnprintf_(char* buffer, size_t count, const char* format, va_list va) {
@@ -966,21 +971,34 @@ void _putchar(char character) { uart_putc(character); }
 
 // Panic function
 [[noreturn]] void vpanic(const char* format, va_list ap) {
-  debug_printf("\n\n*** KERNEL PANIC ***\n");
-  vprintf_(format, ap);
-  debug_printf("\nSystem halted.\n");
+  set_DAIFSet_all();  // mask IRQ/FIQ/SError
+
+  _putchar('\n');
+  _putchar('\n');  // raw banner, avoids locks
+
+  {
+    va_list ap_copy;
+    va_copy(ap_copy, ap);
+    vprintf_(format, ap_copy);
+    va_end(ap_copy);
+  }
+
+  vprintf_("\n*** KERNEL PANIC ***\n",
+           ap);  // safe: vprintf_ uses the lock, but we didn't hold it yet, not
+                 // using debug_printf() prevents deadlocks
+  vprintf_("\nSystem halted.\n", ap);
 
   // ARM64-specific halt: Enter an infinite loop
   while (true) {
-      asm volatile("wfi");  // Wait-for-interrupt (lowers power consumption)
+    __asm__ volatile("wfi");  // Wait-for-interrupt (lowers power consumption)
   }
 }
 
 [[noreturn]] void panic(const char* format, ...) {
   va_list ap;
   va_start(ap, format);
-  vpanic(format, ap);
-  va_end(ap);
+  vpanic(format, ap);       // never returns
+  __builtin_unreachable();  // keeps the compiler happy
 }
 
 // #ifdef __cplusplus
