@@ -14,8 +14,11 @@ void runTests() {
   eventLoopTests();
   // hashmapTests();
 
-  // when running the bfs tests, you have to remake test.dd so that it isn't
-  // messed up also calling delete makes heap dead hang generally sdTests();
+  // When running the bfs tests, you have to remake test.dd so that it isn't
+  // messed up, also calling delete makes heap dead hang generally
+
+  // sdTests();
+
   // Must be done last until free is implemented
   heapTests();
   primitives_tests();
