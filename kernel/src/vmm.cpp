@@ -4,6 +4,8 @@
 #include "printf.h"
 #include "vmm.h"
 
+using Debug::panic;
+
 namespace VMM
 {
   TranslationTable::TranslationTable(enum Granule gran) : granule_size(gran)
@@ -21,15 +23,15 @@ namespace VMM
     }
     else if (gran == Granule::KB_16)
     {
-      // PANIC: Unsupported Granule Size
+      panic("TranslationTable: unsupported granule size %u", (unsigned)gran);
     }
     else if (gran == Granule::KB_64)
     {
-      // PANIC: Unsupported Granule Size
+      panic("TranslationTable: unsupported granule size %u", (unsigned)gran);
     }
     else 
     {
-      // PANIC: Unknown Granule Size
+      panic("TranslationTable: unknown granule size %u", (unsigned)gran);
     }
   }
 
@@ -117,8 +119,7 @@ namespace VMM
           return stage_page + entry_number;
         }
       default:
-        // Panic : Unknown Level
-        return nullptr;
+        panic("get_stage_descriptor: illegal level %u (va=0x%lx)", level, address);
     }
   }
 
@@ -127,7 +128,7 @@ namespace VMM
     if (pg_sz == PageSize::NONE || pg_sz == PageSize::KB_16 || pg_sz == PageSize::KB_64 || pg_sz == PageSize::MB_2 || pg_sz == PageSize::GB_1)
     {
       // Unsupported Page Sizes
-      return false;
+      panic("map_address: unsupported PageSize %u", (unsigned)pg_sz);
     }
 
     if (granule_size == Granule::KB_4)
@@ -141,8 +142,7 @@ namespace VMM
 
       if (!is_page_descriptor(*stage_0_descriptor))
       {
-        // PANIC: Invalid Level for Block Descriptor
-        return false;
+        panic("map_address: L0 entry %#018lx not a table (va=0x%lx)", *stage_0_descriptor, virtual_address);
       }
 
       uint64_t* stage_1_base_address = get_next_level(*stage_0_descriptor);
@@ -155,8 +155,7 @@ namespace VMM
 
       if (!is_page_descriptor(*stage_1_descriptor))
       {
-        // PANIC: Invalid Level for Block Descriptor
-        return false;
+        panic("map_address: L1 entry %#018lx not a table (va=0x%lx)", *stage_1_descriptor, virtual_address);
       }
 
       uint64_t* stage_2_base_address = get_next_level(*stage_1_descriptor);
@@ -170,8 +169,7 @@ namespace VMM
 
       if (!is_page_descriptor(*stage_2_descriptor))
       {
-        // PANIC: Invalid Level for Block Descriptor
-        return false;
+        panic("map_address: L2 entry %#018lx not a table (va=0x%lx)", *stage_2_descriptor, virtual_address);
       }
 
       uint64_t* stage_3_base_address = get_next_level(*stage_2_descriptor);
@@ -234,14 +232,14 @@ namespace VMM
   {
     if (granule_size == Granule::KB_4)
     {
-      if (pg_sz != PageSize::NONE || pg_sz != PageSize::KB_4 || pg_sz != PageSize::MB_2 || pg_sz != PageSize::GB_1)
+      if (pg_sz != PageSize::NONE && pg_sz != PageSize::KB_4 && pg_sz != PageSize::MB_2 && pg_sz != PageSize::GB_1)
       {
         // Invalid Page Size
-        return false;
+        panic("unmap_address: unsupported PageSize %u", (unsigned)pg_sz);
       }
 
       uint64_t* stage_0_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 0, base_address));
-      
+
       if (!is_valid_descriptor(*stage_0_descriptor))
       {
         // Not a valid descriptor to this virtual address
@@ -312,8 +310,7 @@ namespace VMM
 
       if (is_page_descriptor(*stage_3_descriptor))
       {
-        // PANIC: Can't have a page descriptor at the third level
-        return false;
+        panic("unmap_address: L3 entry %#018lx is page, expected table (va=0x%lx)", *stage_3_descriptor, virtual_address);
       }
 
       if (pg_sz == PageSize::KB_4 || pg_sz == PageSize::NONE)
@@ -358,8 +355,7 @@ namespace VMM
     else if (granule_size == Granule::KB_16)
       tg0 = 0b10;
     else
-      tg0 = 0b11; // Panic, Unknown Granularity
-
+      panic("set_ttbr0_el1: unknown granule enum=%u", static_cast<unsigned>(granule_size));
 
     uint64_t new_tcr_el1 = prev_tcr_el1
                             | (tg0 << 14) /*TG0*/
