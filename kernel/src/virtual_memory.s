@@ -13,15 +13,24 @@ kernel_vm_level_1_table:
   .word 0x0
 
 .balign 4096
+.globl kernel_vm_level_2_table
+kernel_vm_level_2_table:
+  .word 0x0
+
+.balign 4096
 .globl setup_kernel_vm
 setup_kernel_vm:
-  adrp x0, :pg_hi21:kernel_vm_base_tbl   // Get Address for VMM Tables
+  adrp x0, :pg_hi21:kernel_vm_base_tbl              // Get Address for VMM Tables
   adrp x1, :pg_hi21:kernel_vm_level_1_table
-  movz x2, #0x0003, lsl #0    // Setup Attribute BitMask
-  movk x2, #0x0000, lsl #48
-  orr x2, x1, x2
-  str x2, [x0]
-  movz x2, #0x0401, lsl #0  // Setup Attribute BitMask
+  adrp x2, :pg_hi21:kernel_vm_level_2_table
+  movz x3, #0x0003, lsl #0                          // Setup Level 0
+  orr x3, x1, x3
+  str x3, [x0]
+  movz x3, #0x0003, lsl #0                          // Setup Level 1
+  orr x3, x2, x3
+  str x3, [x1]
+loop_level_2_table:
+  movz x2, #0x0401, lsl #0                          // Setup Attribute BitMask
   movk x2, #0x0000, lsl #16
   movk x2, #0x0000, lsl #48
   str x2, [x1]
@@ -29,18 +38,18 @@ setup_kernel_vm:
 
 .globl enable_kernel_vm
 enable_kernel_vm:
-  adrp x0, :pg_hi21:kernel_vm_base_tbl    // Setup TTBR1_EL1
+  adrp x0, :pg_hi21:kernel_vm_base_tbl              // Setup TTBR1_EL1
   msr TTBR1_EL1, x0
-  movz x0, #0x0000, lsl #0    // Setup TCR_EL1
+  movz x0, #0x0000, lsl #0                          // Setup TCR_EL1
   movk x0, #0x8010, lsl #16
   movk x0, #0x00c5, lsl #32
   movk x0, #0x0080, lsl #48
   msr TCR_EL1, x0
-  ldr x0, =0xFF   // Setup MAIR_EL1
+  ldr x0, =0xFF                                     // Setup MAIR_EL1
   msr MAIR_EL1, x0
   isb
-  mrs x0, SCTLR_EL1   // Setup SCTLR_EL1
-  orr x0, x0, #0x1
+  mrs x0, SCTLR_EL1                                 // Setup SCTLR_EL1
+  orr x0, x0, #0x7
   msr SCTLR_EL1, x0
   isb
   ret

@@ -63,6 +63,5 @@ void SystemTimer::set_compare_register(uint8_t n, uint32_t value) {
 void SystemTimer::setup_timer(uint8_t IRQ_num) {
   current_time = 0;
   set_compare_register(0, 1000000);
-  set_VBAR_EL1(&el1_vector_table);
   Interrupts::Enable_IRQ(IRQ_num);
 }
