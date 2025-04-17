@@ -21,17 +21,17 @@ class GPIO {
    */
   enum PUD { OFF = 0b00, PULL_DOWN = 0b01, PULL_UP = 0b10, RESERVED = 0b11 };
 
-  static constexpr uint32_t gpio_base_address = GPIO_BASE;
+  static constexpr uint64_t gpio_base_address = GPIO_BASE;
 
-  static constexpr uint32_t GPFSEL4 = gpio_base_address + 0x10;
-  static constexpr uint32_t GPFSEL5 = gpio_base_address + 0x14;
-  static constexpr uint32_t GPHEN0 = gpio_base_address + 0x64;
-  static constexpr uint32_t GPHEN1 = gpio_base_address + 0x68;
-  static constexpr uint32_t GPLEN0 = gpio_base_address + 0x70;
-  static constexpr uint32_t GPLEN1 = gpio_base_address + 0x74;
-  static constexpr uint32_t GPPUD = gpio_base_address + 0x94;
-  static constexpr uint32_t GPPUDCLK0 = gpio_base_address + 0x98;
-  static constexpr uint32_t GPPUDCLK1 = gpio_base_address + 0x9c;
+  static constexpr uint64_t GPFSEL4 = gpio_base_address + 0x10;
+  static constexpr uint64_t GPFSEL5 = gpio_base_address + 0x14;
+  static constexpr uint64_t GPHEN0 = gpio_base_address + 0x64;
+  static constexpr uint64_t GPHEN1 = gpio_base_address + 0x68;
+  static constexpr uint64_t GPLEN0 = gpio_base_address + 0x70;
+  static constexpr uint64_t GPLEN1 = gpio_base_address + 0x74;
+  static constexpr uint64_t GPPUD = gpio_base_address + 0x94;
+  static constexpr uint64_t GPPUDCLK0 = gpio_base_address + 0x98;
+  static constexpr uint64_t GPPUDCLK1 = gpio_base_address + 0x9c;
   /**
    * @brief Sets the Pull-up/down Register Value for all GPIO pins
    *
@@ -64,7 +64,7 @@ class GPIO {
    * @param location    Memory location to apply the mask to
    * @param mask        Mask to apply to the location
    */
-  static void maskAnd(uint32_t location, uint32_t mask);
+  static void maskAnd(uint64_t location, uint32_t mask);
 
   /**
    * @brief Applies `or` mask to a location
@@ -72,14 +72,14 @@ class GPIO {
    * @param location   Memory location to apply the mask to
    * @param mask       Mask to apply to the location
    */
-  static void maskOr(uint32_t location, uint32_t mask);
+  static void maskOr(uint64_t location, uint32_t mask);
 
   /**
    * @brief Applies a mask to a location to set the value to 0
    *
    * @param location  Memory location to apply the mask to
    */
-  static void maskZero(uint32_t location);
+  static void maskZero(uint64_t location);
 
   /**
    * @brief Set the Pull object

@@ -11,19 +11,19 @@ void GPIO::set_clock(uint8_t clock_num, uint32_t device_mask) {
   *GPPUDCLK_register = device_mask;
 }
 
-void GPIO::maskAnd(uint32_t location, uint32_t mask) {
+void GPIO::maskAnd(uint64_t location, uint32_t mask) {
   volatile uint32_t* locationPTR = (volatile uint32_t*)location;
   uint32_t temp = *locationPTR;
   *locationPTR &= mask;
 }
 
-void GPIO::maskOr(uint32_t location, uint32_t mask) {
+void GPIO::maskOr(uint64_t location, uint32_t mask) {
   volatile uint32_t* locationPTR = (volatile uint32_t*)location;
   uint32_t temp = *locationPTR;
   *locationPTR |= mask;
 }
 
-void GPIO::maskZero(uint32_t location) {
+void GPIO::maskZero(uint64_t location) {
   volatile uint32_t* locationPTR = (volatile uint32_t*)location;
   *locationPTR = 0;
 }
