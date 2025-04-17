@@ -5,6 +5,7 @@
 
 Process* activeProcess[4] = {nullptr, nullptr, nullptr, nullptr};
 
+
 void user_mode()
 {
   while(1)
@@ -84,3 +85,16 @@ void Process::save_state(uint64_t* register_frame)
   context.x30 = register_frame[0];
   context.x31 = register_frame[0];
 }
+
+void Process::map_range(uint64_t start, uint64_t end) {
+  constexpr uint64_t flags = VMM::TranslationTable::UnprivilegedAccess;
+  constexpr auto pageSize = VMM::TranslationTable::PageSize::KB_4;
+  for (uint64_t a = start & (-4096); a < end; a += 4096) {
+    translation_table.map_address(a, flags, pageSize);
+  }
+}
+
+void Process::set_entry_point(uint64_t entry) {
+  context.pc = entry;
+}
+
