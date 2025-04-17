@@ -1,5 +1,7 @@
 #include "heap.h"
+
 #include "atomics.h"
+#include "definitions.h"
 #include "printf.h"
 #include "stdint.h"
 #include "definitions.h"
@@ -9,7 +11,7 @@
 // this PDF to understand: https://my.eng.utah.edu/~cs4400/malloc-2.pdf
 
 // Linker Defined Symbols
-extern "C" uint64_t* _end; 
+extern "C" uint64_t* _end;
 extern "C" uint64_t* _heap_start;
 extern "C" uint64_t* _heap_end;
 
@@ -31,19 +33,18 @@ static long* head_of_list;
 // Lock to prevent heap race conditions
 SpinLock* heap_spinlock;
 
-// Marks a region as allocated by setting the first 8 bytes to the 
+// Marks a region as allocated by setting the first 8 bytes to the
 // size of the region (negative to indicate allocated)
-// Also marks the last 8 bytes to make it easier to get the 
+// Also marks the last 8 bytes to make it easier to get the
 // "head" address of the region during coalescing
 void mark_allocated(long* position, size_t block_size) {
     position[0] = ((long) block_size) * -1;
     position[(block_size / 8) - 1] = ((long) block_size) * -1;
 }
 
-
-// Marks a region as free by setting the first 8 bytes to the 
+// Marks a region as free by setting the first 8 bytes to the
 // size of the region (positive to indicate freed)
-// Also marks the last 8 bytes to make it easier to get the 
+// Also marks the last 8 bytes to make it easier to get the
 // "head" address of the region during coalescing
 void mark_free(long* position, size_t block_size) {
     position[0] = ((long) block_size);
@@ -189,20 +190,20 @@ void* operator new(size_t count, align_val_t al) { return malloc(count, al); }
 void* operator new[](size_t count, align_val_t al) { return malloc(count, al); }
 
 void operator delete(void* ptr) noexcept {
-    // debug_printf("Freeing address 0x%X\n", ptr); 
-    free(ptr); 
+  // debug_printf("Freeing address 0x%X\n", ptr);
+  free(ptr);
 }
 
-void operator delete[](void* ptr) noexcept { 
-    // debug_printf("Freeing address 0x%X\n", ptr); 
-    free(ptr); 
+void operator delete[](void* ptr) noexcept {
+  // debug_printf("Freeing address 0x%X\n", ptr);
+  free(ptr);
 }
 
 void operator delete(void* ptr, size_t sz) noexcept { free(ptr); }
 
 void operator delete[](void* ptr, size_t sz) noexcept { free(ptr); }
 
-// // Undefined Delete Reference Fix
+// Undefined Delete Reference Fix
 
 extern "C" void __cxa_atexit() {}
 
