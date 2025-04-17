@@ -58,6 +58,11 @@ set_DAIFClr_all:
   msr DAIFClr, #7
   ret
 
+.globl set_DAIFSet_all
+set_DAIFSet_all:
+    msr DAIFSet, #7
+    ret
+
 .extern 
 .globl set_stack_pointer
 set_stack_pointer:
