@@ -19,8 +19,13 @@ QEMU := $(QEMUBIN)/qemu-system-aarch64 								# QEMU
 
 # QEMU flags and params
 QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4 -drive file=../test.dd,if=sd,format=raw -cpu cortex-a72 -m 1G \
-    -usb -device usb-kbd
-	# --trace "sd*" 
+    -usb -device usb-kbd \
+	# -trace "usb*" -d unimp,guest_errors
+
+# QEMU flags and params
+# QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4 -drive file=../test.dd,if=sd,format=raw -cpu cortex-a72 -m 1G \
+#     -usb -device usb-storage,drive=usbdrive -drive if=none,id=usbdrive,format=raw,file=../usb.img \
+# 	--trace "sd*" 
 
 # Optional kernel output log file
 QEMU_LOG ?=
