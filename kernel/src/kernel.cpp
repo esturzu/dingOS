@@ -86,7 +86,6 @@ extern "C" void kernelMain() {
   //       }
   //   }
 
-  printf("BEFORE TESTS OK WTF PLEASE START PRINTING PLEASE START PRINTING!");
   setupTests();
 
   // while (true) {
@@ -99,17 +98,16 @@ extern "C" void kernelMain() {
 
   // event_loop();
 
-  // Request a framebuffer at 800x600x32
-  debug_printf("HELLO FROM FRAMEBUFFER BEFORE");
-  // FrameBufferInfo* fb = framebuffer_init(640, 480, 32);
-  // if (!fb) {
-  //   debug_printf("Failed to init framebuffer!\n");
-  //   while (true) { /* spin */
-  //   }
-  // }
+  // Request a framebuffer at 640x480x32
+  FrameBufferInfo* fb = framebuffer_init(640, 480, 32);
+  if (!fb) {
+    debug_printf("Failed to init framebuffer!\n");
+    while (true) { /* spin */
+    }
+  }
 
   // Fill the screen with a color
-  // framebuffer_fill(fb, 0xFFFF00);
+  framebuffer_fill(fb, 0xFFFF00);
 
   while (1);
 }

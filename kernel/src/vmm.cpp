@@ -390,6 +390,20 @@ namespace VMM
     kernel_translation_table.map_address(0xFFFF000040000000, kernel_to_phys_ptr(0xFFFF000040000000), TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
     kernel_translation_table.map_address(0xFFFF000040001000, kernel_to_phys_ptr(0xFFFF000040001000), TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
 
+    /* ------------------------------------------------------------------
+     * Map the rest of the first 64 KiB of the peripheral window
+     * (covers the property‑mailbox at 0x4000B880).
+     * ------------------------------------------------------------------ */
+    for (uint64_t off = 0x2000; off < 0x10000; off += 0x1000)   // pages 2‑15
+    {
+        uint64_t va = 0xFFFF000040000000 + off;                 // KVA
+        kernel_translation_table.map_address(
+            va,
+            kernel_to_phys_ptr(va),
+            TranslationTable::DeviceMemory,
+            TranslationTable::PageSize::KB_4);
+    }
+
     MAIR::setup_mair_el1();
 
     kernel_translation_table.set_ttbr1_el1();
