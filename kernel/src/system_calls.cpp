@@ -1,9 +1,12 @@
 #include "system_call.h"
-
 #include "cores.h"
 #include "event_loop.h"
 #include "printf.h"
 #include "process.h"
+#include "ext2.h"
+
+#define USER_MASK 0xFFFF'0000'0000'0000
+#define IN_USER(ptr) ((((uint64_t) (ptr)) & USER_MASK) == USER_MASK)
 
 // TODO For print system calls (syscalls 2 and 3):
 // - Optimize saving state (instead of saving all registers again, just select
@@ -11,87 +14,135 @@
 // - Optimize character printing (instead of printing in a loop and using
 //   printf with "%c", just add directly to the final print buffer)
 
-uint64_t system_call_handler (uint16_t syscall_type, uint64_t* saved_state)
-{
+int fork() {
+  return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+}
+
+int join(int pid) {
+  return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+}
+
+int getpid() {
+  return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+}
+
+int open(const char* filename) {
+  return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+}
+
+int close(int fd) {
+  return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+}
+
+int read(char* buffer, int count, int fd) {
+  return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+}
+
+int write(const char* buffer, int count, int fd) {
+  if (fd != 1) return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+  if (!IN_USER(buffer)) return (int) SystemCallErrorCode::INVALID_POINTER;
+  for (int i = 0; i < count; i++) printf("%c", buffer[i]);
+  return count;
+}
+
+int exec(const char* filename, int argc, const char** argv) {
+  if (!IN_USER(filename)) return (int) SystemCallErrorCode::INVALID_POINTER;
+  Node* output = find_from_abs_path(filename);
+  if (output == nullptr) return (int) SystemCallErrorCode::FILE_NOT_FOUND;
+  return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+}
+
+void current_process_return(uint64_t* saved_state, int result) {
+  saved_state[0] = result;
+  Process* current_process = activeProcess[SMP::whichCore()];
+  current_process->save_state(saved_state);
+  current_process->run();
+}
+
+uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state) {
   debug_printf("Sys Call Handler\n");
+  switch (syscall_type) {
+    // Exit System Call
+    case 0x00: {
+      debug_printf("Exit System Call\n");
+      uint8_t current_core = SMP::whichCore();
+      Process* current_process = activeProcess[current_core];
+      delete current_process;
+      activeProcess[current_core] = nullptr;
+      event_loop();
+      break;
+    }
 
-  switch (syscall_type)
-  {
-    case 0: // Exit System Call
-      {
-        debug_printf("Exit System Call\n");
+    // Yield System Call
+    case 0x01: {
+      debug_printf("Yield System Call\n");
+      uint8_t current_core = SMP::whichCore();
+      Process* current_process = activeProcess[current_core];
+      current_process->save_state(saved_state);
+      activeProcess[current_core] = nullptr;
+      __asm__ volatile("dmb sy" ::: "memory");
+      schedule_event([current_process] () { current_process->run(); });
+      event_loop();
+      break;
+    }
 
-        uint8_t current_core = SMP::whichCore();
+    case 0x02: {
+      current_process_return(saved_state, fork());
+      break;
+    }
 
-        Process* current_process = activeProcess[current_core];
+    case 0x03: {
+      current_process_return(saved_state, join((int) saved_state[0]));
+      break;
+    }
 
-        activeProcess[current_core] = nullptr;
+    case 0x04: {
+      current_process_return(saved_state, getpid());
+      break;
+    }
 
-        event_loop();
-      }
-    case 1: // Yield System Call
-      {
-        debug_printf("Yield System Call\n");
+    case 0x05: {
+      current_process_return(saved_state, open((const char*) saved_state[0]));
+      break;
+    }
 
-        uint8_t current_core = SMP::whichCore();
+    case 0x06: {
+      current_process_return(saved_state, close((int) saved_state[0]));
+      break;
+    }
 
-        Process* current_process = activeProcess[current_core];
+    case 0x07: {
+      char* buffer = (char*) saved_state[0];
+      int count = (int) saved_state[1];
+      int fd = (int) saved_state[2];
+      current_process_return(saved_state, read(buffer, count, fd));
+      break;
+    }
 
-        current_process->save_state(saved_state);
+    case 0x08: {
+      const char* buffer = (const char*) saved_state[0];
+      int count = (int) saved_state[1];
+      int fd = (int) saved_state[2];
+      current_process_return(saved_state, write(buffer, count, fd));
+      break;
+    }
 
-        activeProcess[current_core] = nullptr;
+    case 0x09: {
+      const char* filename = (const char*) saved_state[0];
+      int argc = (int) saved_state[1];
+      const char** argv = (const char**) saved_state[2];
+      current_process_return(saved_state, exec(filename, argc, argv));
+      break;
+    }
 
-        __asm__ volatile("dmb sy" ::: "memory");
-
-        schedule_event([current_process](){
-          current_process->run();
-        });
-
-        event_loop();
-      }
-    case 2: // Print Character System Call
-      {
-        // Convention: x0 stores the character to be printed. The system call
-        // returns 1 if the character was printed successfully, and 0
-        // otherwise
-        printf("%c", (char) saved_state[0]);
-        saved_state[0] = 1;
-
-        uint8_t current_core = SMP::whichCore();
-        Process* current_process = activeProcess[current_core];
-        current_process->save_state(saved_state);
-        current_process->run();
-      }
-    case 3: // Print String System Call
-      {
-        // Convention: x0 stores the pointer of data to be printed, and x1
-        // stores the size of the data. The system call returns the number of
-        // characters successfully printed, or -1 if some error occurred. Note
-        // that it verifies that the pointer is in user space before printing.
-        uint64_t pointerU64 = saved_state[0];
-        constexpr uint64_t mask = 0xFFFF'0000'0000'0000;
-        bool validPointer = (pointerU64 & mask) == mask;
-
-        if (validPointer) {
-          const char* pointer = (const char*) pointerU64;
-          uint64_t size = saved_state[1];
-          for (uint64_t i = 0; i < size; i++) printf("%c", pointer);
-          saved_state[0] = size;
-        } else {
-          saved_state[0] = -1;
-        }
-
-        uint8_t current_core = SMP::whichCore();
-        Process* current_process = activeProcess[current_core];
-        current_process->save_state(saved_state);
-        current_process->run();
-      }
-    default:
-      {
-        printf("Unknown System Call\n");
-        while (true) {}
-      }
+    default: {
+      printf("Unknown System Call\n");
+      while (true) {}
+    }
   }
 
+  printf("Should be a noreturn function\n");
+  while (true) {}
   return 0;
 }
+
