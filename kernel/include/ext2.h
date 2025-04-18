@@ -87,6 +87,8 @@ extern super_block* supa;          // Pointer to the mounted filesystem's superb
 extern BGDT* bgdt;                 // Pointer to the first block group descriptor
 extern uint32_t SB_offset;         // Offset to the superblock (1024 bytes)
 extern uint32_t BGDT_index;        // Block index of the BGDT
+extern uint8_t* cached_inode_bitmap;
+extern uint8_t* cached_block_bitmap;
 
 // Forward declarations
 class Node;
@@ -327,6 +329,8 @@ public:
             bgdt->num_unallocated_blocks,
             bgdt->num_unallocated_directories,
             bgdt->num_unallocated_iNodes);
+        cached_inode_bitmap = new uint8_t[1024 << supa->block_size];
+        cached_block_bitmap = new uint8_t[1024 << supa->block_size];
     }
     
     // Destructor
@@ -334,6 +338,8 @@ public:
         delete root;
         delete supa;
         delete bgdt;
+        delete cached_inode_bitmap;
+        delete cached_block_bitmap;
     }
     
     // Returns the block size of the filesystem
@@ -385,15 +391,8 @@ void create_inode(uint32_t inode_num, uint16_t type, SDAdapter* adapter);
 // Add a directory entry for a new file/directory
 void add_dir_entry(Node* dir, const char* name, uint32_t inode_num);
 
-// Test the directory traversal functionality
-void test_directory_traversal();
-
-// Test creating and writing to a file
-void test_file_creation();
-
 // Initialize the filesystem
 void init_ext2();
 
-void diagnose_block_bitmap(SDAdapter* adapter);
 
 #endif // _EXT2_H_

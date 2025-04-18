@@ -15,10 +15,15 @@ super_block* supa = nullptr;    // Superblock
 BGDT* bgdt = nullptr;           // Block Group Descriptor Table
 uint32_t SB_offset = 1024;      // Superblock offset (always 1024 bytes)
 uint32_t BGDT_index = 0;        // Block index of the BGDT
-// bool inode_bitmap_dirty = false;
-// bool block_bitmap_dirty = false;
-// bool bgdt_dirty = false;
-// bool dir_inode_dirty = false;
+bool inode_bitmap_dirty = false;
+bool block_bitmap_dirty = false;
+bool bgdt_dirty = false;
+bool dir_inode_dirty = false;
+// uint8_t* cached_inode_bitmap = new uint8_t[1024 << supa->block_size];
+// uint8_t* cached_block_bitmap = new uint8_t[1024 << supa->block_size];
+uint8_t* cached_inode_bitmap = nullptr;
+uint8_t* cached_block_bitmap = nullptr;
+
 
 
 /*
@@ -140,10 +145,6 @@ void Node::update_inode_on_disk() {
 uint32_t Node::allocate_block() {
     printf("DEBUG: Node::allocate_block: Finding free block for inode %u\n", number);
     
-    // Read the block bitmap
-    uint8_t* bitmap = new uint8_t[1024 << supa->block_size];
-    sd_adapter->read_block(bgdt->bit_map_block_address, (char*)bitmap);
-    
     // Detailed bitmap tracking
     uint32_t total_blocks = supa->num_Blocks;
     uint32_t free_blocks_in_bitmap = 0;
@@ -154,7 +155,7 @@ uint32_t Node::allocate_block() {
         uint32_t byte_idx = i / 8;
         uint32_t bit_idx = i % 8;
         
-        if ((bitmap[byte_idx] & (1 << bit_idx)) == 0) {
+        if ((cached_block_bitmap[byte_idx] & (1 << bit_idx)) == 0) {
             free_blocks_in_bitmap++;
             if (first_free_block == 0) {
                 first_free_block = i + 1; // Block numbers start at 1
@@ -166,7 +167,6 @@ uint32_t Node::allocate_block() {
     // Check for available free blocks
     if (first_free_block == 0) {
         printf("ERROR: No free blocks available!\n");
-        delete[] bitmap;
         return 0;
     }
     
@@ -175,33 +175,19 @@ uint32_t Node::allocate_block() {
         uint32_t byte_idx = i / 8;
         uint32_t bit_idx = i % 8;
         
-        if ((bitmap[byte_idx] & (1 << bit_idx)) == 0) {
+        if ((cached_block_bitmap[byte_idx] & (1 << bit_idx)) == 0) {
             // Mark as used
-            bitmap[byte_idx] |= (1 << bit_idx);
+            cached_block_bitmap[byte_idx] |= (1 << bit_idx);
             
             printf("DEBUG: Found free block %u (byte %u, bit %u)\n", 
                    i + 1, byte_idx, bit_idx);
-            
-            // Write bitmap back
-            sd_adapter->write_block(bgdt->bit_map_block_address, (char*)bitmap, 0, 1024 << supa->block_size);
-            
-            // Update BGDT
-            uint32_t prev_free_blocks = bgdt->num_unallocated_blocks;
-            bgdt->num_unallocated_blocks--;
-            
-            
-            // Update BGDT on disk
-            uint32_t bgdt_offset = BGDT_index * (1024 << supa->block_size) + 
-                                   (block_group * sizeof(BGDT));
-            int64_t bgdt_write_result = sd_adapter->write_all(bgdt_offset, sizeof(BGDT), (char*)bgdt);
-            
-            delete[] bitmap;
+            block_bitmap_dirty = true;
+            bgdt_dirty = true;
             return i + 1; // Block numbers start at 1
         }
     }
     
     printf("ERROR: No free blocks found despite initial count\n");
-    delete[] bitmap;
     return 0; // No free blocks
 }
 
@@ -424,41 +410,29 @@ uint32_t allocate_inode(Node* dir) {
     // Use the same block group as the parent directory for locality
     uint32_t block_group = dir->block_group;
     
-    // Read the inode bitmap
-    uint8_t* bitmap = new uint8_t[1024 << supa->block_size];
-    dir->sd_adapter->read_block(bgdt->bit_map_iNode_address, (char*)bitmap);
-    
     // Find first free inode in this block group
     for (uint32_t i = 0; i < supa->num_iNode_pergroup; i++) {
         uint32_t byte_idx = i / 8;
         uint32_t bit_idx = i % 8;
-        
-        if ((bitmap[byte_idx] & (1 << bit_idx)) == 0) {
-            // Mark as used
-            bitmap[byte_idx] |= (1 << bit_idx);
-            
+        if ((cached_inode_bitmap[byte_idx] & (1 << bit_idx)) == 0) {
+            cached_inode_bitmap[byte_idx] |= (1 << bit_idx);
             printf("DEBUG: allocate_inode: Found free inode at index %u (byte %u, bit %u)\n", 
                    i, byte_idx, bit_idx);
-            
-            // Write bitmap back
-            dir->sd_adapter->write_block(bgdt->bit_map_iNode_address, (char*)bitmap, 0, 1024 << supa->block_size);
-            
-            // Update BGDT
+            inode_bitmap_dirty = true;
+            bgdt_dirty = true;
             bgdt->num_unallocated_iNodes--;
-            
-            // Update BGDT on disk
-            uint32_t bgdt_offset = BGDT_index * (1024 << supa->block_size) + (block_group * sizeof(BGDT));
-            dir->sd_adapter->write_all(bgdt_offset, sizeof(BGDT), (char*)bgdt);
-            
-            delete[] bitmap;
+    
+            // Delay writes — just mark dirty
+            // Don't write bitmap or BGDT yet
+            // Keep updated bitmap in memory if you need it for later
             uint32_t inode_num = (block_group * supa->num_iNode_pergroup) + i + 1; // inode numbers start at 1
             printf("DEBUG: allocate_inode: Allocated inode %u\n", inode_num);
             return inode_num;
         }
+        
     }
     
     printf("DEBUG: allocate_inode: No free inodes found\n");
-    delete[] bitmap;
     return 0; // No free inodes
 }
 
@@ -509,7 +483,6 @@ void add_dir_entry(Node* dir, const char* name, uint32_t inode_num) {
     // Find space in the directory
     char* block_buf = new char[1024 << supa->block_size];
     bool found_space = false;
-    bool inode_changed = false;
     uint32_t block_num = 0;
     uint32_t offset = 0;
     
@@ -529,7 +502,7 @@ void add_dir_entry(Node* dir, const char* name, uint32_t inode_num) {
             
             printf("DEBUG: add_dir_entry: Allocated block %u\n", new_block);
             dir->node->directLinked[block_num] = new_block;
-            inode_changed = true;
+            dir_inode_dirty = true;
             // offset = 0;
             found_space = true;
         } else {
@@ -597,11 +570,7 @@ void add_dir_entry(Node* dir, const char* name, uint32_t inode_num) {
         printf("DEBUG: add_dir_entry: Updating directory size from %u to %u\n", 
                dir->node->size_of_iNode, end_pos);
         dir->node->size_of_iNode = end_pos;
-        inode_changed = true; 
-    }
-
-    if (inode_changed) {
-        dir->update_inode_on_disk();
+        dir_inode_dirty = true;
     }
     
     delete[] block_buf;
@@ -643,189 +612,44 @@ Node* create_file(Node* dir, const char* name) {
     
     // Return the new node
     printf("DEBUG: create_file: Creating Node object for new file\n");
+        // ----- FLUSH METADATA BASED ON DIRTY FLAGS -----
+
+    // Flush inode bitmap if dirty
+    if (inode_bitmap_dirty) {
+        printf("DEBUG: Flushing inode bitmap to disk\n");
+        dir->sd_adapter->write_block(bgdt->bit_map_iNode_address, (char*)cached_inode_bitmap, 0, 1024 << supa->block_size);
+        inode_bitmap_dirty = false;
+    }
+
+    // Flush block bitmap if dirty
+    if (block_bitmap_dirty) {
+        printf("DEBUG: Flushing block bitmap to disk\n");
+        dir->sd_adapter->write_block(bgdt->bit_map_block_address, (char*)cached_block_bitmap, 0, 1024 << supa->block_size);
+        block_bitmap_dirty = false;
+    }
+
+    // Flush BGDT if dirty
+    if (bgdt_dirty) {
+        printf("DEBUG: Flushing BGDT to disk\n");
+        uint32_t bgdt_offset = BGDT_index * (1024 << supa->block_size) +
+                               (dir->block_group * sizeof(BGDT));
+        dir->sd_adapter->write_all(bgdt_offset, sizeof(BGDT), (char*)bgdt);
+        bgdt_dirty = false;
+    }
+
+    // Flush directory inode if dirty
+    if (dir_inode_dirty) {
+        printf("DEBUG: Flushing parent directory inode to disk\n");
+        dir->update_inode_on_disk();
+        dir_inode_dirty = false;
+    }
+
     return new Node(1024 << supa->block_size, inode_num, dir->sd_adapter);
 }
 
 /*
- * INITIALIZATION AND TESTING
+ * INITIALIZATION
  */
-
-// Test the directory traversal functionality
-void test_directory_traversal() {
-    // Create an SD adapter with initial block size
-    SDAdapter* adapter = new SDAdapter(1024);
-    
-    // Read the superblock
-    supa = new super_block();
-    adapter->read_all(EXT2_SB_OFFSET, sizeof(super_block), (char*)supa);
-    
-    // Update the adapter with the correct block size
-    uint32_t fs_block_size = 1024 << supa->block_size;
-    adapter = new SDAdapter(fs_block_size);
-    
-    // Read the block group descriptor table
-    bgdt = new BGDT();
-    
-    // Calculate BGDT location based on block size
-    if ((1024 << supa->block_size) == 1024) {
-        BGDT_index = 2;  // For 1K blocks, BGDT starts at block 2
-    } else {
-        BGDT_index = 1;  // For larger blocks, BGDT starts at block 1
-    }
-    
-    // Read the BGDT
-    adapter->read_all(BGDT_index * fs_block_size, sizeof(BGDT), (char*)bgdt);
-    
-    // Create an ext2 filesystem instance
-    Ext2* fs = new Ext2(adapter);
-    
-    // Test the root directory
-    if (fs->root && fs->root->is_dir()) {
-        printf("Root directory found (inode %u)\n", fs->root->number);
-        
-        // List the contents of the root directory
-        list_directory(fs->root);
-        
-        // Try to find and read a test file
-        const char* test_filename = "hello.txt";
-        printf("Looking for file: %s\n", test_filename);
-        
-        Node* test_file = find_in_directory(fs->root, test_filename);
-        
-        if (test_file) {
-            printf("Found file '%s' (inode %u)\n", test_filename, test_file->number);
-            
-            // Read and display the file contents
-            char buffer[1024];
-            int bytes_read = read_file(test_file, buffer, sizeof(buffer) - 1);
-            
-            if (bytes_read > 0) {
-                printf("File contents (%d bytes):\n%s\n", bytes_read, buffer);
-            } else {
-                printf("Error reading file or empty file\n");
-            }
-            
-            delete test_file;
-        } else {
-            printf("File '%s' not found\n", test_filename);
-        }
-    } else {
-        printf("Error: Root is not a directory or not found\n");
-    }
-    
-    // Clean up
-    delete fs;
-    delete adapter;
-}
-
-// Test file creation and writing
-void test_file_creation() {
-    // Initialize the SD card
-    if (SD::init() != SD::SUCCESS) {
-        printf("ERROR: SD card initialization failed!\n");
-        return;
-    }
-    
-    printf("SD card initialized successfully\n");
-    
-    // Create an SD adapter with initial block size
-    SDAdapter* adapter = new SDAdapter(1024);
-    
-    // Read the superblock
-    supa = new super_block();
-    adapter->read_all(EXT2_SB_OFFSET, sizeof(super_block), (char*)supa);
-    
-    // Update the adapter with the correct block size
-    uint32_t fs_block_size = 1024 << supa->block_size;
-    adapter = new SDAdapter(fs_block_size);
-    
-    // Read the block group descriptor table
-    bgdt = new BGDT();
-    
-    // Calculate BGDT location
-    if ((1024 << supa->block_size) == 1024) {
-        BGDT_index = 2;
-    } else {
-        BGDT_index = 1;
-    }
-    
-    // Read the BGDT
-    adapter->read_all(BGDT_index * fs_block_size, sizeof(BGDT), (char*)bgdt);
-    
-    // Create an ext2 filesystem instance
-    Ext2* fs = new Ext2(adapter);
-    
-    printf("Creating test file in root directory...\n");
-    
-    // Create a test file
-    const char* test_filename = "dingos_test.txt";
-    Node* test_file = create_file(fs->root, test_filename);
-    
-    if (test_file) {
-        printf("DEBUG: After create, file inode %u, type=0x%x, size=%u\n", 
-               test_file->number, test_file->node->types_plus_perm, test_file->node->size_of_iNode);
-        
-        // Write some data to the file
-        const char* test_data = "Hello from DingOS! This is a test file created by the ext2 filesystem.";
-        printf("DEBUG: BEFORE WRITE: About to call write_all with %u bytes\n", strlen_ext(test_data));
-        int64_t write_result = test_file->write_all(0, strlen_ext(test_data), (char*)test_data);
-        printf("DEBUG: AFTER WRITE: write_all returned %lld\n", write_result);
-        printf("DEBUG: File size after write: %u\n", test_file->node->size_of_iNode);
-        
-        printf("File '%s' created and written successfully\n", test_filename);
-        
-        // Close the file
-        delete test_file;
-        
-        // Now read it back
-        test_file = find_in_directory(fs->root, test_filename);
-        if (test_file) {
-            printf("DEBUG: After reopening, file inode %u, type=0x%x, size=%u\n", 
-                   test_file->number, test_file->node->types_plus_perm, test_file->node->size_of_iNode);
-            
-            char buffer[256];
-            int64_t bytes_read = test_file->read_all(0, sizeof(buffer) - 1, buffer);
-            
-            if (bytes_read > 0) {
-                buffer[bytes_read] = '\0';
-                printf("Read from test file (%lld bytes):\n%s\n", bytes_read, buffer);
-                
-                // Compare with original data
-                bool match = true;
-                for (uint32_t i = 0; i < bytes_read && i < strlen_ext(test_data); i++) {
-                    if (buffer[i] != test_data[i]) {
-                        printf("Data mismatch at byte %u\n", i);
-                        match = false;
-                        break;
-                    }
-                }
-                
-                if (match && bytes_read == strlen_ext(test_data)) {
-                    printf("Data verification successful!\n");
-                } else {
-                    printf("Data verification failed: read %lld bytes, expected %u\n", 
-                           bytes_read, strlen_ext(test_data));
-                }
-            } else {
-                printf("Error reading file\n");
-            }
-            
-            delete test_file;
-        } else {
-            printf("Error: Could not find newly created file\n");
-        }
-    } else {
-        printf("Error: Failed to create test file\n");
-    }
-    
-    // Show the updated directory listing
-    printf("Updated root directory contents:\n");
-    list_directory(fs->root);
-    
-    // Clean up
-    delete fs;
-    delete adapter;
-}
 
 
 // Initialize the ext2 filesystem
@@ -875,93 +699,10 @@ void init_ext2() {
     } else {
         printf("Error: Root is not a directory or not found\n");
     }
-    diagnose_block_bitmap(adapter);
     
     // Don't delete fs here if you want to keep using it
     // The initialization function should probably return the filesystem
     // or store it in a global variable
 }
 
-// Add this function to your ext2.cpp or ext2.h
-void diagnose_block_bitmap(SDAdapter* adapter) {
-    printf("\n--- DETAILED BLOCK BITMAP DIAGNOSTIC ---\n");
-    
-    // Read the block bitmap
-    uint8_t* bitmap = new uint8_t[1024 << supa->block_size];
-    adapter->read_block(bgdt->bit_map_block_address, (char*)bitmap);
-
-    // Bitmap metadata
-    printf("Block Bitmap Location: %u\n", bgdt->bit_map_block_address);
-    printf("Total Blocks: %u\n", supa->num_Blocks);
-    uint32_t used_blocks = 0;
-    uint32_t first_used_block = 0xFFFFFFFF;
-    uint32_t last_used_block = 0;
-    
-    // Track blocks used by critical filesystem structures
-    uint32_t critical_blocks[] = {
-        0,      // Usually reserved
-        1,      // Superblock
-        BGDT_index,  // Block Group Descriptor Table
-        bgdt->bit_map_block_address,  // Block bitmap
-        bgdt->bit_map_iNode_address,  // Inode bitmap
-        bgdt->startingBlockAddress  // Inode table start
-    };
-    const uint32_t num_critical_blocks = sizeof(critical_blocks) / sizeof(critical_blocks[0]);
-
-    // Print first few bytes of bitmap for raw inspection
-    printf("\nFirst 32 bytes of Block Bitmap:\n");
-    for (int i = 0; i < 32; i++) {
-        printf("%02x ", bitmap[i]);
-        if ((i + 1) % 8 == 0) printf("\n");
-    }
-    printf("\n");
-
-    // Detailed block tracking
-    for (uint32_t i = 0; i < supa->num_Blocks; i++) {
-        uint32_t byte_idx = i / 8;
-        uint32_t bit_idx = i % 8;
-        
-        bool is_block_used = bitmap[byte_idx] & (1 << bit_idx);
-        
-        // Check if this is a critical block
-        bool is_critical_block = false;
-        for (uint32_t j = 0; j < num_critical_blocks; j++) {
-            if (i == critical_blocks[j]) {
-                is_critical_block = true;
-                break;
-            }
-        }
-
-        if (is_block_used || is_critical_block) {
-            used_blocks++;
-            
-            if (i < first_used_block) first_used_block = i;
-            if (i > last_used_block) last_used_block = i;
-        }
-    }
-
-    // Detailed reporting
-    printf("Detailed Block Allocation Analysis:\n");
-    printf("Used Blocks: %u\n", used_blocks);
-    printf("Calculated Free Blocks: %u\n", supa->num_Blocks - used_blocks);
-    printf("BGDT Reported Free Blocks: %u\n", bgdt->num_unallocated_blocks);
-    printf("First Used Block: %u\n", first_used_block);
-    printf("Last Used Block: %u\n", last_used_block);
-
-    // Hex dump of critical block entries
-    printf("\nCritical Block Bitmap Entries:\n");
-    for (uint32_t j = 0; j < num_critical_blocks; j++) {
-        uint32_t block = critical_blocks[j];
-        uint32_t byte_idx = block / 8;
-        uint32_t bit_idx = block % 8;
-        
-        printf("Block %u: Byte %u, Bit %u - Value: %s\n", 
-               block, 
-               byte_idx, 
-               bit_idx, 
-               (bitmap[byte_idx] & (1 << bit_idx)) ? "Used" : "Free");
-    }
-
-    delete[] bitmap;
-}
 
