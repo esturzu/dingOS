@@ -3,10 +3,11 @@
 # This script will continuously run 'make qemu' until the last line of
 # kernel output is different than expected.
 
-MAX_SECS=3                      # How many seconds to let QEMU run each time before timing out
-EXPECTED_LINE="HERE 4"          # Change this to the line you expect at the end
-LOGFILE="kernel_output.log"     # File to kernel output
-DEBUG_ENABLED_FLAG=1            # Enable debug prints
+MAX_SECS=4                                        # How many seconds to let QEMU run each time before timing out
+EXPECTED_LINE="Test 2: HashMap resizing"          # Change this to the line you expect at the end
+LOGFILE="kernel_output.log"                       # File to kernel output
+DEBUG_ENABLED_FLAG=1                              # Enable debug prints
+MAX_ITER=100
 
 COUNTER=0
 
@@ -15,11 +16,11 @@ while true; do
   rm -f "$LOGFILE"
 
   # Make clean
-  make clean
+  make -s clean
 
   # Run QEMU for MAX_SECS seconds
   # Need --foreground otherwise QEMU arguments won't be passed in
-  timeout --foreground ${MAX_SECS}s make DEBUG_ENABLED=$DEBUG_ENABLED_FLAG QEMU_LOG="$LOGFILE" qemu
+  timeout --foreground ${MAX_SECS}s make -s DEBUG_ENABLED=$DEBUG_ENABLED_FLAG QEMU_LOG="$LOGFILE" qemu
 
   # Reset terminal back to cooked mode
   reset
@@ -54,4 +55,10 @@ while true; do
   fi
 
   echo "Run #$COUNTER was successful (i.e., ended with '$EXPECTED_LINE'). Retrying..."
+
+  # Break if over MAX_ITER rounds ran successfully
+  if [ "$COUNTER" -gt "$MAX_ITER" ]; then
+    echo "$MAX_ITER rounds ran successfully."
+    break
+  fi
 done

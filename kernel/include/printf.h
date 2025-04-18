@@ -119,19 +119,42 @@ int fctprintf(void (*out)(char character, void* arg), void* arg,
 // #ifdef __cplusplus
 // }
 // #endif
-
-}  // namespace Debug
-
 // Our additions
 #if defined(DEBUG_ENABLED) && (DEBUG_ENABLED + 0)
-#define debug_printf(...) Debug::printf_(__VA_ARGS__) 
+  #define debug_printf(...) Debug::printf_(__VA_ARGS__)
 #else
-#define debug_printf(...) 
+  #define debug_printf(...)
 #endif
 
 #define printf(...) Debug::printf_(__VA_ARGS__)
-
-// TODO: decide on when to have error_printf and what to do with it
 #define error_printf(...) Debug::printf_(__VA_ARGS__)
+
+// Panic and assertion handling
+[[noreturn]] void vpanic(const char* format, va_list ap);
+[[noreturn]] void panic(const char* format, ...);
+#define ASSERT(condition)                                                   \
+  do {                                                                      \
+    if (!(condition))                                                       \
+      Debug::panic("Assertion failed: %s at %s:%d\n", #condition, __FILE__, \
+                   __LINE__);                                               \
+  } while (0)
+}  // namespace Debug
+
+// Our additions
+// #if defined(DEBUG_ENABLED) && (DEBUG_ENABLED + 0)
+// #define debug_printf(...) Debug::printf_(__VA_ARGS__)
+// #else
+// #define debug_printf(...)
+// #endif
+
+// #define printf(...) Debug::printf_(__VA_ARGS__)
+// #define error_printf(...) Debug::printf_(__VA_ARGS__)
+
+// // Panic and assertion handling
+// [[noreturn]] void vpanic(const char* format, va_list ap);
+// [[noreturn]] void panic(const char* format, ...);
+// #define ASSERT(condition) \
+//     do { if (!(condition)) panic("Assertion failed: %s at %s:%d\n",
+//     #condition, __FILE__, __LINE__); } while (0)
 
 #endif  // _PRINTF_H_
