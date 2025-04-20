@@ -7,11 +7,12 @@
  * 0x02: int fork();
  * 0x03: int join(int pid);
  * 0x04: int getpid();
- * 0x05: int open(const char* filename);
+ * 0x05: int fopen(const char* filename);
  * 0x06: int close(int fd);
- * 0x07: int read(char* buffer, int count, int fd);
- * 0x08: int write(const char* buffer, int count, int fd);
- * 0x09: int exec(const char* filename, int argc, const char** argv);
+ * 0x07: long read(char* buffer, long size, int fd);
+ * 0x08: long write(const char* buffer, long size, int fd);
+ * 0x09: long seek(long loc, SeekType seek_type, int fd);
+ * 0x0A: int exec(const char* filename, int argc, const char** argv);
  *
  * CALLING CONVENTION
  *
@@ -62,10 +63,20 @@
 #define SYS_CALL_H
 
 enum SystemCallErrorCode {
-  NOT_IMPLEMENTED = -1,
-  INVALID_POINTER = -2,
-  FILE_NOT_FOUND = -3,
-  DATA_OVERFLOW = -4
+  NOT_IMPLEMENTED       = -2,
+  INVALID_SYSTEM_CALL   = -3,
+  INVALID_OPERATION     = -4,
+  INVALID_POINTER       = -5,
+  FILE_NOT_FOUND        = -6,
+  INVALID_FD            = -7,
+  INVALID_SEEK_TYPE     = -8,
+  DATA_OVERFLOW         = -9
+};
+
+enum SeekType {
+  ABSOLUTE = 2,
+  RELATIVE = 3,
+  END      = 4
 };
 
 extern uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state);

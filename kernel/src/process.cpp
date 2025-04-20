@@ -2,6 +2,7 @@
 #include "printf.h"
 #include "process.h"
 #include "cores.h"
+#include "system_call.h"
 
 Process* activeProcess[4] = {nullptr, nullptr, nullptr, nullptr};
 
@@ -23,11 +24,33 @@ Process::Process() : translation_table(VMM::TranslationTable::Granule::KB_4), co
   {
     translation_table.map_address(virtual_address, VMM::kernel_to_phys_ptr(virtual_address), VMM::TranslationTable::UnprivilegedAccess, VMM::TranslationTable::PageSize::KB_4);
   }
+
+  // User Space Stack Mapping
+  context.sp = 0;
+  constexpr uint64_t flags = VMM::TranslationTable::UnprivilegedAccess;
+  constexpr auto page_size = VMM::TranslationTable::PageSize::KB_4;
+  for (uint64_t a = 0xFFFF'FFFF'FF00'0000; a != 0; a += 0x1000) {
+    translation_table.map_address(a, flags, page_size);
+  }
+
+  // Fills IO Resources
+  static_assert(NUM_IO_RESOURCES >= 3, "Kernel error: Num IO < 3");
+  resources[0] = new StandardInput();
+  resources[1] = new StandardOutput();
+  resources[2] = new StandardError();
+  for (int i = 3; i < NUM_IO_RESOURCES; i++) {
+    resources[i] = nullptr;
+  }
 }
 
 Process::~Process()
 {
-  
+  // TODO free memory mappings
+  // TODO free filesystem attributes
+  // Deletes IO Resources
+  for (int i = 0; i < NUM_IO_RESOURCES; i++) {
+    if (resources[i] != nullptr) delete resources[i];
+  }
 }
 
 extern "C" void enter_process(struct ProcessContext*);
@@ -88,13 +111,45 @@ void Process::save_state(uint64_t* register_frame)
 
 void Process::map_range(uint64_t start, uint64_t end) {
   constexpr uint64_t flags = VMM::TranslationTable::UnprivilegedAccess;
-  constexpr auto pageSize = VMM::TranslationTable::PageSize::KB_4;
+  constexpr auto page_size = VMM::TranslationTable::PageSize::KB_4;
   for (uint64_t a = start & (-4096); a < end; a += 4096) {
-    translation_table.map_address(a, flags, pageSize);
+    translation_table.map_address(a, flags, page_size);
   }
 }
 
 void Process::set_entry_point(uint64_t entry) {
   context.pc = entry;
+}
+
+IOResource* Process::get_io_resource(int fd) {
+  bool out_of_bounds = ((unsigned int) fd) >= NUM_IO_RESOURCES;
+  return out_of_bounds ? nullptr : resources[fd];
+}
+
+int Process::find_unused_fd() {
+  for (int i = 0; i < NUM_IO_RESOURCES; i++) {
+    if (resources[i] == nullptr) return i;
+  }
+  return SystemCallErrorCode::DATA_OVERFLOW;
+}
+
+int Process::file_open(const char* filename) {
+  int fd = find_unused_fd();
+  if (fd < 0) return fd;
+  FileResource* resource = new FileResource();
+  int result = resource->open(filename);
+  if (result < 0) {
+    delete resource;
+    return result;
+  }
+  resources[fd] = resource;
+  return fd;
+}
+
+int Process::close_io_resource(int fd) {
+  if (resources[fd] == nullptr) return SystemCallErrorCode::INVALID_FD;
+  delete resources[fd];
+  resources[fd] = nullptr;
+  return 0;
 }
 

@@ -1,4 +1,5 @@
 #include "vmm.h"
+#include "ioresource.h"
 
 #ifndef PROCESS_H
 #define PROCESS_H
@@ -47,9 +48,12 @@ struct ProcessContext
 
 class Process
 {
+  static constexpr int NUM_IO_RESOURCES = 16;
   ProcessContext context;
-
   VMM::TranslationTable translation_table;
+  IOResource* resources[NUM_IO_RESOURCES];
+
+  int find_unused_fd();
 
 public:
 
@@ -60,6 +64,9 @@ public:
   void save_state(uint64_t* register_frame);
   void map_range(uint64_t start, uint64_t end);
   void set_entry_point(uint64_t entry);
+  IOResource* get_io_resource(int fd);
+  int file_open(const char* name);
+  int close_io_resource(int fd);
 };
 
 extern Process* activeProcess[4];
