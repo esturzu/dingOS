@@ -1,8 +1,8 @@
 #include "usb.h"
-#include "physmem.h"      
-#include "system_timer.h" 
+#include "physmem.h"
+#include "system_timer.h"
 
-UsbController g_usb;  
+UsbController g_usb;
 
 UsbController::UsbController() {
     usb_base = reinterpret_cast<volatile uint32_t*>(USB_BASE);
@@ -26,11 +26,11 @@ UsbController::~UsbController() {}
 
 void UsbController::reset_controller() {
     printf("USB: Resetting controller\n");
-    write_reg(USB_GRSTCTL, (1 << 0)); 
+    write_reg(USB_GRSTCTL, (1 << 0));
     while (read_reg(USB_GRSTCTL) & (1 << 0)) {
         for (volatile int i = 0; i < 1000; i++);
     }
-    while (!(read_reg(USB_GRSTCTL) & (1 << 31))) { 
+    while (!(read_reg(USB_GRSTCTL) & (1 << 31))) {
         for (volatile int i = 0; i < 1000; i++);
     }
     printf("USB: Reset complete\n");
@@ -99,7 +99,7 @@ void UsbController::init() {
 
     write_reg(USB_GRXFSIZ, 0x200);
     write_reg(USB_GNPTXFSIZ, (0x200 << 16) | 0x200);
-    
+
     reset_controller();
     configure_host_mode();
     printf("USB: Post-configure_host_mode\n");
@@ -113,21 +113,20 @@ void UsbController::init() {
     write_reg(USB_GINTMSK, (1 << 24) | (1 << 3));
     printf("USB: Interrupts masked\n");
     setup_endpoint(0, 0, 0, 8);
-    // printf("USB: Endpoint 0 setup\n");
 
     printf("USB: Controller initialized at 0x%X on core %d\n", USB_BASE, SMP::whichCore());
 }
 
 bool UsbController::is_device_connected() {
     uint32_t hprt = read_reg(USB_HPRT);
-    printf("USB: HPRT = 0x%X\n", hprt);
+    // printf("USB: HPRT = 0x%X\n", hprt);
     return (hprt & (1 << 0)) != 0;  // Check Port Connect Detected bit
 }
 
 void UsbController::send_data(uint8_t channel, const uint8_t* data, uint32_t length) {
     uint32_t hc_base = USB_HC0_BASE + (channel * 0x20);
     write_reg(hc_base + HCTSIZ, (1 << 19) | length);
-    
+
     for (uint32_t i = 0; i < length; i++) {
         printf("%02x ", data[i]);
     }
@@ -167,9 +166,9 @@ uint32_t UsbController::receive_data(uint8_t channel, uint8_t* buffer, uint32_t 
 
     // Otherwise, proceed with the transfer (which will fail in QEMU)
     uint32_t hc_base = USB_HC0_BASE + (channel * 0x20);
-    
+
     write_reg(hc_base + HCTSIZ, (1 << 19) | max_length);
-    
+
     uint32_t hcchar = read_reg(hc_base + HCCHAR);
     hcchar |= (1 << 15); // Enable channel
     hcchar |= (1 << 20); // IN direction for Data
@@ -225,18 +224,18 @@ void UsbController::handle_interrupt() {
         }
     }
 
-    if (gintsts & (1 << 3)) { 
+    if (gintsts & (1 << 3)) {
         for (uint8_t ch = 0; ch < 16; ch++) {
             uint32_t hc_base = USB_HC0_BASE + (ch * 0x20);
             uint32_t hcint = read_reg(hc_base + HCINT);
             if (hcint & (1 << 0)) {  // Transfer Completed
                 printf("USB: Transfer completed on channel %d, core %d\n", ch, SMP::whichCore());
-                write_reg(hc_base + HCINT, hcint); 
+                write_reg(hc_base + HCINT, hcint);
             }
         }
     }
 
-    write_reg(USB_GINTSTS, gintsts); 
+    write_reg(USB_GINTSTS, gintsts);
 }
 
 bool UsbController::enumerate_device() {

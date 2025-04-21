@@ -27,3 +27,21 @@ clean:
 	for dir in $(COMPONENTS); do \
 		$(MAKE) -C $$dir clean; \
 	done
+
+# ------------------------------
+# EXT2 IMAGE GENERATION SECTION
+# ------------------------------
+EXT2_IMG := ext2.img
+FS_ROOT := fs_root
+BLOCK_SIZE := 1024
+DISK_SIZE := 32m
+
+fs-image: $(EXT2_IMG)
+
+$(EXT2_IMG): $(wildcard $(FS_ROOT)/** $(FS_ROOT)/*)
+	@echo "Creating ext2 image: $(EXT2_IMG)"
+	@mkfs.ext2 -q -b $(BLOCK_SIZE) -i $(BLOCK_SIZE) -I 128 -r 0 -t ext2 -d $(FS_ROOT) $(EXT2_IMG) $(DISK_SIZE)
+	@echo "Image created successfully."
+
+clean-fs:
+	@rm -f $(EXT2_IMG)

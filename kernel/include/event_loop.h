@@ -5,6 +5,7 @@
 #define EVENT_LOOP_H
 
 #include "heap.h"
+#include "printf.h"
 #include "queue.h"
 
 struct Event {
@@ -38,7 +39,7 @@ struct EventWithWorkAndValue : public EventWithWork<Work> {
 extern LocklessQueue<Event*>* ready_queue;
 
 void init_event_loop();
-void event_loop();
+[[noreturn]] void event_loop();
 
 template <typename Work>
 void schedule_event(Work work) {

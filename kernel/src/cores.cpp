@@ -5,6 +5,7 @@
 #include "machine.h"
 #include "printf.h"
 #include "stdint.h"
+#include "vmm.h"
 
 /**
  * @brief Symmetric Multiprocessing (SMP) aka multicore support
@@ -37,12 +38,16 @@ extern "C" void initCore1() {
   debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
+  VMM::init_core();
+
   event_loop();
 }
 
 extern "C" void initCore2() {
   debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
+
+  VMM::init_core();
 
   event_loop();
 }
@@ -51,16 +56,18 @@ extern "C" void initCore3() {
   debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
+  VMM::init_core();
+
   event_loop();
 }
 
 void bootCores() {
   startedCores.add_fetch(1);
   // Boot other cores
-  uint64_t* core_wakeup_base = (uint64_t*)216;
-  *(core_wakeup_base + 1) = (uint64_t)&_start_core1;
-  *(core_wakeup_base + 2) = (uint64_t)&_start_core2;
-  *(core_wakeup_base + 3) = (uint64_t)&_start_core3;
+  uint64_t* core_wakeup_base = (uint64_t*)0xFFFF0000000000D8;
+  *(core_wakeup_base + 1) = VMM::kernel_to_phys_ptr((uint64_t)&_start_core1);
+  *(core_wakeup_base + 2) = VMM::kernel_to_phys_ptr((uint64_t)&_start_core2);
+  *(core_wakeup_base + 3) = VMM::kernel_to_phys_ptr((uint64_t)&_start_core3);
 }
 
 /**

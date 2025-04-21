@@ -8,7 +8,7 @@
 
 class Interrupts {
  public:
-  static constexpr uint64_t interrupt_base_address = 0x3f00b000;
+  static constexpr uint64_t interrupt_base_address = 0xffff00003f00b000;
 
   static constexpr uint64_t IRQ_basic_pending_offset = 0x200;
   static constexpr uint64_t IRQ_pending_1_offset = 0x204;
