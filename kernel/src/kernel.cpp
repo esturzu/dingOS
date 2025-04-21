@@ -8,7 +8,7 @@
 #include "crti.h"
 #include "event_loop.h"
 #include "heap.h"
-#include "interrupts.h"
+// #include "interrupts.h"
 #include "machine.h"
 #include "physmem.h"
 #include "printf.h"
@@ -19,6 +19,7 @@
 #include "tester.h"
 #include "ext2.h"
 #include "vmm.h"
+#include "usb.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -83,6 +84,28 @@ extern "C" void kernelMain() {
 //           delete reading_test_file;
 //       }
 //   }
+
+  g_usb.init();
+  printf("USB TEST: Core %d finished USB init\n", SMP::whichCore());
+
+  // Step 15: Test USB by requesting the device descriptor
+  uint8_t setup_packet[] = {0x80, 0x06, 0x00, 0x01, 0x00, 0x00, 0x12, 0x00};
+  g_usb.send_data(0, setup_packet, 8);
+  for (volatile int i = 0; i < 100000; i++);
+  uint8_t buffer[18];
+  uint32_t bytes = g_usb.receive_data(0, buffer, 18);
+  printf("USB TEST: USB Test: Received (%d bytes): ", bytes);
+  for (uint32_t i = 0; i < bytes; i++) {
+      printf("%02x ", buffer[i]);
+  }
+  printf("\n");
+  if (bytes >= 2 && buffer[0] == 0x12 && buffer[1] == 0x01) {
+      printf("USB TEST: USB Test: Valid device descriptor\n");
+  } else {
+      printf("USB TEST: USB Test: Invalid device descriptor\n");
+  }
+
+
   
  
 
