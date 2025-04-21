@@ -21,6 +21,13 @@
 #include "tester.h"
 #include "vmm.h"
 #include "usb.h"
+#include "e1000_driver.h"
+#include "uart.h"
+#include "definitions.h"
+
+extern void testNetwork();
+
+
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -31,20 +38,30 @@ extern "C" void kernelMain() {
   VMM::init();
 
   printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
+  uart_init(UART0_BASE);
 
   heap_init();
+  printf("Heap initialized\n");
   init_event_loop();
 
   printf("DingOS is Booting!\n");
   debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
 
   SMP::bootCores();
+  printf("Cores booted\n");
 
   LocalTimer::setup_timer();
 
   run_page_tests();
+  printf("Page tests done\n");
 
   SD::init();
+  printf("SD card initialized\n");
+
+  // Network test
+  printf("Starting network test\n");
+  testNetwork();
+
 
   // // I run this with this command make clean-fs;make fs-image;clear; make
   // clean qemu DEBUG_ENABLED=0 to have the right disk, you also have to mkdir
@@ -87,27 +104,27 @@ extern "C" void kernelMain() {
   //       }
   //   }
 
-  g_usb.init();
-  printf("USB TEST: Core %d finished USB init\n", SMP::whichCore());
+  // g_usb.init();
+  // printf("USB TEST: Core %d finished USB init\n", SMP::whichCore());
 
-  // Step 15: Test USB by requesting the device descriptor
-  uint8_t setup_packet[] = {0x80, 0x06, 0x00, 0x01, 0x00, 0x00, 0x12, 0x00};
-  g_usb.send_data(0, setup_packet, 8);
-  for (volatile int i = 0; i < 100000; i++);
-  uint8_t buffer[18];
-  uint32_t bytes = g_usb.receive_data(0, buffer, 18);
-  printf("USB TEST: USB Test: Received (%d bytes): ", bytes);
-  for (uint32_t i = 0; i < bytes; i++) {
-      printf("%02x ", buffer[i]);
-  }
-  printf("\n");
-  if (bytes >= 2 && buffer[0] == 0x12 && buffer[1] == 0x01) {
-      printf("USB TEST: USB Test: Valid device descriptor\n");
-  } else {
-      printf("USB TEST: USB Test: Invalid device descriptor\n");
-  }
+  // // Step 15: Test USB by requesting the device descriptor
+  // uint8_t setup_packet[] = {0x80, 0x06, 0x00, 0x01, 0x00, 0x00, 0x12, 0x00};
+  // g_usb.send_data(0, setup_packet, 8);
+  // for (volatile int i = 0; i < 100000; i++);
+  // uint8_t buffer[18];
+  // uint32_t bytes = g_usb.receive_data(0, buffer, 18);
+  // printf("USB TEST: USB Test: Received (%d bytes): ", bytes);
+  // for (uint32_t i = 0; i < bytes; i++) {
+  //     printf("%02x ", buffer[i]);
+  // }
+  // printf("\n");
+  // if (bytes >= 2 && buffer[0] == 0x12 && buffer[1] == 0x01) {
+  //     printf("USB TEST: USB Test: Valid device descriptor\n");
+  // } else {
+  //     printf("USB TEST: USB Test: Invalid device descriptor\n");
+  // }
 
-  setupTests();
+  // setupTests();
 
   // while (true) {
   // }
@@ -119,16 +136,16 @@ extern "C" void kernelMain() {
 
   // event_loop();
 
-  // Request a framebuffer at 640x480x32
-  FrameBufferInfo* fb = framebuffer_init(640, 480, 32);
-  if (!fb) {
-    debug_printf("Failed to init framebuffer!\n");
-    while (true) { /* spin */
-    }
-  }
+  // // Request a framebuffer at 640x480x32
+  // FrameBufferInfo* fb = framebuffer_init(640, 480, 32);
+  // if (!fb) {
+  //   debug_printf("Failed to init framebuffer!\n");
+  //   while (true) { /* spin */
+  //   }
+  // }
 
-  // Fill the screen with a color
-  framebuffer_fill(fb, 0xFFFF00);
+  // // Fill the screen with a color
+  // framebuffer_fill(fb, 0xFFFF00);
 
   while (1);
 }

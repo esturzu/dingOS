@@ -1,10 +1,7 @@
 #include "physmem.h"
-
 #include "machine.h"
 #include "printf.h"
 #include "vmm.h"
-
-using Debug::panic;
 
 namespace VMM
 {
@@ -23,21 +20,23 @@ namespace VMM
     }
     else if (gran == Granule::KB_16)
     {
-      panic("TranslationTable: unsupported granule size %u", (unsigned)gran);
+      printf("TranslationTable: unsupported granule size %u\n", (unsigned)gran);
+      while (true) {}
     }
     else if (gran == Granule::KB_64)
     {
-      panic("TranslationTable: unsupported granule size %u", (unsigned)gran);
+      printf("TranslationTable: unsupported granule size %u\n", (unsigned)gran);
+      while (true) {}
     }
     else 
     {
-      panic("TranslationTable: unknown granule size %u", (unsigned)gran);
+      printf("TranslationTable: unknown granule size %u\n", (unsigned)gran);
+      while (true) {}
     }
   }
 
   TranslationTable::TranslationTable(enum Granule gran, uint64_t* base_addr) : granule_size(gran), base_address(base_addr)
   {
-
   }
 
   TranslationTable::~TranslationTable()
@@ -63,17 +62,14 @@ namespace VMM
     }
     else if (granule_size == Granule::KB_16)
     {
-      // Unsupported Granule Size
       return nullptr;
     }
     else if (granule_size == Granule::KB_64)
     {
-      // Unsupported Granule Size
       return nullptr;
     }
     else
     {
-      // Unsupported Granule Size
       return nullptr;
     }
   }
@@ -119,7 +115,8 @@ namespace VMM
           return stage_page + entry_number;
         }
       default:
-        panic("get_stage_descriptor: illegal level %u (va=0x%lx)", level, address);
+        printf("get_stage_descriptor: illegal level %u (va=0x%lx)\n", level, address);
+        while (true) {}
     }
   }
 
@@ -127,8 +124,8 @@ namespace VMM
   {
     if (pg_sz == PageSize::NONE || pg_sz == PageSize::KB_16 || pg_sz == PageSize::KB_64 || pg_sz == PageSize::MB_2 || pg_sz == PageSize::GB_1)
     {
-      // Unsupported Page Sizes
-      panic("map_address: unsupported PageSize %u", (unsigned)pg_sz);
+      printf("map_address: unsupported PageSize %u\n", (unsigned)pg_sz);
+      while (true) {}
     }
 
     if (granule_size == Granule::KB_4)
@@ -142,7 +139,8 @@ namespace VMM
 
       if (!is_page_descriptor(*stage_0_descriptor))
       {
-        panic("map_address: L0 entry %#018lx not a table (va=0x%lx)", *stage_0_descriptor, virtual_address);
+        printf("map_address: L0 entry 0x%lx not a table (va=0x%lx)\n", *stage_0_descriptor, virtual_address);
+        while (true) {}
       }
 
       uint64_t* stage_1_base_address = get_next_level(*stage_0_descriptor);
@@ -155,7 +153,8 @@ namespace VMM
 
       if (!is_page_descriptor(*stage_1_descriptor))
       {
-        panic("map_address: L1 entry %#018lx not a table (va=0x%lx)", *stage_1_descriptor, virtual_address);
+        printf("map_address: L1 entry 0x%lx not a table (va=0x%lx)\n", *stage_1_descriptor, virtual_address);
+        while (true) {}
       }
 
       uint64_t* stage_2_base_address = get_next_level(*stage_1_descriptor);
@@ -169,7 +168,8 @@ namespace VMM
 
       if (!is_page_descriptor(*stage_2_descriptor))
       {
-        panic("map_address: L2 entry %#018lx not a table (va=0x%lx)", *stage_2_descriptor, virtual_address);
+        printf("map_address: L2 entry 0x%lx not a table (va=0x%lx)\n", *stage_2_descriptor, virtual_address);
+        while (true) {}
       }
 
       uint64_t* stage_3_base_address = get_next_level(*stage_2_descriptor);
@@ -207,17 +207,14 @@ namespace VMM
     }
     else if (granule_size == Granule::KB_16)
     {
-      // Unsupported Granule Size
       return false;
     }
     else if (granule_size == Granule::KB_64)
     {
-      // Unsupported Granule Size
       return false;
     }
     else
     {
-      // Unsupported Granule Size
       return false;
     }
   }
@@ -227,22 +224,20 @@ namespace VMM
     return map_address(virtual_address, reinterpret_cast<uint64_t>(PhysMem::allocate_frame()), flags, pg_sz);
   }
 
-
   bool TranslationTable::unmap_address(uint64_t virtual_address, PageSize pg_sz)
   {
     if (granule_size == Granule::KB_4)
     {
       if (pg_sz != PageSize::NONE && pg_sz != PageSize::KB_4 && pg_sz != PageSize::MB_2 && pg_sz != PageSize::GB_1)
       {
-        // Invalid Page Size
-        panic("unmap_address: unsupported PageSize %u", (unsigned)pg_sz);
+        printf("unmap_address: unsupported PageSize %u\n", (unsigned)pg_sz);
+        while (true) {}
       }
 
       uint64_t* stage_0_descriptor = phys_to_kernel_ptr(get_stage_descriptor(virtual_address, 0, base_address));
 
       if (!is_valid_descriptor(*stage_0_descriptor))
       {
-        // Not a valid descriptor to this virtual address
         return true;
       }
 
@@ -256,7 +251,6 @@ namespace VMM
 
       if (!is_valid_descriptor(*stage_1_descriptor))
       {
-        // Not a valid descriptor to this virtual address
         return true;
       }
 
@@ -264,13 +258,11 @@ namespace VMM
       {
         if (pg_sz == PageSize::GB_1 || pg_sz == PageSize::NONE)
         {
-          // TODO: free frame
           invalidate_entry(stage_1_descriptor);
           return true;
         }
         else
         {
-          // Incorrect Page Size Being Removed
           return false;
         }
       }
@@ -280,7 +272,6 @@ namespace VMM
 
       if (!is_valid_descriptor(*stage_2_descriptor))
       {
-        // Not a valid descriptor to this virtual address
         return true;
       }
 
@@ -288,13 +279,11 @@ namespace VMM
       {
         if (pg_sz == PageSize::MB_2 || pg_sz == PageSize::NONE)
         {
-          // TODO: free frame
           invalidate_entry(stage_2_descriptor);
           return true;
         }
         else
         {
-          // Incorrect Page Size Being Removed
           return false;
         }
       }
@@ -304,45 +293,39 @@ namespace VMM
 
       if (!is_valid_descriptor(*stage_3_descriptor))
       {
-        // Not a valid descriptor to this virtual address
         return true;
       }
 
       if (is_page_descriptor(*stage_3_descriptor))
       {
-        panic("unmap_address: L3 entry %#018lx is page, expected table (va=0x%lx)", *stage_3_descriptor, virtual_address);
+        printf("unmap_address: L3 entry 0x%lx is page, expected table (va=0x%lx)\n", *stage_3_descriptor, virtual_address);
+        while (true) {};
       }
 
       if (pg_sz == PageSize::KB_4 || pg_sz == PageSize::NONE)
       {
-        // TODO: free frame
         invalidate_entry(stage_3_descriptor);
         return true;
       }
 
-      // Incorrect Page Size Being Removed
       return false;
     }
     else if (granule_size == Granule::KB_16)
     {
-      // Unsupported Granule Size
       return false;
     }
     else if (granule_size == Granule::KB_64)
     {
-      // Unsupported Granule Size
       return false;
     }
     else
     {
-      // Unsupported Granule Size
       return false;
     }
   }
 
   void TranslationTable::set_ttbr0_el1()
   {
-    // Setup Translation Control Register
     uint64_t prev_tcr_el1 = get_TCR_EL1();
     prev_tcr_el1 &= 0xFFFFFFFFFFFF0000;
 
@@ -355,7 +338,10 @@ namespace VMM
     else if (granule_size == Granule::KB_16)
       tg0 = 0b10;
     else
-      panic("set_ttbr0_el1: unknown granule enum=%u", static_cast<unsigned>(granule_size));
+    {
+      printf("set_ttbr0_el1: unknown granule enum=%u\n", static_cast<unsigned>(granule_size));
+      while (true) {}
+    }
 
     uint64_t new_tcr_el1 = prev_tcr_el1
                             | (tg0 << 14) /*TG0*/
@@ -377,43 +363,61 @@ namespace VMM
 
   void init()
   {
-    // Allocate First 1 GB
+    // Allocate First 1 GB for kernel code/data
     for (uint64_t virtual_address = 0xFFFF000000000000; virtual_address < 0xFFFF000040000000; virtual_address += 0x1000)
     {
       kernel_translation_table.map_address(virtual_address, kernel_to_phys_ptr(virtual_address), 0, TranslationTable::PageSize::KB_4);
     }
 
-    kernel_translation_table.map_address(0xFFFF000040000000, kernel_to_phys_ptr(0xFFFF000040000000), TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
-    kernel_translation_table.map_address(0xFFFF000040001000, kernel_to_phys_ptr(0xFFFF000040001000), TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
+    // Map the UART region (physical 0x3F201000 to virtual 0xFFFF00003F201000)
+    uint64_t uart_phys_base = 0x3F201000;
+    uint64_t uart_virt_base = 0xFFFF00003F201000;
+    kernel_translation_table.map_address(uart_virt_base, uart_phys_base, TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
 
-    /* ------------------------------------------------------------------
-     * Map the rest of the first 64 KiB of the peripheral window
-     * (covers the property‑mailbox at 0x4000B880).
-     * ------------------------------------------------------------------ */
-    for (uint64_t off = 0x2000; off < 0x10000; off += 0x1000)   // pages 2‑15
+    // Map the GPIO region (physical 0x3F200000 to virtual 0xFFFF00003F200000)
+    uint64_t gpio_phys_base = 0x3F200000;
+    uint64_t gpio_virt_base = 0xFFFF00003F200000;
+    kernel_translation_table.map_address(gpio_virt_base, gpio_phys_base, TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
+
+    // Map the clock region (physical 0x3F101000 to virtual 0xFFFF00003F101000)
+    // Note: Clock registers are part of the system timer/CM region on BCM2837
+    uint64_t clock_phys_base = 0x3F101000;
+    uint64_t clock_virt_base = 0xFFFF00003F101000;
+    kernel_translation_table.map_address(clock_virt_base, clock_phys_base, TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
+
+    // Map additional peripheral window (e.g., property mailbox at 0x3F00B880)
+    for (uint64_t off = 0x0B880; off < 0x0C000; off += 0x1000)
     {
-        uint64_t va = 0xFFFF000040000000 + off;                 // KVA
-        kernel_translation_table.map_address(
-            va,
-            kernel_to_phys_ptr(va),
-            TranslationTable::DeviceMemory,
-            TranslationTable::PageSize::KB_4);
+        uint64_t phys_addr = 0x3F000000 + off;
+        uint64_t virt_addr = 0xFFFF00003F000000 + off;
+        kernel_translation_table.map_address(virt_addr, phys_addr, TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
     }
 
     MAIR::setup_mair_el1();
-
     kernel_translation_table.set_ttbr1_el1();
+
+    // Enable the MMU
+    uint64_t sctlr;
+    asm volatile("mrs %0, sctlr_el1" : "=r"(sctlr));
+    sctlr |= 0x1; // Enable MMU
+    asm volatile("msr sctlr_el1, %0" : : "r"(sctlr));
+    asm volatile("isb");
   }
 
   void init_core()
   {
     MAIR::setup_mair_el1();
-
     kernel_translation_table.set_ttbr1_el1();
+
+    // Ensure MMU is enabled for this core
+    uint64_t sctlr;
+    asm volatile("mrs %0, sctlr_el1" : "=r"(sctlr));
+    sctlr |= 0x1;
+    asm volatile("msr sctlr_el1, %0" : : "r"(sctlr));
+    asm volatile("isb");
   }
 }
 
-extern "C" void vmm_pageFault ()
+extern "C" void vmm_pageFault()
 {
-  
 }

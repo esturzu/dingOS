@@ -3,7 +3,6 @@
 // https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
 
 #include "uart.h"
-
 #include "definitions.h"
 #include "gpio.h"
 #include "stdint.h"
@@ -90,15 +89,24 @@ class UART {
     set_interrupt_mask(0b11111110010);
 
     set_control(0b1100000001);
-  };
+  }
 
   ~UART() {}
 };
 
-UART uart0{UART0_BASE};
+// Global UART pointer (null until initialized)
+static UART* uart0 = nullptr;
+
+void uart_init(uint64_t base_address) {
+    uart0 = new UART(base_address);
+}
 
 extern "C" void uart_putc(char c) {
-  while (uart0.transmit_fifo_full()) {
-  }
-  uart0.transmit_data(c);
+    if (!uart0) {
+        // If UART isn't initialized, do nothing (or spin)
+        return;
+    }
+    while (uart0->transmit_fifo_full()) {
+    }
+    uart0->transmit_data(c);
 }
