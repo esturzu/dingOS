@@ -2,7 +2,7 @@
 #define USB_H
 
 #include <stdint.h>      // For fixed-size integer types
-#include "interrupts.h"  // For interrupt handling
+// #include "interrupts.h"  // For interrupt handling
 #include "printf.h"      // For debug output
 #include "cores.h"       // For SMP::whichCore()
 #include "vmm.h"         // For VMM integration
