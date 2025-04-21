@@ -14,6 +14,8 @@
 #include "system_timer.h"
 #include "usb.h"
 
+using Debug::panic;
+
 #define INTERRUPT_STACK_SIZE 4096
 
 uint8_t cpu0_interrupt_stack[INTERRUPT_STACK_SIZE] __attribute__((aligned(16)));
@@ -83,7 +85,7 @@ void Interrupts::Disable_IRQ(uint8_t IRQ_num) {
     *Disable_IRQ_1_register = (1 << IRQ_num);
   } else {
     volatile uint32_t* Disable_IRQ_2_register =
-        (volatile uint32_t*)(interrupt_base_address + Disable_IRQ_1_offset);
+        (volatile uint32_t*)(interrupt_base_address + Disable_IRQ_2_offset);
     *Disable_IRQ_2_register = (1 << (IRQ_num - 32));
   }
 }
@@ -94,7 +96,7 @@ void Interrupts::Disable_All_IRQ() {
   *Disable_IRQ_1_register = 0xFFFFFFFF;
 
   volatile uint32_t* Disable_IRQ_2_register =
-      (volatile uint32_t*)(interrupt_base_address + Disable_IRQ_1_offset);
+      (volatile uint32_t*)(interrupt_base_address + Disable_IRQ_2_offset);
   *Disable_IRQ_2_register = 0xFFFFFFFF;
 }
 
@@ -175,239 +177,199 @@ extern "C" void synchronous_handler(uint64_t* saved_state)
   {
     case 0b000000:
       {
-        printf("ESR_EL1 Unknown Reason\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Unknown reason   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b000001:
       {
-        printf("Trapped WF* instruction\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped WF* instruction   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b000011:
       {
-        printf("Trapped MCR\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped MCR (A32)   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b000100:
       {
-        printf("Trapped MCRR\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped MCRR (A32)   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b000101:
       {
-        printf("Trapped MCR\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped MCR (T32)   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b000110:
       {
-        printf("Trapped LDC or STC access\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped LDC/STC access   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b000111:
       {
-        printf("Access to SME, SVE, Advanced SIMD, or floating-point\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Access to SME, SVE, Advanced SIMD, or floating-point   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b001010:
       {
-        printf("Not covered error class\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Not covered error class   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b001100:
       {
-        printf("Trapped MRRC\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped MRRC (A32)   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b001101:
       {
-        printf("Branch Target Exception\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Branch-Target exception   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b001110:
       {
-        printf("Illegal Execution State\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Illegal Execution state   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b010001:
       {
-        printf("SVC Instruction Execution in AArch32 state\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: SVC Instruction Execution in AArch32 state   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b010100:
       {
-        printf("Trapped MSRR, MRRS, or System Instruction Execution\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped MSRR, MRRS, or System Instruction Execution   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b010101:
       {
-        uint16_t syscall_type = error_syndrome_register & 0xFFFF;
+        const uint16_t syscall_type = error_syndrome_register & 0xFFFF;
         system_call_handler(syscall_type, saved_state);
-        while(1){} // Replace with PANIC
+        return;
       }
       break;
     case 0b011000:
       {
-        printf("Trapped MSRR, MRRS, or System Instruction Execution\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped MSRR, MRRS, or System Instruction Execution   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b011001:
       {
-        printf("Access to SVE functionality\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Access to SVE functionality   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b011011:
       {
-        printf("Exception from an access to a TSTART instruction\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Exception from an access to a TSTART instruction   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b011100:
       {
-        printf("Exception from a PAC Fail\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Exception from a PAC Fail   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b011101:
       {
-        printf("Access to SME functionality\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Access to SME functionality   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b100000:
       {
-        printf("Instruction Abort from a lower exception level %lx %lx\n", get_ESR_EL1(), get_FAR_EL1());
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Instruction Abort from a lower exception level   ESR=0x%lx FAR=0x%lx", error_syndrome_register, get_FAR_EL1());
       }
       break;
     case 0b100001:
       {
-        printf("Instruction Abort taken without a change in exception level %lx %lx\n", get_ESR_EL1(), get_FAR_EL1());
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Instruction Abort taken without a change in exception level   ESR=0x%lx FAR=0x%lx", error_syndrome_register, get_FAR_EL1());
       }
       break;
     case 0b100010:
       {
-        printf("PC alignment fault exception\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: PC alignment fault exception   ESR=0x%lx FAR=0x%lx", error_syndrome_register, get_FAR_EL1());
       }
       break;
     case 0b100100:
       {
-        printf("Data Abort exception from a lower exception level\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Data Abort exception from a lower exception level   ESR=0x%lx FAR=0x%lx ", error_syndrome_register, get_FAR_EL1());
       }
       break;
     case 0b100101:
       {
-        printf("Data Abort exception taken without a change in exception level %lx %lx\n", get_ESR_EL1(), get_FAR_EL1());
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Data Abort exception taken without a change in exception level   ESR=0x%lx FAR=0x%lx ", error_syndrome_register, get_FAR_EL1());
       }
       break;
     case 0b100110:
       {
-        printf("SP alignment fault exception\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: SP alignment fault exception   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b100111:
       {
-        printf("Memory Operation Exception\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Memory Operation Exception   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b101000:
       {
-        printf("Trapped floating-point exception taken from AArch32 state\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped floating-point exception taken from AArch32 state   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b101100:
       {
-        printf("Trapped floating-point exception taken from AArch64 state\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Trapped floating-point exception taken from AArch64 state   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b101101:
       {
-        printf("GCS exception\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: GCS exception   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b101111:
       {
-        printf("SError exception\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: SError exception   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b110000:
       {
-        printf("Breakpoint exception from a lower exception level\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Breakpoint exception from a lower exception level   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b110001:
       {
-        printf("Breakpoint exception taken without a change in exception level\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Breakpoint exception taken without a change in exception level   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b110010:
       {
-        printf("Software Step exception from a lower exception level\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Software Step exception from a lower exception level   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b110011:
       {
-        printf("Software step exception take without a change in exception level\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Software step exception take without a change in exception level   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b110100:
       {
-        printf("Watchpoint exception from a lower exception level\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Watchpoint exception from a lower exception level   ESR=0x%lx FAR=0x%lx", error_syndrome_register, get_FAR_EL1());
       }
       break;
     case 0b110101:
       {
-        printf("Watchpoint exception taken without a change in exception level\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Watchpoint exception taken without a change in exception level   ESR=0x%lx FAR=0x%lx", error_syndrome_register, get_FAR_EL1());
       }
       break;
     case 0b111000:
       {
-        printf("BKPT instruction execution in AArch32 state\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: BKPT instruction execution in AArch32 state   ESR=0x%lx", error_syndrome_register);
       }
       break;
     case 0b111100:
       {
-        printf("BKPT instruction execution in AArch64 state\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: BKPT instruction execution in AArch64 state   ESR=0x%lx", error_syndrome_register);
       }
       break;
     default:
       {
-        printf("Unknown ESR_EL1 Value\n");
-        while(1){} // Replace with PANIC
+        panic("EL1 sync: Unknown ESR_EL1 Value   ESR=0x%lx", error_syndrome_register);
       }
   }
-
-  while(1){}
 }

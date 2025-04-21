@@ -41,18 +41,17 @@ class LocklessQueue {
     Node* tmp_tail;
     bool successful_exchange;
     do {
-        tmp_tail = __atomic_load_n(&tail, __ATOMIC_SEQ_CST);
-        Node* tail_next = tmp_tail->next;
-        if (tail_next != nullptr) {
-            __atomic_compare_exchange_n(&tail, &tmp_tail, tail_next, true,
-                                        __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-            successful_exchange = false;
-        } else {
-            Node* expected = nullptr;
-            successful_exchange = __atomic_compare_exchange_n(
-                &tmp_tail->next, &expected, tmp, true, __ATOMIC_SEQ_CST,
-                __ATOMIC_SEQ_CST);
-        }
+      tmp_tail = __atomic_load_n(&tail, __ATOMIC_SEQ_CST);
+      Node* tail_next = tmp_tail->next;
+      if (tail_next != 0) {
+        __atomic_compare_exchange_n(&tail, &tmp_tail, tail_next, true,
+                                    __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+        successful_exchange = false;
+      } else {
+        successful_exchange = __atomic_compare_exchange_n(
+            &tail->next, &tmp->next /*nullptr*/, tmp, true, __ATOMIC_SEQ_CST,
+            __ATOMIC_SEQ_CST);
+      }
     } while (!successful_exchange);
 
     __atomic_compare_exchange_n(&tail, &tmp_tail, tmp, false, __ATOMIC_SEQ_CST,
@@ -60,29 +59,26 @@ class LocklessQueue {
     
 }
 
-T dequeue() {
-  Node* prev_head;
-  Node* next;
-  do {
+  T dequeue() {
+    Node* prev_head;
+    T item;
+
+    do {
       prev_head = __atomic_load_n(&head, __ATOMIC_SEQ_CST);
-      next = prev_head->next;
-      // printf("Dequeue: head=%p, prev_head=%p, next=%p\n", (void*)head, prev_head, next);
-      if (next == nullptr) {
-          // printf("Dequeue: queue is empty\n");
-          return T();
-      }
-      // printf("Attempting CAS: head from %p to %p\n", prev_head, next);
-      if (__atomic_compare_exchange_n(&head, &prev_head, next, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
-          // printf("CAS succeeded\n");
-          break;
-      } else {
-          // printf("CAS fa/iled, retrying\n");
-      }
-  } while (true);
-  T item = next->item;
-  // delete prev_head;
-  return item;
-}
+
+      // Empty Queue
+      if (prev_head->next == 0) return {};
+
+      // TODO: A race condition exists here
+      item = prev_head->next->item;
+    } while (!__atomic_compare_exchange_n(&head, &prev_head, prev_head->next,
+                                          true, __ATOMIC_SEQ_CST,
+                                          __ATOMIC_SEQ_CST));
+
+    delete prev_head;
+
+    return item;
+  }
 
   bool is_empty() {
     return __atomic_load_n(&head, __ATOMIC_SEQ_CST) ==
