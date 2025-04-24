@@ -46,6 +46,7 @@ struct ProcessContext
   ProcessContext(uint64_t entry_point, uint64_t initial_sp) : pc(entry_point), sp(initial_sp) {}
 };
 
+// See src/process.cpp for details on functions
 class Process
 {
   static constexpr int NUM_IO_RESOURCES = 16;
@@ -65,8 +66,8 @@ public:
   void map_range(uint64_t start, uint64_t end);
   void set_entry_point(uint64_t entry);
   IOResource* get_io_resource(int fd);
-  int file_open(const char* name);
-  int close_io_resource(int fd);
+  Syscall::Result<int> file_open(const char* name);
+  Syscall::Result<int> close_io_resource(int fd);
 };
 
 extern Process* activeProcess[4];

@@ -109,47 +109,60 @@ void Process::save_state(uint64_t* register_frame)
   context.x31 = register_frame[31];
 }
 
+// Maps the memory addresses in the range from start (inclusive) to end
+// (exclusive), where it pads with extra bytes if needed to page align
 void Process::map_range(uint64_t start, uint64_t end) {
   constexpr uint64_t flags = VMM::TranslationTable::UnprivilegedAccess;
   constexpr auto page_size = VMM::TranslationTable::PageSize::KB_4;
-  for (uint64_t a = start & (-4096); a < end; a += 4096) {
+  for (uint64_t a = start & (uint64_t) (-4096); a < end; a += 4096) {
     translation_table.map_address(a, flags, page_size);
   }
 }
 
+// Sets the entry point of a program
 void Process::set_entry_point(uint64_t entry) {
   context.pc = entry;
 }
 
+// Returns the IO resource with the given file descriptor, or nullptr if the
+// file descriptor does not point to a valid open resource
 IOResource* Process::get_io_resource(int fd) {
   bool out_of_bounds = ((unsigned int) fd) >= NUM_IO_RESOURCES;
   return out_of_bounds ? nullptr : resources[fd];
 }
 
+// Finds an unused and available file descriptor, or returns -1 if none are
+// available
 int Process::find_unused_fd() {
   for (int i = 0; i < NUM_IO_RESOURCES; i++) {
     if (resources[i] == nullptr) return i;
   }
-  return SystemCallErrorCode::DATA_OVERFLOW;
+  return -1;
 }
 
-int Process::file_open(const char* filename) {
+// Opens a file by creating a new file resource, and returns the file
+// descriptor or -1 if an error occurred
+Syscall::Result<int> Process::file_open(const char* filename) {
   int fd = find_unused_fd();
-  if (fd < 0) return fd;
+  if (fd == -1) return Syscall::FD_OVERFLOW;
   FileResource* resource = new FileResource();
-  int result = resource->open(filename);
-  if (result < 0) {
+  Syscall::ErrorCode code = resource->open(filename);
+  if (code == Syscall::SUCCESS) {
+    resources[fd] = resource;
+    return fd;
+  } else {
     delete resource;
-    return result;
+    return code;
   }
-  resources[fd] = resource;
-  return fd;
 }
 
-int Process::close_io_resource(int fd) {
-  if (resources[fd] == nullptr) return SystemCallErrorCode::INVALID_FD;
-  delete resources[fd];
+// Closes a file and destroys its resources, or returns INVALID_FD
+// if the file descriptor is invalid
+Syscall::Result<int> Process::close_io_resource(int fd) {
+  IOResource* resource = get_io_resource(fd);
+  if (resource == nullptr) return Syscall::INVALID_FD;
+  delete resource;
   resources[fd] = nullptr;
-  return 0;
+  return Syscall::SUCCESS;
 }
 

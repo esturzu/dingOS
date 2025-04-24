@@ -16,24 +16,24 @@
 // [[noreturn]] void exit(int code) {}
 // [[noreturn]] void yield() {}
 
-int fork() {
-  return SystemCallErrorCode::NOT_IMPLEMENTED;
+Syscall::Result<int> fork() {
+  return Syscall::NOT_IMPLEMENTED;
 }
 
-int join(int pid) {
-  return SystemCallErrorCode::NOT_IMPLEMENTED;
+Syscall::Result<int> join(int pid) {
+  return Syscall::NOT_IMPLEMENTED;
 }
 
-int getpid() {
-  return SystemCallErrorCode::NOT_IMPLEMENTED;
+Syscall::Result<int> getpid() {
+  return Syscall::NOT_IMPLEMENTED;
 }
 
-int fopen(const char* filename) {
+Syscall::Result<int> fopen(const char* filename) {
   Process* current_process = activeProcess[SMP::whichCore()];
   return current_process->file_open(filename);
 }
 
-int close(int fd) {
+Syscall::Result<int> close(int fd) {
   Process* current_process = activeProcess[SMP::whichCore()];
   return current_process->close_io_resource(fd);
 }
@@ -43,33 +43,36 @@ IOResource* fetch_io_resource(int fd) {
   return current_process->get_io_resource(fd);
 }
 
-long read(char* buffer, long size, int fd) {
+Syscall::Result<long> read(char* buffer, long size, int fd) {
+  if (!IN_USER(buffer)) return Syscall::INVALID_POINTER;
   IOResource* io_resource = fetch_io_resource(fd);
-  if (io_resource == nullptr) return SystemCallErrorCode::INVALID_FD;
+  if (io_resource == nullptr) return Syscall::INVALID_FD;
   return io_resource->read(buffer, size);
 }
 
-long write(const char* buffer, long size, int fd) {
+Syscall::Result<long> write(const char* buffer, long size, int fd) {
+  if (!IN_USER(buffer)) return Syscall::INVALID_POINTER;
   IOResource* io_resource = fetch_io_resource(fd);
-  if (io_resource == nullptr) return SystemCallErrorCode::INVALID_FD;
+  if (io_resource == nullptr) return Syscall::INVALID_FD;
   return io_resource->write(buffer, size);
 }
 
-long seek(long loc, SeekType seek_type, int fd) {
+Syscall::Result<long> seek(long loc, Syscall::SeekType seek_type, int fd) {
   IOResource* io_resource = fetch_io_resource(fd);
-  if (io_resource == nullptr) return SystemCallErrorCode::INVALID_FD;
+  if (io_resource == nullptr) return Syscall::INVALID_FD;
   return io_resource->seek(loc, seek_type);
 }
 
-int exec(const char* filename, int argc, const char** argv) {
-  if (!IN_USER(filename)) return (int) SystemCallErrorCode::INVALID_POINTER;
+Syscall::Result<int> exec(const char* filename, int argc, const char** argv) {
+  if (!IN_USER(filename) || !IN_USER(argv)) return Syscall::INVALID_POINTER;
   Node* output = find_from_abs_path(filename);
-  if (output == nullptr) return (int) SystemCallErrorCode::FILE_NOT_FOUND;
-  return (int) SystemCallErrorCode::NOT_IMPLEMENTED;
+  if (output == nullptr) return Syscall::FILE_NOT_FOUND;
+  return Syscall::NOT_IMPLEMENTED;
 }
 
-void current_process_return(uint64_t* saved_state, uint64_t result) {
-  saved_state[0] = result;
+template <typename T>
+void process_return(uint64_t* saved_state, Syscall::Result<T> result) {
+  result.set_state(saved_state);
   Process* current_process = activeProcess[SMP::whichCore()];
   current_process->save_state(saved_state);
   current_process->run();
@@ -101,39 +104,39 @@ uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state) {
 
     // 0x02: int fork();
     case 0x02: {
-      int result = fork();
-      current_process_return(saved_state, (unsigned int) result);
+      Syscall::Result<int> result = fork();
+      process_return(saved_state, result);
       break;
     }
 
     // 0x03: int join(int pid);
     case 0x03: {
       int pid = (int) saved_state[0];
-      int result = join(pid);
-      current_process_return(saved_state, (unsigned int) result);
+      Syscall::Result<int> result = join(pid);
+      process_return(saved_state, result);
       break;
     }
 
     // 0x04: int getpid();
     case 0x04: {
-      int result = getpid();
-      current_process_return(saved_state, (unsigned int) result);
+      Syscall::Result<int> result = getpid();
+      process_return(saved_state, result);
       break;
     }
 
     // 0x05: int fopen(const char* filename);
     case 0x05: {
       const char* filename = (const char*) saved_state[0];
-      int result = fopen(filename);
-      current_process_return(saved_state, (unsigned int) result);
+      Syscall::Result<int> result = fopen(filename);
+      process_return(saved_state, result);
       break;
     }
 
     // 0x06: int close(int fd);
     case 0x06: {
       int fd = (int) saved_state[0];
-      int result = close(fd);
-      current_process_return(saved_state, (unsigned int) result);
+      Syscall::Result<int> result = close(fd);
+      process_return(saved_state, result);
       break;
     }
 
@@ -142,8 +145,8 @@ uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state) {
       char* buffer = (char*) saved_state[0];
       long size = (long) saved_state[1];
       int fd = (int) saved_state[2];
-      long result = read(buffer, size, fd);
-      current_process_return(saved_state, (unsigned long) result);
+      Syscall::Result<long> result = read(buffer, size, fd);
+      process_return(saved_state, result);
       break;
     }
 
@@ -152,18 +155,18 @@ uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state) {
       const char* buffer = (const char*) saved_state[0];
       long size = (long) saved_state[1];
       int fd = (int) saved_state[2];
-      long result = write(buffer, size, fd);
-      current_process_return(saved_state, (unsigned long) result);
+      Syscall::Result<long> result = write(buffer, size, fd);
+      process_return(saved_state, result);
       break;
     }
 
     // 0x09: long seek(long loc, SeekType seek_type, int fd);
     case 0x09: {
       long loc = (long) saved_state[0];
-      SeekType seek_type = (SeekType) saved_state[1];
+      Syscall::SeekType seek_type = (Syscall::SeekType) saved_state[1];
       int fd = (int) saved_state[2];
-      long result = seek(loc, seek_type, fd);
-      current_process_return(saved_state, (unsigned long) result);
+      Syscall::Result<long> result = seek(loc, seek_type, fd);
+      process_return(saved_state, result);
       break;
     }
 
@@ -172,15 +175,15 @@ uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state) {
       const char* filename = (const char*) saved_state[0];
       int argc = (int) saved_state[1];
       const char** argv = (const char**) saved_state[2];
-      int result = exec(filename, argc, argv);
-      current_process_return(saved_state, (unsigned int) result);
+      Syscall::Result<int> result = exec(filename, argc, argv);
+      process_return(saved_state, result);
       break;
     }
 
     default: {
       printf("Unknown System Call\n");
-      int result = SystemCallErrorCode::INVALID_SYSTEM_CALL;
-      current_process_return(saved_state, result);
+      Syscall::Result<int> result = Syscall::INVALID_SYSTEM_CALL;
+      process_return(saved_state, result);
       break;
     }
   }
@@ -189,4 +192,7 @@ uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state) {
   while (true) {}
   return 0;
 }
+
+#undef USER_MASK
+#undef IN_USER
 
