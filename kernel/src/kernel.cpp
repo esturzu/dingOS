@@ -48,21 +48,26 @@ extern "C" void kernelMain() {
   // To have the right disk, you have to 'mkdir fs_root'
   // Then, run with command:
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
+  
   SDAdapter* adapter = new SDAdapter(1024);
   Ext2* fs = new Ext2(adapter);
-  const char* existing_file_name = "hello.txt";
-  Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
-  int file_size = existing_test_file->size_in_bytes();
-  if (existing_test_file) {
-    char buffer[file_size + 1];
-    int bytes_read = read_file(existing_test_file, buffer, file_size);
-    if (bytes_read > 0) {
-      buffer[bytes_read] = '\0';
-      printf("File contents: %s\n", buffer);
-    }
-    delete existing_test_file;
-  }
-  
+  Node* journal = new Node(fs->get_block_size(), 8, fs->adapter);
+  print_inode_info(journal);
+  delete journal;
+
+  // const char* existing_file_name = "hello.txt";
+  // Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
+  // int file_size = existing_test_file->size_in_bytes();
+  // if (existing_test_file) {
+  //   char buffer[file_size + 1];
+  //   int bytes_read = read_file(existing_test_file, buffer, file_size);
+  //   if (bytes_read > 0) {
+  //     buffer[bytes_read] = '\0';
+  //     printf("File contents: %s\n", buffer);
+  //   }
+  //   delete existing_test_file;
+  // }
+
   // Create a test file
   const char* test_filename = "example.txt";
   printf("about to create %s\n", test_filename);

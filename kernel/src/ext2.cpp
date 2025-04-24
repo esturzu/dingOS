@@ -52,6 +52,29 @@ void dump_blocks(SDAdapter* adapter, uint32_t block_start, uint32_t count) {
 
     delete[] buffer;
 }
+void print_inode_info(Node* node) {
+    if (!node || !node->node) {
+        printf("print_inode_info: Invalid inode\n");
+        return;
+    }
+
+    printf("---- INODE %u ----\n", node->number);
+    printf("Type+Permissions : 0x%04x\n", node->node->types_plus_perm);
+    printf("Size             : %u bytes\n", node->node->size_of_iNode);
+    printf("Hard Links       : %u\n", node->node->num_Hard_Links);
+
+    printf("Direct Blocks    :\n");
+    for (int i = 0; i < 12; i++) {
+        printf("  [%2d] -> %u\n", i, node->node->directLinked[i]);
+    }
+
+    printf("Indirect Blocks  :\n");
+    printf("  singleIndirect : %u\n", node->node->singleIndirect);
+    printf("  doubleIndirect : %u\n", node->node->doubleIndirect);
+    printf("  tripleIndirect : %u\n", node->node->tripleIndirect);
+    printf("------------------\n");
+}
+
 
 
 // Compare two strings for equality

@@ -45,3 +45,15 @@ $(EXT2_IMG): $(wildcard $(FS_ROOT)/** $(FS_ROOT)/*)
 
 clean-fs:
 	@rm -f $(EXT2_IMG)
+
+EXT3_IMG := ext3.img
+
+fs3-image: $(EXT3_IMG)
+
+$(EXT3_IMG): $(wildcard $(FS_ROOT)/** $(FS_ROOT)/*)
+	@echo "Creating ext3 image: $(EXT3_IMG)"
+	@mkfs.ext3 -F -b 1024 -O has_journal ext3.img 32M
+	@echo "Image created successfully."
+
+clean-fs-3:
+	@rm -f $(EXT3_IMG)

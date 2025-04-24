@@ -367,6 +367,7 @@ void zero_memory(void* buffer, uint32_t size);
 
 // Dump a block's contents for debugging
 void dump_blocks(SDAdapter* adapter, uint32_t block_start, uint32_t count);
+void print_inode_info(Node* node);
 // String comparison utility
 bool streq_ext(const char* a, const char* b);
 
