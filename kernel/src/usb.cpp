@@ -1,23 +1,27 @@
 #include "usb.h"
 #include "physmem.h"
 #include "system_timer.h"
+#include "interrupts.h"
 
-UsbController g_usb;
+// UsbController g_usb;
 
-UsbController::UsbController() {
+UsbController::UsbController(uint8_t* device, uint8_t* config) {
     usb_base = reinterpret_cast<volatile uint32_t*>(USB_BASE);
     if (!usb_base || read_reg(USB_GOTGCTL) == 0xFFFFFFFF) {
         printf("USB: Failed to access controller at 0x%X on core %d\n", USB_BASE, SMP::whichCore());
     }
 
-    // Initialize fake device descriptor
-    uint8_t descriptor[18] = {
-        0x12, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x08, // bLength, bDescriptorType, bcdUSB, bDeviceClass, etc.
-        0x34, 0x12, 0x78, 0x56, 0x00, 0x01, 0x00, 0x00, // idVendor, idProduct, bcdDevice, iManufacturer, etc.
-        0x00, 0x01                                              // iSerialNumber, bNumConfigurations
-    };
+    // // Initialize fake device descriptor
+    // uint8_t descriptor[18] = {
+    //     0x12, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x08, // bLength, bDescriptorType, bcdUSB, bDeviceClass, etc.
+    //     0x34, 0x12, 0x78, 0x56, 0x00, 0x01, 0x00, 0x00, // idVendor, idProduct, bcdDevice, iManufacturer, etc.
+    //     0x00, 0x01                                              // iSerialNumber, bNumConfigurations
+    // };
     for (int i = 0; i < 18; i++) {
-        fake_device_descriptor[i] = descriptor[i];
+        fake_device_descriptor[i] = device[i];
+    }
+    for (int i = 0; i < 34; i++) {
+        fake_config_descriptor[i] = config[i];
     }
     use_fake_descriptor = true;
 }
@@ -80,21 +84,36 @@ void UsbController::configure_host_mode() {
     printf("USB: Host mode configured successfully\n");
 }
 
-void UsbController::setup_endpoint(uint8_t channel, uint8_t ep_num, uint8_t ep_type, uint16_t max_packet_size, uint8_t device_address) {
+void UsbController::setup_endpoint(uint8_t channel, uint8_t ep_num, uint8_t ep_type, uint16_t max_packet_size, uint8_t device_address, uint8_t* buffer) {
     uint32_t hc_base = USB_HC0_BASE + (channel * 0x20);
-    uint32_t hcchar = (max_packet_size << 0) |  // Max packet size
-                      (ep_num << 11) |          // Endpoint number
-                      (ep_type << 18) |         // Endpoint type (0=Control)
-                      (device_address << 22) |  // Device address (bits 22-28)
-                      (1 << 15);                // Enable channel
+
+    // Step 1: Set up DMA address (if needed, safe even without DMA mode)
+    write_reg(hc_base + HCDMA, ((uint64_t)buffer) & 0xFFFFFFFF);
+
+    // Step 2: Set up transfer size
+    // (1 packet, DATA0 PID, and max_packet_size bytes)
+    uint32_t hctsiz = (max_packet_size << 0) | (1 << 19) | (0 << 29);
+    write_reg(hc_base + HCTSIZ, hctsiz);
+
+    // Step 3: Set interrupt mask
+    write_reg(hc_base + HCINTMSK, (1 << 0) | (1 << 1)); // Transfer complete + Halt
+
+    // Step 4: Now build HCCHAR
+    uint32_t hcchar = (max_packet_size) |  // Max packet size
+                        (ep_num << 11) |      // Endpoint number
+                        (1 << 15) |            // EP Direction IN
+                        (ep_type << 18) |     // Endpoint type (0=Control, 1=Isochronous, 2=Bulk, 3=Interrupt)
+                        (device_address << 22);
+    
+    // Finally, enable channel
+    hcchar |= (1 << 31); // CHENA (Channel Enable)
+
     write_reg(hc_base + HCCHAR, hcchar);
-    write_reg(hc_base + HCTSIZ, (1 << 19) | max_packet_size);
-    write_reg(hc_base + HCINTMSK, (1 << 0));
 }
 
-void UsbController::init() {
+void UsbController::init(uint8_t* buffer) {
     printf("USB: Starting init on core %d\n", SMP::whichCore());
-    write_reg(USB_GAHBCFG, (1 << 0)); // Enable AHB interrupt (no DMA)
+    // write_reg(USB_GAHBCFG, (1 << 0)); // Enable AHB interrupt (no DMA)
     printf("USB: AHB interrupt enabled\n");
 
     write_reg(USB_GRXFSIZ, 0x200);
@@ -110,10 +129,11 @@ void UsbController::init() {
         printf("USB: Device enumeration failed\n");
     }
 
-    write_reg(USB_GINTMSK, (1 << 24) | (1 << 3));
+    write_reg(USB_GINTMSK, read_reg(USB_GINTMSK) | (1 << 24) | (1 << 3));
+    Interrupts::Enable_IRQ(USB_IRQ);
     printf("USB: Interrupts masked\n");
-    setup_endpoint(0, 0, 0, 8);
 
+    write_reg(USB_GINTSTS, 0);
     printf("USB: Controller initialized at 0x%X on core %d\n", USB_BASE, SMP::whichCore());
 }
 
@@ -213,29 +233,39 @@ uint32_t UsbController::receive_data(uint8_t channel, uint8_t* buffer, uint32_t 
     return bytes_received;
 }
 
-void UsbController::handle_interrupt() {
+int UsbController::handle_interrupt() {
     uint32_t gintsts = read_reg(USB_GINTSTS);
 
     if (gintsts & (1 << 24)) {  // Port Interrupt
         if (is_device_connected()) {
-            printf("USB: Device connected on core %d\n", SMP::whichCore());
+            // printf("USB: Device connected on core %d\n", SMP::whichCore());
         } else {
             printf("USB: Device disconnected on core %d\n", SMP::whichCore());
+            return -1;
         }
     }
 
     if (gintsts & (1 << 3)) {
+        bool found = false;
         for (uint8_t ch = 0; ch < 16; ch++) {
             uint32_t hc_base = USB_HC0_BASE + (ch * 0x20);
             uint32_t hcint = read_reg(hc_base + HCINT);
             if (hcint & (1 << 0)) {  // Transfer Completed
                 printf("USB: Transfer completed on channel %d, core %d\n", ch, SMP::whichCore());
                 write_reg(hc_base + HCINT, hcint);
+                found = true;
             }
+            else {
+                printf("HCINT: 0x%lx\n", hcint);
+            }
+        }
+        if (!found) {
+            return -1;
         }
     }
 
     write_reg(USB_GINTSTS, gintsts);
+    return 0;
 }
 
 bool UsbController::enumerate_device() {
@@ -253,6 +283,11 @@ bool UsbController::enumerate_device() {
     } else {
         printf("USB: Device connected after reset, HPRT = 0x%X\n", hprt);
     }
+
+    uint8_t new_address = 1;
+    uint8_t set_addr_packet[] = {0x00, 0x05, new_address, 0x00, 0x00, 0x00, 0x00, 0x00};
+    send_data(0, set_addr_packet, 8);
+    for (volatile int i = 0; i < 100000; i++);
 
     // Request only 8 bytes first
     uint8_t setup_packet[] = {0x80, 0x06, 0x00, 0x01, 0x00, 0x00, 0x08, 0x00};
@@ -300,12 +335,6 @@ bool UsbController::enumerate_device() {
     }
     printf("\n");
 
-    uint8_t new_address = 1;
-    uint8_t set_addr_packet[] = {0x00, 0x05, new_address, 0x00, 0x00, 0x00, 0x00, 0x00};
-    send_data(0, set_addr_packet, 8);
-    for (volatile int i = 0; i < 100000; i++);
-
-    setup_endpoint(0, 0, 0, buffer_full[7], new_address);
     printf("USB: Device enumerated successfully, address set to %d\n", new_address);
     return true;
 }

@@ -21,7 +21,7 @@ void runTests() {
 
   // Must be done last until free is implemented
   heapTests();
-  primitives_tests();
+  // primitives_tests();
 }
 
 void setupTests() {

@@ -26,8 +26,8 @@ QEMU := $(QEMUBIN)/qemu-system-aarch64 								# QEMU
    
 # 	# --trace "sd*" ]
 
-QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4 -drive file=../ext2.img,if=sd,format=raw -cpu cortex-a72 -m 1G \
-    -usb -device usb-kbd  \
+QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4 -cpu cortex-a72 -m 1G \
+    -usb -device usb-host,hostbus=0,hostaddr=1  \
 	# -trace "usb*" -d unimp,guest_errors
     # -usb -device usb-kbd  \
 	# -trace "usb*" -d unimp,guest_errors

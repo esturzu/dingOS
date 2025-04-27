@@ -29,6 +29,7 @@
 #define HCINT    (0x08)  // Channel Interrupt
 #define HCINTMSK (0x0C)  // Channel Interrupt Mask
 #define HCTSIZ   (0x10)  // Channel Transfer Size
+#define HCDMA    (0x14)  // Channel DMA Location
 
 // USB IRQ number for RPi 3B
 #define USB_IRQ 9
@@ -37,20 +38,21 @@ class UsbController {
 private:
     volatile uint32_t* usb_base;
     uint8_t fake_device_descriptor[18]; // Storage for fake device descriptor
+    uint8_t fake_config_descriptor[34];
     bool use_fake_descriptor;          // Flag to enable fake descriptor
     uint8_t last_setup_packet[8];      // Store the last setup packet for checking
 
 public:
-    UsbController();
+    UsbController(uint8_t* device, uint8_t* config);
     ~UsbController();
     void reset_controller();
     void configure_host_mode();
-    void setup_endpoint(uint8_t channel, uint8_t ep_num, uint8_t ep_type, uint16_t max_packet_size, uint8_t device_address = 0);
-    void init();
+    void setup_endpoint(uint8_t channel, uint8_t ep_num, uint8_t ep_type, uint16_t max_packet_size, uint8_t device_address, uint8_t* buffer);
+    void init(uint8_t* buffer);
     bool is_device_connected();
     void send_data(uint8_t channel, const uint8_t* data, uint32_t length);
     uint32_t receive_data(uint8_t channel, uint8_t* buffer, uint32_t max_length);
-    void handle_interrupt();
+    int handle_interrupt();
     bool enumerate_device();
 
 private:
@@ -58,6 +60,6 @@ private:
     void write_reg(uint32_t offset, uint32_t value) { usb_base[offset >> 2] = value; }
 };
 
-extern UsbController g_usb;
+// extern UsbController g_usb;
 
 #endif // USB_H

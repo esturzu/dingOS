@@ -13,6 +13,7 @@
 #include "system_call.h"
 #include "system_timer.h"
 #include "usb.h"
+#include "keyboard.h"
 
 using Debug::panic;
 
@@ -58,7 +59,7 @@ void Interrupts::Enable_IRQ(uint8_t IRQ_num) {
   if (IRQ_num < 32) {
     volatile uint32_t* Enable_IRQ_1_register =
         (volatile uint32_t*)(interrupt_base_address + Enable_IRQ_1_offset);
-    printf("IRQ: Writing to 0x%X\n", (uint64_t)Enable_IRQ_1_register);
+    printf("IRQ: Writing to 0x%lX\n", (uint64_t) Enable_IRQ_1_register);
     uint32_t test_read = *Enable_IRQ_1_register;
     printf("IRQ: Read IRQ_ENABLE_1 = 0x%X\n", test_read);
     *Enable_IRQ_1_register = (1 << IRQ_num);
@@ -155,6 +156,8 @@ extern "C" void irq_handler(uint64_t* saved_state)
 
   uint32_t irq_pending_1 = Interrupts::get_IRQ_pending_1_register();
 
+  debug_printf("irq_pending_1 = 0x%x\n", irq_pending_1);
+
   if (irq_pending_1 & (1 << 0)) {
       current_time += 1;
       uint32_t current_lower = SystemTimer::get_lower_running_counter_value();
@@ -163,7 +166,8 @@ extern "C" void irq_handler(uint64_t* saved_state)
   }
 
   if (irq_pending_1 & (1 << USB_IRQ)) {
-      g_usb.handle_interrupt();  
+      debug_printf("Here\n");
+      kbd->keyboard_loop();  
   }
 }
 
