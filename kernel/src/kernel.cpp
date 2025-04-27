@@ -5,6 +5,7 @@
 
 #include "cores.h"
 #include "crti.h"
+#include "elf.h"
 #include "event_loop.h"
 #include "ext2.h"
 #include "framebuffer.h"
@@ -45,24 +46,40 @@ extern "C" void kernelMain() {
 
   SD::init();
 
-#if 0
+#if 1
   // To have the right disk, you have to 'mkdir fs_root'
   // Then, run with command:
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
   SDAdapter* adapter = new SDAdapter(1024);
   Ext2* fs = new Ext2(adapter);
-  const char* existing_file_name = "hello.txt";
+  const char* existing_file_name = "hello.elf";
   Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
   int file_size = existing_test_file->size_in_bytes();
+
+  // If file is found
   if (existing_test_file) {
-    char buffer[file_size + 1];
+    char *buffer = new char[file_size + 1];
     int bytes_read = read_file(existing_test_file, buffer, file_size);
     if (bytes_read > 0) {
       buffer[bytes_read] = '\0';
       printf("File contents: %s\n", buffer);
     }
+
+    // Run user program
+    Process* process = (Process*) malloc(sizeof(Process));
+    ELFLoader::Result result = ELFLoader::load(buffer, bytes_read, process);
+    bool success = result.success();
+    if (!success) {
+      Debug::panic("ELF load failed code=%u", (uint32_t)result.getErrorCode());
+    }
+
+    schedule_event([process]{ process->run(); });
+
     delete existing_test_file;
   }
+#endif
+
+#if 0
   // Create a test file
   const char* test_filename = "example.txt";
   Node* test_file = create_file(fs->root, test_filename);
@@ -102,13 +119,15 @@ extern "C" void kernelMain() {
   // Request a framebuffer at 640x480x32
   FrameBufferInfo* fb = framebuffer_init(640, 480, 32);
   if (!fb) {
-    debug_printf("Failed to init framebuffer!\n");
-    while (true) { /* spin */
-    }
+    Debug::panic("Failed to init framebuffer!\n");
   }
 
   // Fill the screen with a color
   framebuffer_fill(fb, 0xFFFF00);
+
+#if 1
+  event_loop();
+#endif
 
   while (1);
 }
