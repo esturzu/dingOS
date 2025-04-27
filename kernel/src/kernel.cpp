@@ -48,7 +48,10 @@ extern "C" void kernelMain() {
   SDAdapter* adapter = new SDAdapter(1024);
   Ext2* fs = new Ext2(adapter);
   const char* existing_file_name = "hello.txt";
+  printf("about to find %s\n", existing_file_name);
   Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
+  printf("found%s\n", existing_file_name);
+  
   int file_size = existing_test_file->size_in_bytes();
   if (existing_test_file) {
     char buffer[file_size + 1];

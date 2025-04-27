@@ -49,7 +49,7 @@
      
      // Check if read was successful by comparing bytes read with expected block size
      if (bytes != block_size) {
-         printf("SDAdapter::read_block: Failed to read block %u\n", block_number);
+         debug_printf("SDAdapter::read_block: Failed to read block %u\n", block_number);
      }
  }
  
@@ -66,7 +66,7 @@
   * @param n Number of bytes to write
   */
  void SDAdapter::write_block(uint32_t block_number, char* buffer, uint32_t offset, uint32_t n) {
-     printf("DEBUG: SDAdapter::write_block: block %u, offset %u, size %u\n", 
+     debug_printf("DEBUG: SDAdapter::write_block: block %u, offset %u, size %u\n", 
            block_number, offset, n);
      
      // Calculate SD card sector mapping
@@ -77,7 +77,7 @@
      // Check if we need to perform a partial write
      // This happens when we're not writing a complete block or starting at non-zero offset
      if (offset > 0 || n < block_size) {
-         printf("DEBUG: SDAdapter::write_block: Partial block write, doing read-modify-write\n");
+         debug_printf("DEBUG: SDAdapter::write_block: Partial block write, doing read-modify-write\n");
          
          // Allocate a temporary buffer for the entire block
          uint8_t* temp_buffer = new uint8_t[block_size];
@@ -87,7 +87,7 @@
          uint32_t read_bytes = SD::read(sd_start, sd_block_count, temp_buffer);
          
          if (read_bytes != block_size) {
-             printf("DEBUG: SDAdapter::write_block: Read failed (%u/%u bytes)\n", 
+             debug_printf("DEBUG: SDAdapter::write_block: Read failed (%u/%u bytes)\n", 
                    read_bytes, block_size);
          }
          
@@ -105,23 +105,23 @@
          
          // Check if the write was successful
          if (bytes != block_size) {
-             printf("DEBUG: SDAdapter::write_block: Write failed (%u/%u bytes)\n", 
+             debug_printf("DEBUG: SDAdapter::write_block: Write failed (%u/%u bytes)\n", 
                    bytes, block_size);
          } else {
-             printf("DEBUG: SDAdapter::write_block: Write successful\n");
+             debug_printf("DEBUG: SDAdapter::write_block: Write successful\n");
          }
      } else {
          // Simple case - writing an entire block
          // We can directly write the buffer without read-modify-write
-         printf("DEBUG: SDAdapter::write_block: Full block write\n");
+         debug_printf("DEBUG: SDAdapter::write_block: Full block write\n");
          
          uint32_t bytes = SD::write(sd_start, sd_block_count, (uint8_t*)buffer);
          
          if (bytes != block_size) {
-             printf("DEBUG: SDAdapter::write_block: Write failed (%u/%u bytes)\n", 
+             debug_printf("DEBUG: SDAdapter::write_block: Write failed (%u/%u bytes)\n", 
                    bytes, block_size);
          } else {
-             printf("DEBUG: SDAdapter::write_block: Write successful\n");
+             debug_printf("DEBUG: SDAdapter::write_block: Write successful\n");
          }
      }
  }
@@ -139,7 +139,7 @@
   * @return Number of bytes written, or -1 on error
   */
  int64_t SDAdapter::write(uint32_t offset, uint32_t n, char* buffer) {
-     printf("DEBUG: SDAdapter::write: offset=%u, size=%u\n", offset, n);
+     debug_printf("DEBUG: SDAdapter::write: offset=%u, size=%u\n", offset, n);
  
      // Get the total size of the device
      auto sz = size_in_bytes();
@@ -184,7 +184,7 @@
   * @return Total number of bytes written, or negative value on error
   */
  int64_t SDAdapter::write_all(uint32_t offset, uint32_t n, char* buffer) {
-     printf("DEBUG: SDAdapter::write_all: offset=%u, size=%u\n", offset, n);
+     debug_printf("DEBUG: SDAdapter::write_all: offset=%u, size=%u\n", offset, n);
      
      int64_t total = 0;
      

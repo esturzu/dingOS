@@ -160,7 +160,7 @@ public:
         : BlockIO(block_size), number(number), node(nullptr), 
           sd_adapter(adapter), have_entry_before(false), entry_result(0), oldSym(nullptr) {
         
-        printf("DEBUG: Node constructor: Creating Node for inode %u\n", number);
+        debug_printf("DEBUG: Node constructor: Creating Node for inode %u\n", number);
         
         // Allocate and initialize the inode
         node = new iNode();
@@ -191,9 +191,9 @@ public:
         uint32_t inode_offset = bgdt->startingBlockAddress * (1024 << supa->block_size) + 
                                index * supa->iNode_size;
         
-        printf("DEBUG: Node constructor: Reading inode data from offset 0x%x\n", inode_offset);
+        debug_printf("DEBUG: Node constructor: Reading inode data from offset 0x%x\n", inode_offset);
         sd_adapter->read_all(inode_offset, sizeof(iNode), (char*)node);
-        printf("DEBUG: Node constructor: Inode loaded, type=0x%x, size=%u\n", 
+        debug_printf("DEBUG: Node constructor: Inode loaded, type=0x%x, size=%u\n", 
               node->types_plus_perm, node->size_of_iNode);
     }
     
@@ -241,7 +241,7 @@ public:
      * @param buffer Buffer to store the read data
      */
     void read_block(uint32_t block_number, char* buffer) override {
-        printf("DEBUG: Node::read_block: inode %u, block %u\n", number, block_number);
+        debug_printf("DEBUG: Node::read_block: inode %u, block %u\n", number, block_number);
         
         // Calculate how many block pointers fit in one block
         // Each pointer is 4 bytes (uint32_t), so divide block size by 4
@@ -251,12 +251,12 @@ public:
             // Direct block - directly referenced by the inode
             // The first 12 blocks are pointed to directly by the inode
             if (node->directLinked[block_number] == 0) {
-                printf("DEBUG: Node::read_block: Block is not allocated (zero)\n");
+                debug_printf("DEBUG: Node::read_block: Block is not allocated (zero)\n");
                 // zero_memory(buffer, block_size);
                 return;
             }
             
-            printf("DEBUG: Node::read_block: Reading direct block at physical block %u\n", 
+            debug_printf("DEBUG: Node::read_block: Reading direct block at physical block %u\n", 
                   node->directLinked[block_number]);
             
             // Calculate byte offset: block_number * block_size
@@ -267,15 +267,15 @@ public:
             // Single indirect block - referenced through a single indirection
             // The block_number is beyond the direct blocks, so we need to use the single indirect pointer
             // This implementation currently doesn't support single indirect blocks
-            printf("DEBUG: Node::read_block: Single indirect blocks not implemented\n");
+            debug_printf("DEBUG: Node::read_block: Single indirect blocks not implemented\n");
         } else if (block_number < (12 + N + (N * N))) {
             // Double indirect block - referenced through double indirection
             // This requires reading two levels of block pointers to find the data
-            printf("DEBUG: Node::read_block: Double indirect blocks not implemented\n");
+            debug_printf("DEBUG: Node::read_block: Double indirect blocks not implemented\n");
         } else {
             // Triple indirect block - referenced through triple indirection
             // This requires reading three levels of block pointers to find the data
-            printf("DEBUG: Node::read_block: Triple indirect blocks not implemented\n");
+            debug_printf("DEBUG: Node::read_block: Triple indirect blocks not implemented\n");
         }
     }
     
@@ -323,7 +323,7 @@ public:
      */
     uint32_t get_type() {
         // Print debug information
-        printf("DEBUG: Types and permissions raw value: 0x%x\n", node->types_plus_perm);
+        debug_printf("DEBUG: Types and permissions raw value: 0x%x\n", node->types_plus_perm);
         
         // Extract type bits (top 4 bits) using bitwise AND with 0xF000 mask
         // This masks off the permission bits (lower 12 bits) and keeps only the type
@@ -349,7 +349,7 @@ public:
     bool is_file() {
         uint32_t file_code = 0x8000;  // Regular file
         uint32_t type = get_type();
-        printf("DEBUG: is_file() type check: raw=0x%x, expected=0x%x\n", type, file_code);
+        debug_printf("DEBUG: is_file() type check: raw=0x%x, expected=0x%x\n", type, file_code);
         return (type == file_code);
     }
     
@@ -375,7 +375,7 @@ public:
      * @return Number of bytes written, or negative value on error
      */
     int64_t write(uint32_t offset, uint32_t n, char* buffer) override {
-        printf("DEBUG: Node::write: inode %u, offset %u, size %u\n", number, offset, n);
+        debug_printf("DEBUG: Node::write: inode %u, offset %u, size %u\n", number, offset, n);
         
         // Calculate which block and offset within block
         // Integer division gives block number: offset / block_size
@@ -388,7 +388,7 @@ public:
         // Either the requested size or the remaining space in the block
         uint32_t bytes_to_write = (n < block_size - offset_in_block) ? n : block_size - offset_in_block;
         
-        printf("DEBUG: Node::write: Writing to block %u, offset_in_block %u, bytes_to_write %u\n", 
+        debug_printf("DEBUG: Node::write: Writing to block %u, offset_in_block %u, bytes_to_write %u\n", 
               block_number, offset_in_block, bytes_to_write);
         
         // Write to the block
@@ -409,14 +409,14 @@ public:
      * @return Total number of bytes written, or negative value on error
      */
     int64_t write_all(uint32_t offset, uint32_t n, char* buffer) override {
-        printf("DEBUG: Node::write_all: inode %u, offset %u, size %u\n", number, offset, n);
-        printf("DEBUG: Node::write_all: Before write, inode size=%u\n", node->size_of_iNode);
+        debug_printf("DEBUG: Node::write_all: inode %u, offset %u, size %u\n", number, offset, n);
+        debug_printf("DEBUG: Node::write_all: Before write, inode size=%u\n", node->size_of_iNode);
         
         int64_t total_count = 0;
         while (n > 0) {
             // Write as much as we can at the current offset
             int64_t cnt = write(offset, n, buffer);
-            printf("DEBUG: Node::write_all: write returned %lld\n", cnt);
+            debug_printf("DEBUG: Node::write_all: write returned %lld\n", cnt);
             
             // Check for errors or end of file
             if (cnt < 0) return cnt;
@@ -429,7 +429,7 @@ public:
             buffer += cnt;
         }
         
-        printf("DEBUG: Node::write_all: After write, total bytes written=%lld, inode size=%u\n", 
+        debug_printf("DEBUG: Node::write_all: After write, total bytes written=%lld, inode size=%u\n", 
               total_count, node->size_of_iNode);
         return total_count;
     }
@@ -481,13 +481,13 @@ public:
         root = new Node(1024 << supa->block_size, 2, adapter);
         
         // Print superblock and BGDT info for debugging
-        printf("Blocks: %u | Inodes: %u | Block size = %u | Inodes per group = %u\n",
+        debug_printf("Blocks: %u | Inodes: %u | Block size = %u | Inodes per group = %u\n",
             supa->num_Blocks,
             supa->num_iNodes,
             1024 << supa->block_size,
             supa->num_iNode_pergroup);
         
-        printf("bit_map_block_address: %u | bit_map_iNode_address: %u | startingBlockAddress = %u | "
+        debug_printf("bit_map_block_address: %u | bit_map_iNode_address: %u | startingBlockAddress = %u | "
                "num_unallocated_blocks = %u | num_unallocated_directories = %u | num_unallocated_iNodes = %u |\n",
             bgdt->bit_map_block_address,
             bgdt->bit_map_iNode_address,
