@@ -2,6 +2,7 @@
 #include "machine.h"
 #include "printf.h"
 #include "vmm.h"
+#include "definitions.h"
 
 namespace VMM
 {
@@ -256,15 +257,7 @@ namespace VMM
 
       if (!is_page_descriptor(*stage_1_descriptor))
       {
-        if (pg_sz == PageSize::GB_1 || pg_sz == PageSize::NONE)
-        {
-          invalidate_entry(stage_1_descriptor);
-          return true;
-        }
-        else
-        {
-          return false;
-        }
+        return false;
       }
 
       uint64_t* stage_2_base_address = get_next_level(*stage_1_descriptor);
@@ -277,15 +270,7 @@ namespace VMM
 
       if (!is_page_descriptor(*stage_2_descriptor))
       {
-        if (pg_sz == PageSize::MB_2 || pg_sz == PageSize::NONE)
-        {
-          invalidate_entry(stage_2_descriptor);
-          return true;
-        }
-        else
-        {
-          return false;
-        }
+        return false;
       }
 
       uint64_t* stage_3_base_address = get_next_level(*stage_2_descriptor);
@@ -298,17 +283,12 @@ namespace VMM
 
       if (is_page_descriptor(*stage_3_descriptor))
       {
-        printf("unmap_address: L3 entry 0x%lx is page, expected table (va=0x%lx)\n", *stage_3_descriptor, virtual_address);
-        while (true) {};
+        return false;
       }
 
-      if (pg_sz == PageSize::KB_4 || pg_sz == PageSize::NONE)
-      {
-        invalidate_entry(stage_3_descriptor);
-        return true;
-      }
+      invalidate_entry(stage_3_descriptor);
 
-      return false;
+      return true;
     }
     else if (granule_size == Granule::KB_16)
     {
@@ -326,98 +306,90 @@ namespace VMM
 
   void TranslationTable::set_ttbr0_el1()
   {
-    uint64_t prev_tcr_el1 = get_TCR_EL1();
-    prev_tcr_el1 &= 0xFFFFFFFFFFFF0000;
-
-    uint64_t tg0;
-
-    if (granule_size == Granule::KB_4)
-      tg0 = 0b00;
-    else if (granule_size == Granule::KB_64)
-      tg0 = 0b01;
-    else if (granule_size == Granule::KB_16)
-      tg0 = 0b10;
-    else
-    {
-      printf("set_ttbr0_el1: unknown granule enum=%u\n", static_cast<unsigned>(granule_size));
-      while (true) {}
-    }
-
-    uint64_t new_tcr_el1 = prev_tcr_el1
-                            | (tg0 << 14) /*TG0*/
-                            | 16; /*Settting T0 SZ*/
-
-    set_TCR_EL1(new_tcr_el1);
-
-    set_TTBR0_EL1(reinterpret_cast<uint64_t>(base_address));
-    tlb_invalidate_all();
+    asm volatile (
+      "msr ttbr0_el1, %0\n"
+      "isb\n"
+      : : "r" (base_address)
+    );
   }
 
   void TranslationTable::set_ttbr1_el1()
   {
-    set_TTBR1_EL1(reinterpret_cast<uint64_t>(base_address));
-    tlb_invalidate_all();
+    asm volatile (
+      "msr ttbr1_el1, %0\n"
+      "isb\n"
+      : : "r" (base_address)
+    );
   }
 
-  TranslationTable kernel_translation_table{TranslationTable::Granule::KB_4};
+  static TranslationTable* kernel_table;
 
   void init()
   {
-    // Allocate First 1 GB for kernel code/data
-    for (uint64_t virtual_address = 0xFFFF000000000000; virtual_address < 0xFFFF000040000000; virtual_address += 0x1000)
-    {
-      kernel_translation_table.map_address(virtual_address, kernel_to_phys_ptr(virtual_address), 0, TranslationTable::PageSize::KB_4);
-    }
-
-    // Map the UART region (physical 0x3F201000 to virtual 0xFFFF00003F201000)
-    uint64_t uart_phys_base = 0x3F201000;
-    uint64_t uart_virt_base = 0xFFFF00003F201000;
-    kernel_translation_table.map_address(uart_virt_base, uart_phys_base, TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
-
-    // Map the GPIO region (physical 0x3F200000 to virtual 0xFFFF00003F200000)
-    uint64_t gpio_phys_base = 0x3F200000;
-    uint64_t gpio_virt_base = 0xFFFF00003F200000;
-    kernel_translation_table.map_address(gpio_virt_base, gpio_phys_base, TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
-
-    // Map the clock region (physical 0x3F101000 to virtual 0xFFFF00003F101000)
-    // Note: Clock registers are part of the system timer/CM region on BCM2837
-    uint64_t clock_phys_base = 0x3F101000;
-    uint64_t clock_virt_base = 0xFFFF00003F101000;
-    kernel_translation_table.map_address(clock_virt_base, clock_phys_base, TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
-
-    // Map additional peripheral window (e.g., property mailbox at 0x3F00B880)
-    for (uint64_t off = 0x0B880; off < 0x0C000; off += 0x1000)
-    {
-        uint64_t phys_addr = 0x3F000000 + off;
-        uint64_t virt_addr = 0xFFFF00003F000000 + off;
-        kernel_translation_table.map_address(virt_addr, phys_addr, TranslationTable::DeviceMemory, TranslationTable::PageSize::KB_4);
-    }
-
+    // Set up MAIR_EL1 for memory attributes
     MAIR::setup_mair_el1();
-    kernel_translation_table.set_ttbr1_el1();
 
-    // Enable the MMU
-    uint64_t sctlr;
-    asm volatile("mrs %0, sctlr_el1" : "=r"(sctlr));
-    sctlr |= 0x1; // Enable MMU
-    asm volatile("msr sctlr_el1, %0" : : "r"(sctlr));
-    asm volatile("isb");
+    // Initialize the kernel page table
+    kernel_table = new TranslationTable(TranslationTable::Granule::KB_4);
+
+    // Map UART (0x3F201000 to 0xFFFF00003F201000)
+    for (uint64_t va = UART0_BASE, pa = 0x3F201000; va < UART0_BASE + 0x1000; va += 0x1000, pa += 0x1000)
+    {
+      kernel_table->map_address(va, pa, TranslationTable::DeviceMemory | TranslationTable::ExecuteNever, TranslationTable::PageSize::KB_4);
+    }
+
+    // Map GPIO (0x3F200000 to 0xFFFF00003F200000)
+    for (uint64_t va = GPIO_BASE, pa = 0x3F200000; va < GPIO_BASE + 0x1000; va += 0x1000, pa += 0x1000)
+    {
+      kernel_table->map_address(va, pa, TranslationTable::DeviceMemory | TranslationTable::ExecuteNever, TranslationTable::PageSize::KB_4);
+    }
+
+    // Map clock (0x3F101000 to 0xFFFF00003F101000)
+    for (uint64_t va = 0xFFFF00003F101000, pa = 0x3F101000; va < 0xFFFF00003F101000 + 0x1000; va += 0x1000, pa += 0x1000)
+    {
+      kernel_table->map_address(va, pa, TranslationTable::DeviceMemory | TranslationTable::ExecuteNever, TranslationTable::PageSize::KB_4);
+    }
+
+    // Map mailbox (0x3F00B880 to 0xFFFF00003F00B880)
+    for (uint64_t va = 0xFFFF00003F00B880, pa = 0x3F00B880; va < 0xFFFF00003F00B880 + 0x1000; va += 0x1000, pa += 0x1000)
+    {
+      kernel_table->map_address(va, pa, TranslationTable::DeviceMemory | TranslationTable::ExecuteNever, TranslationTable::PageSize::KB_4);
+    }
+
+    // Map LAN9118 Ethernet (0x3F300000 to 0xFFFF00003F300000)
+    for (uint64_t va = LAN9118_BASE, pa = 0x3F300000; va < LAN9118_BASE + 0x1000; va += 0x1000, pa += 0x1000)
+    {
+      kernel_table->map_address(va, pa, TranslationTable::DeviceMemory | TranslationTable::ExecuteNever, TranslationTable::PageSize::KB_4);
+    }
+
+    // Map kernel virtual memory (identity mapping for now)
+    for (uint64_t va = 0xFFFF000000000000; va < 0xFFFF000000100000; va += 0x1000)
+    {
+      kernel_table->map_address(va, va - 0xFFFF000000000000, TranslationTable::ExecuteNever, TranslationTable::PageSize::KB_4);
+    }
+
+    // Flush caches and TLB
+    asm volatile (
+      "dsb sy\n"
+      "tlbi vmalle1\n"
+      "dsb sy\n"
+      "isb\n"
+    );
+
+    // Set TTBR0_EL1 to point to the kernel page table
+    kernel_table->set_ttbr0_el1();
   }
 
   void init_core()
   {
-    MAIR::setup_mair_el1();
-    kernel_translation_table.set_ttbr1_el1();
-
-    // Ensure MMU is enabled for this core
+    // Enable the MMU
     uint64_t sctlr;
-    asm volatile("mrs %0, sctlr_el1" : "=r"(sctlr));
-    sctlr |= 0x1;
-    asm volatile("msr sctlr_el1, %0" : : "r"(sctlr));
-    asm volatile("isb");
+    asm volatile (
+      "mrs %0, sctlr_el1\n"
+      "orr %0, %0, #1\n" // Enable MMU
+      "msr sctlr_el1, %0\n"
+      "isb\n"
+      : "=r" (sctlr)
+    );
   }
-}
-
-extern "C" void vmm_pageFault()
-{
 }

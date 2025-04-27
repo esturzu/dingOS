@@ -21,24 +21,27 @@
 #include "tester.h"
 #include "vmm.h"
 #include "usb.h"
-#include "e1000_driver.h"
+#include "lan9118_driver.h"
 #include "uart.h"
 #include "definitions.h"
+#include "network_test.h"
 
-extern void testNetwork();
+// extern void testNetwork();
 
 
 
 extern "C" void kernelMain() {
   // Handled uart Init
   PhysMem::page_init();
-
+  printf("Physical memory initialized\n");
   CRTI::_init();
-
+  printf("CRT initialized\n");
   VMM::init();
+  printf("VMM initialized\n");
 
   printf("CurrentEL %s\n", STRING_EL(get_CurrentEL()));
   uart_init(UART0_BASE);
+  printf("UART initialized\n");
 
   heap_init();
   printf("Heap initialized\n");

@@ -5,7 +5,20 @@
 #include "uart.h"
 #include "definitions.h"
 #include "gpio.h"
-#include "stdint.h"
+#include <stdint.h>
+
+// Debug function to write directly to physical UART (before MMU is enabled)
+static void debugPutChar(char c) {
+    volatile uint32_t* uart = reinterpret_cast<volatile uint32_t*>(0x3F201000); // Physical address
+    while (uart[0x18 / 4] & (1 << 5)); // Wait for UART to be ready (FR.TXFF)
+    uart[0] = c;
+}
+
+static void debugPutString(const char* str) {
+    while (*str) {
+        debugPutChar(*str++);
+    }
+}
 
 class UART {
   const uint64_t base_address;
@@ -69,25 +82,34 @@ class UART {
   static constexpr uint64_t interrupt_clear_offset = 0x44;
 
   UART(uint64_t base_address) : base_address(base_address) {
+    debugPutString("UART: Disabling UART\n");
     set_control(0);
 
-    // Enable GPIO-14 (UART 0 Transmit)
+    debugPutString("UART: Setting GPIO pull\n");
     GPIO::set_pull_register(GPIO::PUD::OFF);
 
+    debugPutString("UART: Setting GPIO clock 1\n");
     GPIO::set_clock(0, 0b100000000000000);
 
+    debugPutString("UART: Setting GPIO clock 2\n");
     GPIO::set_clock(0, 0);
 
+    debugPutString("UART: Clearing interrupts\n");
     clear_interrupts();
 
+    debugPutString("UART: Setting integer baud\n");
     set_integer_braud(1);
 
+    debugPutString("UART: Setting fractional baud\n");
     set_fractional_braud(40);
 
+    debugPutString("UART: Setting line control\n");
     set_line_control(0b1110000);
 
+    debugPutString("UART: Setting interrupt mask\n");
     set_interrupt_mask(0b11111110010);
 
+    debugPutString("UART: Enabling UART\n");
     set_control(0b1100000001);
   }
 
@@ -98,12 +120,12 @@ class UART {
 static UART* uart0 = nullptr;
 
 void uart_init(uint64_t base_address) {
+    debugPutString("UART: Initializing\n");
     uart0 = new UART(base_address);
 }
 
 extern "C" void uart_putc(char c) {
     if (!uart0) {
-        // If UART isn't initialized, do nothing (or spin)
         return;
     }
     while (uart0->transmit_fifo_full()) {

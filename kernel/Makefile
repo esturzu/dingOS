@@ -19,7 +19,7 @@ QEMU := $(QEMUBIN)/qemu-system-aarch64 								# QEMU
 
 # QEMU flags and params
 QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4 -drive file=../ext2.img,if=sd,format=raw -cpu cortex-a72 -m 1G \
- -net nic -net none \
+-net none \
 	# --trace "sd*" ]
 
 # Optional kernel output log file
