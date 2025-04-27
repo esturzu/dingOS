@@ -52,7 +52,7 @@ extern "C" void kernelMain() {
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
   SDAdapter* adapter = new SDAdapter(1024);
   Ext2* fs = new Ext2(adapter);
-  const char* existing_file_name = "hello.elf";
+  const char* existing_file_name = "hello.txt";
   Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
   int file_size = existing_test_file->size_in_bytes();
 

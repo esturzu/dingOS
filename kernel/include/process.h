@@ -60,6 +60,8 @@ public:
   void save_state(uint64_t* register_frame);
   void map_range(uint64_t start, uint64_t end);
   void set_entry_point(uint64_t entry);
+  void set_initial_sp(uint64_t sp);
+  void* map_one_page(uint64_t user_va);
 };
 
 extern Process* activeProcess[4];

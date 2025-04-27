@@ -105,6 +105,8 @@ namespace VMM
     void set_ttbr1_el1();
   };
 
+  extern TranslationTable kernel_translation_table;
+
   extern void init();
   extern void init_core();
 

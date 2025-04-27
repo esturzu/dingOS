@@ -6,6 +6,15 @@
 
 using Debug::panic;
 
+/* ------------------------------------------------------------------ */
+/*  Zero-fill one 4 KiB page (512 × 8-byte entries).                  */
+/* ------------------------------------------------------------------ */
+static inline void zero_page(void *page_kva)
+{
+  uint64_t *p = static_cast<uint64_t*>(page_kva);
+  for (int i = 0; i < 512; ++i) p[i] = 0;
+}
+
 namespace VMM
 {
   TranslationTable::TranslationTable(enum Granule gran) : granule_size(gran)
@@ -86,6 +95,10 @@ namespace VMM
   inline void TranslationTable::create_page_descriptor(uint64_t* entry)
   {
     uint64_t next_level_address = reinterpret_cast<uint64_t>(PhysMem::allocate_frame());
+
+    // Clear the whole 4 KiB so every entry starts ‘invalid’ (bits[1:0]=00)
+    zero_page(VMM::phys_to_kernel_ptr(reinterpret_cast<void*>(next_level_address)));
+
     *entry = next_level_address
               | 0b10 /*page descriptor flag*/ 
               | 0b1 /*valid descriptor flag*/;

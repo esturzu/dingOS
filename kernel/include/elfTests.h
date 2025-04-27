@@ -7,7 +7,7 @@
 
 typedef uint32_t (*SampleProcessFunction)();
 constexpr size_t NUM_INSTRUCTIONS = 7;
-uint64_t PROGRAM_LOAD_LOC = 0xFFFF'0000'0000'0000;
+uint64_t PROGRAM_LOAD_LOC = 0x0000'0000'0040'0000;
 
 struct ELFFile {
   ELFLoader::ELFHeader64 header;
