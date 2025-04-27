@@ -34,7 +34,7 @@ CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib \
 						-DDEBUG_ENABLED=$(DEBUG_ENABLED)
 
 # Enable debug prints
-DEBUG_ENABLED ?= 0
+DEBUG_ENABLED ?= 1
 
 ASFLAGS :=
 DEBUG_FLAGS := -g
@@ -101,7 +101,7 @@ qemu: $(IMG)
 
 # How to build the final ELF from all objects + linker script
 $(EXEC): linker.ld $(OBJS)
-	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS)
+	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS) -Wl,--end-group
 
 # How to produce the .img from the ELF
 $(IMG): $(EXEC)
