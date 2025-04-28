@@ -11,6 +11,7 @@
 #include "physmem.h"
 #include "printf.h"
 #include "process.h"
+#include "rainbow_demo.h"
 #include "sd.h"
 #include "stdint.h"
 #include "system_timer.h"
@@ -43,7 +44,7 @@ extern "C" void kernelMain() {
 
   SD::init();
 
-#if 1
+#if 0
   // To have the right disk, you have to 'mkdir fs_root'
   // Then, run with command:
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
@@ -121,6 +122,9 @@ extern "C" void kernelMain() {
 
   // Fill the screen with a color
   framebuffer_fill(fb, 0xFFFF00);
+
+  // Rainbow demo!
+  start_rainbow_demo(fb);
 
 #if 1
   event_loop();

@@ -70,6 +70,19 @@ void Process::run()
   debug_printf("Entering Process\n");
   enter_process(&context);
 
+  uint64_t el, spsr;
+    asm volatile("mrs %0, CurrentEL" : "=r"(el));
+    asm volatile("mrs %0, SPSR_EL1"  : "=r"(spsr));
+    debug_printf("[run] still in EL%llu, SPSR_EL1=%016llx\n",
+                 (el >> 2) & 3, (unsigned long long)spsr);
+    /* ------------------------------------------------------ */
+
+    asm volatile(
+        "msr    elr_el1,  x0 \n"
+        "msr    sp_el0,   x1 \n"
+        "msr    spsr_el1, x2 \n"
+        "eret                 ");
+
   // Never returns
 }
 

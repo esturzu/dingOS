@@ -1,9 +1,8 @@
+    .section .text
     .global _start
 _start:
-    bl  __libc_init_array      // newlib global ctors
-    bl  main
-    mov x0, x0                 // main’s return in x0
-    mov x8, #93                // "exit” svc number
-    svc #0
-1:  wfi                        // should never return
-    b  1b
+    bl  __libc_init_array    // C / C++ global ctors (newlib)
+    bl  main                 // main() -> result in x0
+    svc #0x00                // SYS_exit  (x0 = status)
+1:  wfi
+    b   1b                   // should never get here
