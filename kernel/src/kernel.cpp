@@ -5,9 +5,8 @@
 #include "crti.h"
 #include "elf.h"
 #include "event_loop.h"
+#include "framebuffer.h"
 #include "heap.h"
-// #include "interrupts.h"
-// #include "interrupts.h"
 #include "machine.h"
 #include "physmem.h"
 #include "printf.h"
@@ -21,7 +20,7 @@
 #include "usb.h"
 
 extern "C" void kernelMain() {
-  // Handled uart Init
+  // Handled UART init
   PhysMem::page_init();
 
   CRTI::_init();
@@ -33,17 +32,17 @@ extern "C" void kernelMain() {
   heap_init();
   init_event_loop();
 
-    printf("DingOS is Booting!\n");
+  printf("DingOS is Booting!\n");
 
   SMP::bootCores();
 
   LocalTimer::setup_timer();
 
-    run_page_tests();
+  run_page_tests();
 
-    SD::init();
+  SD::init();
 
-#if 1
+#if 0
   // To have the right disk, you have to 'mkdir fs_root'
   // Then, run with command:
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
