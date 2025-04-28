@@ -1,12 +1,14 @@
 // Citations
 // https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf
 // https://developer.arm.com/documentation/dui0203/j/handling-processor-exceptions/armv6-and-earlier--armv7-a-and-armv7-r-profiles/interrupt-handlers
+#ifndef INTERRUPTS_H
+#define INTERRUPTS_H
 
 #include "stdint.h"
 
 class Interrupts {
  public:
-  static constexpr uint64_t interrupt_base_address = 0x3f00b000;
+  static constexpr uint64_t interrupt_base_address = 0xffff00003f00b000;
 
   static constexpr uint64_t IRQ_basic_pending_offset = 0x200;
   static constexpr uint64_t IRQ_pending_1_offset = 0x204;
@@ -30,3 +32,5 @@ class Interrupts {
   static void Disable_All_IRQ();
   static void Disable_All_Base(uint8_t Offset);
 };
+
+#endif // INTERRUPTS_H

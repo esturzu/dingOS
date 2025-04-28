@@ -280,6 +280,8 @@ void init_devices()
         }
     }
   }
+
+  debug_printf("Finished initializing devices\n");
 }
 
 }

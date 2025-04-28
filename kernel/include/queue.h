@@ -2,6 +2,7 @@
 #define QUEUE_H
 
 #include "atomics.h"
+#include "printf.h"
 
 template <typename T>
 class LocklessQueue {
@@ -24,17 +25,21 @@ class LocklessQueue {
   }
 
   ~LocklessQueue() {
-    // Need to Free Queue
+    // Node* current = head;
+    // while (current != nullptr) {
+    //     Node* next = current->next;
+    //     delete current;
+    //     current = next;
+    // }
   }
 
   void enqueue(T item) {
-    bool successful_exchange;
-
     Node* tmp = new Node();
     tmp->item = item;
-    tmp->next = 0;
+    tmp->next = nullptr;
 
     Node* tmp_tail;
+    bool successful_exchange;
     do {
       tmp_tail = __atomic_load_n(&tail, __ATOMIC_SEQ_CST);
       Node* tail_next = tmp_tail->next;
@@ -51,7 +56,8 @@ class LocklessQueue {
 
     __atomic_compare_exchange_n(&tail, &tmp_tail, tmp, false, __ATOMIC_SEQ_CST,
                                 __ATOMIC_SEQ_CST);
-  }
+    
+}
 
   T dequeue() {
     Node* prev_head;
@@ -63,7 +69,7 @@ class LocklessQueue {
       // Empty Queue
       if (prev_head->next == 0) return {};
 
-      // A race condition exists here
+      // TODO: A race condition exists here
       item = prev_head->next->item;
     } while (!__atomic_compare_exchange_n(&head, &prev_head, prev_head->next,
                                           true, __ATOMIC_SEQ_CST,

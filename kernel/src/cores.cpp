@@ -6,6 +6,7 @@
 #include "machine.h"
 #include "printf.h"
 #include "stdint.h"
+#include "vmm.h"
 
 /**
  * @brief Symmetric Multiprocessing (SMP) aka multicore support
@@ -38,6 +39,8 @@ extern "C" void initCore1() {
   debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
+  VMM::init_core();
+
   event_loop();
 }
 
@@ -45,12 +48,16 @@ extern "C" void initCore2() {
   debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
 
+  VMM::init_core();
+
   event_loop();
 }
 
 extern "C" void initCore3() {
   debug_printf("Core %d! %s\n", whichCore(), STRING_EL(get_CurrentEL()));
   startedCores.add_fetch(1);
+
+  VMM::init_core();
 
   event_loop();
 }
@@ -65,9 +72,9 @@ void bootCores() {
   void* core_3_device = Devices::get_device("/cpus/cpu@3");
   Devices::DTB_Property cpu_3_release_addr = Devices::get_device_property(core_3_device, "cpu-release-addr");
 
-  *(reinterpret_cast<uint64_t*>(cpu_1_release_addr.to_uint64_t())) = (uint64_t)&_start_core1;
-  *(reinterpret_cast<uint64_t*>(cpu_2_release_addr.to_uint64_t())) = (uint64_t)&_start_core2;
-  *(reinterpret_cast<uint64_t*>(cpu_3_release_addr.to_uint64_t())) = (uint64_t)&_start_core3;
+  *(reinterpret_cast<volatile uint64_t*>(VMM::phys_to_kernel_ptr(cpu_1_release_addr.to_uint64_t()))) = VMM::kernel_to_phys_ptr((uint64_t)&_start_core1);
+  *(reinterpret_cast<volatile uint64_t*>(VMM::phys_to_kernel_ptr(cpu_2_release_addr.to_uint64_t()))) = VMM::kernel_to_phys_ptr((uint64_t)&_start_core2);
+  *(reinterpret_cast<volatile uint64_t*>(VMM::phys_to_kernel_ptr(cpu_3_release_addr.to_uint64_t()))) = VMM::kernel_to_phys_ptr((uint64_t)&_start_core3);
 }
 
 /**

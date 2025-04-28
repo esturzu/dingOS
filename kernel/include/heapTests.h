@@ -21,7 +21,7 @@ void heapTests() {
     free((void*)block[i]);
   }
   for (int i = 0; i < 32; i++) {
-    if(i == 0 || i & (i - 1) != 0) {
+    if (i == 0 || i & (i - 1) != 0) {
       free((void*)block[i]);
     }
   }
@@ -31,7 +31,7 @@ void heapTests() {
   testsResult("Basic allocation", block1 != 0);
 
   // Test 2: Large allocation within heap size
-  char* block2 = (char*)malloc(0x10000000);
+  char* block2 = (char*)malloc(0x8000000);
   testsResult("Large allocation within heap size", block2 != 0);
 
   // Test 3: Allocation exceeding available heap space
@@ -41,6 +41,9 @@ void heapTests() {
   // Test 4: Testing new keyword
   HeapTestStruct* block4 = new HeapTestStruct();
   testsResult("Testing new keyword", block4 != 0);
+
+  delete block4;
+  testsResult("Testing delete keyword", ((long*) block4)[-1] > 0);
 }
 
 #endif

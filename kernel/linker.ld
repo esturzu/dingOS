@@ -2,7 +2,7 @@ ENTRY(_start)
 
 MEMORY
 {
-    ram (rwx) : ORIGIN = 0x80000, LENGTH = 0x3E000000 /* 1GB RAM */
+    ram (rwx) : ORIGIN = 0xFFFF000000080000, LENGTH = 0x3E000000 /* 1GB RAM */
 }
 
 SECTIONS
@@ -15,18 +15,20 @@ SECTIONS
 
     .init_array :
     {
-        crti.o(.init_array)
-        KEEP (*(SORT(EXCLUDE_FILE(crti.o crtn.o) .init_array.*)))
-        KEEP (*(EXCLUDE_FILE(crti.o crtn.o) .init_array))
-        crtn.o(.init_array)
+        . = ALIGN(8);
+        _init_array_start = .;
+        KEEP (*(SORT(.init_array.*)))
+        KEEP (*(.init_array))
+        _init_array_end = .;
     } > ram
 
     .fini_array :
     {
-        crti.o(.fini_array)
-        KEEP (*(SORT(EXCLUDE_FILE(crti.o crtn.o) .fini_array.*)))
-        KEEP (*(EXCLUDE_FILE(crti.o crtn.o) .fini_array))
-        crtn.o(.fini_array)
+        . = ALIGN(8);
+        _fini_array_start = .;
+        KEEP (*(SORT(.fini_array.*)))
+        KEEP (*(.fini_array))
+        _fini_array_end = .;
     } > ram
 
     .rodata :
@@ -47,9 +49,8 @@ SECTIONS
 
     /* Define heap and page region */
     _heap_start = ALIGN(8);
-    _heap_end = _heap_start + 0x20000000; /* 512 MB for heap space */
+    _heap_end = _heap_start + 0x20000000; /* 256 MB for heap space */
 
-    
-    _frame_start = _heap_end;
-    _frame_end = _heap_end + 0x10000000; /* 256 MB for page space */
+    _frame_start = ALIGN(_heap_end, 4096) + 0x10000;
+    _frame_end = _heap_end + 0x1f000000; /* 512 MB for page space */
 }

@@ -1,0 +1,85 @@
+Message queue explicitly initialized
+DingOS is Booting!
+Step 9: SMP bootCores completed on core 0
+Step 10: Page tests completed on core 0
+Step 11: SD initialized on core 0
+Initializing Minimal Filesystem...
+Filesystem initialized using SD card!
+Step 12: Filesystem initialized on core 0
+Step 13: Core 0 starting USB init
+USB: Starting init on core 0
+USB: AHB interrupt enabled
+USB: Resetting controller
+USB: Reset complete
+USB: Configuring host mode
+USB: Waiting for host mode, GOTGCTL = 0xD0000, timeout = 750000
+USB: Waiting for host mode, GOTGCTL = 0xD0000, timeout = 500000
+USB: Waiting for host mode, GOTGCTL = 0xD0000, timeout = 250000
+USB: Waiting for host mode, GOTGCTL = 0xD0000, timeout = 0
+USB: Host mode config timed out, proceeding anyway, GOTGCTL = 0xD0000
+USB: Post-configure_host_mode
+USB: Interrupts masked
+USB: Endpoint 0 setup
+USB: Skipping IRQ enable for debugging
+USB: Controller initialized at 0x3F980000 on core 0
+Step 14: Core 0 finished USB init
+USB: GOTGCTL = 0xD0000, GINTSTS = 0x15000029
+Step 15: USB Test: Device detected
+USB: Sent 8 bytes on channel 0 from core 0
+USB: Received 8 bytes on channel 0
+Step 16: USB Test: Received (8 bytes): 00 00 00 00 00 00 00 00 
+Step 17: Starting keyboard polling
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
+USB: Received 8 bytes on channel 0
+Step 18: Keyboard Input: 00 00 00 00 00 00 00 00 
