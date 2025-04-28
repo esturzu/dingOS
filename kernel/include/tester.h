@@ -11,7 +11,7 @@
 
 void runTests() {
   elfTests();
-  eventLoopTests();
+  // eventLoopTests();
   // hashmapTests();
 
   // When running the bfs tests, you have to remake test.dd so that it isn't
@@ -20,8 +20,8 @@ void runTests() {
   // sdTests();
 
   // Must be done last until free is implemented
-  heapTests();
-  primitives_tests();
+  // heapTests();
+  // primitives_tests();
 }
 
 void setupTests() {

@@ -48,7 +48,7 @@ extern "C" void kernelMain() {
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
   SDAdapter* adapter = new SDAdapter(1024);
   Ext2* fs = new Ext2(adapter);
-  const char* existing_file_name = "hello.txt";
+  const char* existing_file_name = "hello.elf";
   Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
   int file_size = existing_test_file->size_in_bytes();
 
@@ -101,7 +101,7 @@ extern "C" void kernelMain() {
   }
 #endif
 
-  // setupTests();
+  setupTests();
 
 #if 0
   schedule_event([] {

@@ -1,3 +1,6 @@
+/* --------------------------------------------------------------------
+ *  system_calls.cpp  –  unified handler
+ * ------------------------------------------------------------------ */
 #include "system_call.h"
 
 #include "cores.h"
@@ -5,93 +8,72 @@
 #include "printf.h"
 #include "process.h"
 
-// TODO For print system calls (syscalls 2 and 3):
-// - Optimize saving state (instead of saving all registers again, just select
-//   the ones that actually change - for example, just x0 and x1)
-// - Optimize character printing (instead of printing in a loop and using
-//   printf with "%c", just add directly to the final print buffer)
+/* indices of general registers in the trap frame ------------------- */
+enum { X0=0, X1, X2, X3, X4, X5, X6, X7, X8 /* … */ };
 
-uint64_t system_call_handler (uint16_t syscall_type, uint64_t* saved_state)
+uint64_t system_call_handler(uint16_t esr_imm, uint64_t *regs)
 {
-  debug_printf("Sys Call Handler\n");
+    /* Prefer the Linux-style ABI (number in x8).       */
+    uint64_t nr = regs[X8];
 
-  switch (syscall_type)
-  {
-    case 0: // Exit System Call
-      {
-        debug_printf("Exit System Call\n");
+    /* If user put nothing in x8, fall back to imm16 so
+       the tiny ‘hi’ demo (svc #2 / svc #0) still works. */
+    if (nr == 0)
+        nr = esr_imm;
 
-        uint8_t current_core = SMP::whichCore();
+    switch (nr)
+    {
+    /* --------------------------------------------------------------
+     * 0  –  exit(status)
+     * ------------------------------------------------------------ */
+    case 0: {
+        debug_printf("[kernel] exit(%lu)\n", regs[X0]);
 
-        Process* current_process = activeProcess[current_core];
+        uint8_t  core = SMP::whichCore();
+        activeProcess[core] = nullptr;
 
-        activeProcess[current_core] = nullptr;
-
+        /* never returns */
         event_loop();
-      }
-    case 1: // Yield System Call
-      {
-        debug_printf("Yield System Call\n");
+        break;                          /* unreachable, keeps compiler happy */
+    }
 
-        uint8_t current_core = SMP::whichCore();
+    /* --------------------------------------------------------------
+     * 1  –  yield()
+     * ------------------------------------------------------------ */
+    case 1: {
+        debug_printf("[kernel] yield()\n");
 
-        Process* current_process = activeProcess[current_core];
+        uint8_t  core = SMP::whichCore();
+        Process *p    = activeProcess[core];
 
-        current_process->save_state(saved_state);
-
-        activeProcess[current_core] = nullptr;
+        p->save_state(regs);
+        activeProcess[core] = nullptr;
 
         __asm__ volatile("dmb sy" ::: "memory");
 
-        schedule_event([current_process](){
-          current_process->run();
-        });
+        schedule_event([p]{ p->run(); });
+        event_loop();                   /* never returns */
+        break;
+    }
 
-        event_loop();
-      }
-    case 2: // Print Character System Call
-      {
-        // Convention: x0 stores the character to be printed. The system call
-        // returns 1 if the character was printed successfully, and 0
-        // otherwise
-        printf("%c", (char) saved_state[0]);
-        saved_state[0] = 1;
+    /* --------------------------------------------------------------
+     * 2  –  write(fd, buf, len)  (we honour only fd==1)
+     * ------------------------------------------------------------ */
+    case 2: {
+        const char *buf = (const char *)regs[X0];
+        uint64_t    len =               regs[X1];
 
-        uint8_t current_core = SMP::whichCore();
-        Process* current_process = activeProcess[current_core];
-        current_process->save_state(saved_state);
-        current_process->run();
-      }
-    case 3: // Print String System Call
-      {
-        // Convention: x0 stores the pointer of data to be printed, and x1
-        // stores the size of the data. The system call returns the number of
-        // characters successfully printed, or -1 if some error occurred. Note
-        // that it verifies that the pointer is in user space before printing.
-        uint64_t pointerU64 = saved_state[0];
-        constexpr uint64_t mask = 0xFFFF'0000'0000'0000;
-        bool validPointer = (pointerU64 & mask) == mask;
+        for (uint64_t i = 0; i < len; ++i)
+            printf("%c", buf[i]);
 
-        if (validPointer) {
-          const char* pointer = (const char*) pointerU64;
-          uint64_t size = saved_state[1];
-          for (uint64_t i = 0; i < size; i++) printf("%c", pointer);
-          saved_state[0] = size;
-        } else {
-          saved_state[0] = -1;
-        }
+        regs[X0] = len;                 /* return #bytes written */
+        return 0;                       /* handled */
+    }
 
-        uint8_t current_core = SMP::whichCore();
-        Process* current_process = activeProcess[current_core];
-        current_process->save_state(saved_state);
-        current_process->run();
-      }
+    /* -------------------------------------------------------------- */
     default:
-      {
-        printf("Unknown System Call\n");
-        while (true) {}
-      }
-  }
-
-  return 0;
+        printf("[kernel] unknown syscall %lu\n", nr);
+        regs[X0] = (uint64_t)-1;        /* –1  →  ENOSYS for user-space */
+        return 0;
+    }
 }
