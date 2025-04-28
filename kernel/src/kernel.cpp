@@ -1,17 +1,13 @@
-// Citations
-// https://medium.com/applied/applied-c-align-array-elements-32af40a768ee
-
 #include "kernel.h"
 
+#include "local_timer.h"
 #include "cores.h"
 #include "crti.h"
 #include "elf.h"
 #include "event_loop.h"
-#include "ext2.h"
-#include "framebuffer.h"
 #include "heap.h"
-#include "interrupts.h"
-#include "local_timer.h"
+// #include "interrupts.h"
+// #include "interrupts.h"
 #include "machine.h"
 #include "physmem.h"
 #include "printf.h"
@@ -20,7 +16,9 @@
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
+#include "ext2.h"
 #include "vmm.h"
+#include "usb.h"
 
 extern "C" void kernelMain() {
   // Handled uart Init
@@ -35,16 +33,15 @@ extern "C" void kernelMain() {
   heap_init();
   init_event_loop();
 
-  printf("DingOS is Booting!\n");
-  debug_printf("Core %d! %s\n", SMP::whichCore(), STRING_EL(get_CurrentEL()));
+    printf("DingOS is Booting!\n");
 
   SMP::bootCores();
 
   LocalTimer::setup_timer();
 
-  run_page_tests();
+    run_page_tests();
 
-  SD::init();
+    SD::init();
 
 #if 1
   // To have the right disk, you have to 'mkdir fs_root'
