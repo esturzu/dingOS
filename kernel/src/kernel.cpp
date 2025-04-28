@@ -32,15 +32,15 @@ extern "C" void kernelMain() {
   heap_init();
   init_event_loop();
 
-    printf("DingOS is Booting!\n");
+  printf("DingOS is Booting!\n");
 
   SMP::bootCores();
 
   LocalTimer::setup_timer();
 
-    run_page_tests();
+  run_page_tests();
 
-    SD::init();
+  SD::init();
 
 
   // // I run this with this command make clean-fs;make fs-image;clear; make clean qemu DEBUG_ENABLED=0 to have the right disk, you also have to mkdir fs_root beforehand
@@ -98,9 +98,9 @@ extern "C" void kernelMain() {
   }
   printf("\n");
   if (bytes >= 2 && buffer[0] == 0x12 && buffer[1] == 0x01) {
-      printf("USB TEST: USB Test: Valid device descriptor\n");
+    printf("USB TEST: USB Test: Valid device descriptor\n");
   } else {
-      printf("USB TEST: USB Test: Invalid device descriptor\n");
+    printf("USB TEST: USB Test: Invalid device descriptor\n");
   }
 
 

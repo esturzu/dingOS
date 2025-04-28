@@ -90,6 +90,8 @@ void* malloc(size_t size, size_t alignment) {
     long* current = start;
     uint64_t res_sz = 0;
 
+    // BUG IS HERE
+    printf("Heap %lx\n", current);
     while (current < end) {
         long temp_sz = current[0];
         if (temp_sz > 0 && temp_sz >= size) {
@@ -98,7 +100,11 @@ void* malloc(size_t size, size_t alignment) {
             break;
         }
         current += (ABS(current[0]) / 8);
+        if ((ABS(current[0]) / 8))
+          printf("Next Heap %lx\n", current);
     }
+
+    printf("Exit\n");
 
     if (result != nullptr) {
         if (res_sz - size > 24) {
