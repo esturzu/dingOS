@@ -353,6 +353,7 @@ int64_t SDAdapter::write_all(uint32_t offset, uint32_t n, char* buffer) {
         debug_printf("Auto-flushing cache after large write (%lld bytes)\n", total);
         flush_cache();
     }
+
     // flush_cache();
     
     // Return the total number of bytes written

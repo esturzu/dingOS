@@ -57,6 +57,7 @@ struct super_block {
     uint32_t num_iNode_pergroup;   // Number of inodes per block group
     char pad3[44];                 // Reserved/unused fields
     uint16_t iNode_size;           // Size of each inode structure in bytes
+    uint16_t magic; 
 };
 
 /**

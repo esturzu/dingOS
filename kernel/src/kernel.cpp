@@ -47,6 +47,7 @@ extern "C" void kernelMain() {
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
   SDAdapter* adapter = new SDAdapter(1024);
   Ext2* fs = new Ext2(adapter);
+  printf("magic is: %x\n", supa->magic);
   const char* existing_file_name = "hello.txt";
   printf("about to find %s\n", existing_file_name);
   Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
@@ -111,6 +112,7 @@ extern "C" void kernelMain() {
       delete reading_test_file;
     }
   }
+  // adapter->flush_cache();
 
   // setupTests();
 
@@ -120,7 +122,7 @@ extern "C" void kernelMain() {
     proc->run();
   });
 
-  event_loop();
+  // event_loop();
 
   // // Request a framebuffer at 640x480x32
   // FrameBufferInfo* fb = framebuffer_init(640, 480, 32);
