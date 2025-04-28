@@ -6,7 +6,7 @@
 struct IOResource {
   virtual Syscall::Result<long> read(char* buffer, long size) = 0;
   virtual Syscall::Result<long> write(const char* buffer, long size) = 0;
-  virtual Syscall::Result<long> seek(long loc, Syscall::SeekType seek_type);
+  virtual Syscall::Result<long> seek(long loc, Syscall::SeekType seek_type) = 0;
   virtual ~IOResource();
 };
 
