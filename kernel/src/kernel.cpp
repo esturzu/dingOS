@@ -62,6 +62,28 @@ extern "C" void kernelMain() {
     }
     delete existing_test_file;
   }
+  printf("\n");
+  printf("\n");
+  printf("\n");
+  printf("_________________________________________________________________________________________\n");
+  printf("about to find the file, again, should be faster.....bc of cache %s\n", existing_file_name);
+  printf("\n");
+  printf("\n");
+  printf("\n");
+  printf("_________________________________________________________________________________________\n");
+  Node* existing_test_file_2 = find_in_directory(fs->root, existing_file_name);
+  printf("found%s\n", existing_file_name);
+  
+  int file_size_2 = existing_test_file_2->size_in_bytes();
+  if (existing_test_file_2) {
+    char buffer[file_size + 1];
+    int bytes_read = read_file(existing_test_file_2, buffer, file_size_2);
+    if (bytes_read > 0) {
+      buffer[bytes_read] = '\0';
+      printf("File contents: %s\n", buffer);
+    }
+    delete existing_test_file_2;
+  }
   
   // Create a test file
   const char* test_filename = "example.txt";
