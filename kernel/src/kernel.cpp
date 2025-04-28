@@ -33,6 +33,7 @@ extern "C" void kernelMain() {
   init_event_loop();
 
   printf("DingOS is Booting!\n");
+  printf("DingOS is Booting!\n");
 
   SMP::bootCores();
 
@@ -42,7 +43,7 @@ extern "C" void kernelMain() {
 
   SD::init();
 
-#if 0
+#if 1
   // To have the right disk, you have to 'mkdir fs_root'
   // Then, run with command:
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0

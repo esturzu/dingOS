@@ -70,13 +70,14 @@ namespace ELFLoader {
     // Unsupported code(s): 0x40 through 0x7F inclusive: these codes signify
     // that a particular ELF configuration may be valid, but that it is not
     // currently supported by this ELF loader (for example, dynamic loading)
-    UNSUPPORTED_BIT_MODE            = 0x40,
-    UNSUPPORTED_ENDIANNESS          = 0x41,
-    UNSUPPORTED_ELF_TYPE            = 0x42,
-    UNSUPPORTED_ARCH_ISA            = 0x43,
-    UNSUPPORTED_SECTIONS            = 0x44,
-    UNSUPPORTED_PROGRAM_HEADER_TYPE = 0x45,
-    UNSUPPORTED_SYSTEM_ENDIANNESS   = 0x46,
+    UNSUPPORTED_BIT_MODE             = 0x40,
+    UNSUPPORTED_ENDIANNESS           = 0x41,
+    UNSUPPORTED_ELF_TYPE             = 0x42,
+    UNSUPPORTED_ARCH_ISA             = 0x43,
+    UNSUPPORTED_SECTIONS             = 0x44,
+    UNSUPPORTED_PROGRAM_HEADER_TYPE  = 0x45,
+    UNSUPPORTED_SYSTEM_ENDIANNESS    = 0x46,
+    UNSUPPORTED_PAGE_UNALIGNED_VADDR = 0x47,
 
     // Invalid code(s): 0x80 through 0xBF inclusive: these codes signify
     // that one of the inputs (such as the ELF file or the process) has an

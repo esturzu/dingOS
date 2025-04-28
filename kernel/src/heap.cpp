@@ -90,6 +90,7 @@ void* malloc(size_t size, size_t alignment) {
     long* current = start;
     uint64_t res_sz = 0;
 
+    // BUG IS HERE
     while (current < end) {
         long temp_sz = current[0];
         if (temp_sz > 0 && temp_sz >= size) {

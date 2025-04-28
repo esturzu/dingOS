@@ -370,6 +370,12 @@ void list_directory(Node* dir);
 // Find an entry in a directory by name
 Node* find_in_directory(Node* dir, const char* name);
 
+// Find an entry (recursively) from a path and a starting node
+Node* find_from_path(Node* dir, const char* path);
+
+// Find an entry (recursively) from an absolute path (starting with '/')
+Node* find_from_abs_path(const char* path);
+
 // Read a file's contents into a buffer
 int read_file(Node* file, char* buffer, uint32_t max_size);
 
