@@ -68,26 +68,27 @@ extern "C" void kernelMain() {
   Node* test_file = create_file(fs->root, test_filename);
   printf("Successfully created %s\n", test_filename);
 
-  // if (test_file) {
-  //   const char* content = "Hello from DingOS EXT2 filesystem!";
-  //   printf("about to write to %s\n", test_filename);
-  //   test_file->write_all(0, strlen_ext(content), (char*)content);
-  //   printf("Successfully wrote to %s\n", test_filename);
-  //   delete test_file;
+  if (test_file) {
+    const char* content = "Hello from DingOS EXT2 filesystem!";
+    printf("about to write to %s\n", test_filename);
+    test_file->write_all(0, strlen_ext(content), (char*)content);
+    printf("Successfully wrote to %s\n", test_filename);
+    delete test_file;
 
     // Read the file back
-    // Node* reading_test_file = find_in_directory(fs->root, test_filename);
-    // int file_size = reading_test_file->size_in_bytes();
-    // if (reading_test_file) {
-    //   char buffer[file_size + 1];
-    //   int bytes_read = read_file(reading_test_file, buffer, file_size);
-    //   if (bytes_read > 0) {
-    //     buffer[bytes_read] = '\0';
-    //     printf("File contents: %s\n", buffer);
-    //   }
-    //   delete reading_test_file;
-    // }
+    Node* reading_test_file = find_in_directory(fs->root, test_filename);
+    int file_size = reading_test_file->size_in_bytes();
+    if (reading_test_file) {
+      char buffer[file_size + 1];
+      int bytes_read = read_file(reading_test_file, buffer, file_size);
+      if (bytes_read > 0) {
+        buffer[bytes_read] = '\0';
+        printf("File contents: %s\n", buffer);
+      }
+      delete reading_test_file;
+    }
   }
+
 
   // setupTests();
 
@@ -111,4 +112,5 @@ extern "C" void kernelMain() {
   // framebuffer_fill(fb, 0xFFFF00);
 
   while (1);
+
 }

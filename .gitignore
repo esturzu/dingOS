@@ -6,3 +6,4 @@ test.hex
 expectedFS/*
 kernel_output.log
 ext2.img
+ext3.img
