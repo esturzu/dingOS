@@ -3,6 +3,8 @@
 #include "local_timer.h"
 #include "cores.h"
 #include "crti.h"
+#include "definitions.h"
+#include "devices.h"
 #include "event_loop.h"
 #include "heap.h"
 // #include "interrupts.h"
@@ -32,56 +34,56 @@ extern "C" void kernelMain() {
   heap_init();
   init_event_loop();
 
-    printf("DingOS is Booting!\n");
+  printf("DingOS is Booting!\n");
+
+  Devices::init_devices();
 
   SMP::bootCores();
 
   LocalTimer::setup_timer();
 
-    run_page_tests();
+  run_page_tests();
 
-    SD::init();
-
+  SD::init();
 
   // // I run this with this command make clean-fs;make fs-image;clear; make clean qemu DEBUG_ENABLED=0 to have the right disk, you also have to mkdir fs_root beforehand
-//   SDAdapter* adapter = new SDAdapter(1024);
-//   Ext2* fs = new Ext2(adapter);
-//   const char* existing_file_name = "hello.txt";
-//   Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
-//   int file_size = existing_test_file->size_in_bytes();
-//       if (existing_test_file) {
-//           char buffer[file_size + 1];
-//           int bytes_read = read_file(existing_test_file, buffer, file_size);
-//           if (bytes_read > 0) {
-//             buffer[bytes_read] = '\0';
-//             printf("File contents: %s\n", buffer);
-//           }
-//           delete existing_test_file;
-//       }
-//   // Create a test file
-//   const char* test_filename = "example.txt";
-//   Node* test_file = create_file(fs->root, test_filename);
-  
-//   if (test_file) {
-//       const char* content = "Hello from DingOS EXT2 filesystem!";
-//       test_file->write_all(0, strlen_ext(content), (char*)content);
-//       printf("Successfully wrote to %s\n", test_filename);
-//       delete test_file;
-      
-//       // Read the file back
-//       Node* reading_test_file = find_in_directory(fs->root, test_filename);
-//       int file_size = reading_test_file->size_in_bytes();
-//       if (reading_test_file) {
-//           char buffer[file_size + 1];
-//           int bytes_read = read_file(reading_test_file, buffer, file_size);
-//           if (bytes_read > 0) {
-//             buffer[bytes_read] = '\0';
-//             printf("File contents: %s\n", buffer);
-//           }
-//           delete reading_test_file;
-//       }
-//   }
-
+  //   SDAdapter* adapter = new SDAdapter(1024);
+  //   Ext2* fs = new Ext2(adapter);
+  //   const char* existing_file_name = "hello.txt";
+  //   Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
+  //   int file_size = existing_test_file->size_in_bytes();
+  //       if (existing_test_file) {
+  //           char buffer[file_size + 1];
+  //           int bytes_read = read_file(existing_test_file, buffer, file_size);
+  //           if (bytes_read > 0) {
+  //             buffer[bytes_read] = '\0';
+  //             printf("File contents: %s\n", buffer);
+  //           }
+  //           delete existing_test_file;
+  //       }
+  //   // Create a test file
+  //   const char* test_filename = "example.txt";
+  //   Node* test_file = create_file(fs->root, test_filename);
+    
+  //   if (test_file) {
+  //       const char* content = "Hello from DingOS EXT2 filesystem!";
+  //       test_file->write_all(0, strlen_ext(content), (char*)content);
+  //       printf("Successfully wrote to %s\n", test_filename);
+  //       delete test_file;
+        
+  //       // Read the file back
+  //       Node* reading_test_file = find_in_directory(fs->root, test_filename);
+  //       int file_size = reading_test_file->size_in_bytes();
+  //       if (reading_test_file) {
+  //           char buffer[file_size + 1];
+  //           int bytes_read = read_file(reading_test_file, buffer, file_size);
+  //           if (bytes_read > 0) {
+  //             buffer[bytes_read] = '\0';
+  //             printf("File contents: %s\n", buffer);
+  //           }
+  //           delete reading_test_file;
+  //       }
+  //   }
 
   g_usb.init();
   printf("USB TEST: Core %d finished USB init\n", SMP::whichCore());
@@ -109,14 +111,7 @@ extern "C" void kernelMain() {
 
   setupTests();
 
-  while (true) {}
+  event_loop();
 
-//   schedule_event([]{
-//     Process* proc = new Process();
-//     proc->run();
-//   });
-
-  // event_loop();
-
-  while (1);
+  Debug::panic ("We have returned from the impossible\n");
 }

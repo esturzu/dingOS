@@ -44,6 +44,7 @@ CXXFLAGS := -march=armv8-a -mcpu=cortex-a53 -ffreestanding -nostdlib \
 						-fno-exceptions -fno-rtti -nodefaultlibs -nostartfiles \
 						-DDEBUG_ENABLED=$(DEBUG_ENABLED)
 
+DTB := $(CURDIR)/bcm2710-rpi-3-b.dtb
 # Enable debug prints
 DEBUG_ENABLED ?= 1
 
@@ -104,11 +105,12 @@ debug: $(IMG)
 	@echo "To debug via gdb:"
 	@echo "   $(GDB) $(EXEC)"
 	@echo "   (gdb) target remote :1234"
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG) -s -S
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -dtb $(DTB) -kernel $(IMG) -s -S
 
 # Run under QEMU
 qemu: $(IMG)
-	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG)
+	echo "Current directory: $(PWD)"
+	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -dtb $(DTB) -kernel $(IMG)
 
 # How to build the final ELF from all objects + linker script
 $(EXEC): linker.ld $(OBJS)
