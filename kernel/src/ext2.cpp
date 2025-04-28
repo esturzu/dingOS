@@ -215,67 +215,105 @@
   * 
   * @return Allocated block number, or 0 if no free blocks are available
   */
- uint32_t Node::allocate_block() {
-     debug_printf("DEBUG: Node::allocate_block: Finding free block for inode %u\n", number);
-     
-     // Detailed bitmap tracking
-     uint32_t total_blocks = supa->num_Blocks;
-     uint32_t free_blocks_in_bitmap = 0;
-     uint32_t first_free_block = 0;
-     
-     // First scan: Count free blocks and find the first free block
-     for (uint32_t i = 0; i < total_blocks; i++) {
-         // Calculate the byte and bit position within the bitmap
-         // byte_idx = i / 8: Each byte holds 8 bits
-         // bit_idx = i % 8: Position within the byte (0-7)
-         uint32_t byte_idx = i / 8;
-         uint32_t bit_idx = i % 8;
-         
-         // Check if this bit is clear (0 = free, 1 = allocated)
-         // (cached_block_bitmap[byte_idx] & (1 << bit_idx)) gets the bit value
-         // If the result is 0, the block is free
-         if ((cached_block_bitmap[byte_idx] & (1 << bit_idx)) == 0) {
-             free_blocks_in_bitmap++;
-             if (first_free_block == 0) {
-                 // Add 1 because block numbers are 1-based in ext2
-                 first_free_block = i + 1;
-             }
-         }
-     }
-     
-     // Check if we found any free blocks
-     if (first_free_block == 0) {
-         debug_printf("ERROR: No free blocks available!\n");
-         return 0;
-     }
-     
-     // Second scan: Find first free block (could be optimized by using first_free_block)
-     for (uint32_t i = 0; i < total_blocks; i++) {
-         uint32_t byte_idx = i / 8;
-         uint32_t bit_idx = i % 8;
-         
-         if ((cached_block_bitmap[byte_idx] & (1 << bit_idx)) == 0) {
-             // Mark the block as used in the bitmap
-             // (1 << bit_idx) creates a mask with only the bit we want to set
-             // |= performs a bitwise OR to set this bit to 1
-             cached_block_bitmap[byte_idx] |= (1 << bit_idx);
-             
-             debug_printf("DEBUG: Found free block %u (byte %u, bit %u)\n", 
-                    i + 1, byte_idx, bit_idx);
-                    
-             // Mark the bitmap as dirty so it will be written back to disk
-             block_bitmap_dirty = true;
-             bgdt_dirty = true;
-             
-             // Return the block number (1-based in ext2)
-             return i + 1;
-         }
-     }
-     
-     debug_printf("ERROR: No free blocks found despite initial count\n");
-     return 0; // No free blocks
- }
- 
+  uint32_t Node::allocate_block() {
+    // Keep track of last allocated block (static to persist between calls)
+    static uint32_t last_allocated_block = 0;
+    
+    // Get total number of blocks from superblock
+    uint32_t total_blocks = supa->num_Blocks;
+    
+    // Strategy 1: Try to allocate near the last allocated block for locality
+    if (last_allocated_block > 0) {
+        // Search in a window around the last allocated block (e.g., +/- 64 blocks)
+        const uint32_t locality_window = 64;
+        uint32_t start = (last_allocated_block > locality_window) ? 
+                           last_allocated_block - locality_window : 0;
+        uint32_t end = (last_allocated_block + locality_window < total_blocks) ? 
+                         last_allocated_block + locality_window : total_blocks;
+        
+        for (uint32_t i = start; i < end; i++) {
+            uint32_t byte_idx = i / 8;
+            uint32_t bit_idx = i % 8;
+            
+            if ((cached_block_bitmap[byte_idx] & (1 << bit_idx)) == 0) {
+                // Found a free block near the last allocated one
+                cached_block_bitmap[byte_idx] |= (1 << bit_idx);
+                last_allocated_block = i;
+                
+                // Update statistics
+                bgdt->num_unallocated_blocks--;
+                block_bitmap_dirty = true;
+                bgdt_dirty = true;
+                
+                return i + 1; // +1 because blocks are 1-indexed in ext2
+            }
+        }
+    }
+    
+    // Strategy 2: If we're allocating for a directory or a specific inode,
+    // try to allocate in the same block group
+    uint32_t target_block_group = (number - 1) / supa->num_iNode_pergroup;
+    uint32_t blocks_per_group = supa->num_blocks_pergroup;
+    uint32_t group_start = target_block_group * blocks_per_group;
+    uint32_t group_end = (target_block_group + 1) * blocks_per_group;
+    
+    if (group_end > total_blocks) {
+        group_end = total_blocks;
+    }
+    
+    for (uint32_t i = group_start; i < group_end; i++) {
+        uint32_t byte_idx = i / 8;
+        uint32_t bit_idx = i % 8;
+        
+        if ((cached_block_bitmap[byte_idx] & (1 << bit_idx)) == 0) {
+            // Found a free block in the same block group
+            cached_block_bitmap[byte_idx] |= (1 << bit_idx);
+            last_allocated_block = i;
+            
+            // Update statistics
+            bgdt->num_unallocated_blocks--;
+            block_bitmap_dirty = true;
+            bgdt_dirty = true;
+            
+            return i + 1;
+        }
+    }
+    
+    // Strategy 3: Fall back to scanning the entire bitmap
+    // Use a faster bitmap scanning algorithm by checking whole bytes at a time
+    for (uint32_t byte_idx = 0; byte_idx < (total_blocks + 7) / 8; byte_idx++) {
+        // Skip completely full bytes (0xFF = all bits set = all blocks allocated)
+        if (cached_block_bitmap[byte_idx] == 0xFF) {
+            continue;
+        }
+        
+        // Check individual bits in non-full bytes
+        for (uint32_t bit_idx = 0; bit_idx < 8; bit_idx++) {
+            uint32_t block = byte_idx * 8 + bit_idx;
+            
+            // Make sure we don't go past the end of the bitmap
+            if (block >= total_blocks) {
+                break;
+            }
+            
+            if ((cached_block_bitmap[byte_idx] & (1 << bit_idx)) == 0) {
+                // Found a free block
+                cached_block_bitmap[byte_idx] |= (1 << bit_idx);
+                last_allocated_block = block;
+                
+                // Update statistics
+                bgdt->num_unallocated_blocks--;
+                block_bitmap_dirty = true;
+                bgdt_dirty = true;
+                
+                return block + 1;
+            }
+        }
+    }
+    
+    // No free blocks found
+    return 0;
+}
  /**
   * DIRECTORY OPERATIONS
   */
