@@ -1,0 +1,3 @@
+/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/edit_cache.dir
+/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/rebuild_cache.dir
+/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/doomgeneric.dir

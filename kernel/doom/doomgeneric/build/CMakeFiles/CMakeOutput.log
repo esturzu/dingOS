@@ -1,0 +1,167 @@
+The target system is: Generic -  - 
+The host system is: Linux - 5.15.0-134-generic - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /u/yifanma/cross/bin/aarch64-elf-gcc 
+Build flags: -mcpu=cortex-a53;-ffreestanding;-nostdlib;-O2
+Id flags:  
+
+The output was:
+0
+/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/ld: warning: cannot find entry symbol _start; defaulting to 0000000000400000
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+The C compiler identification is GNU, found in "/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/3.16.3/CompilerIdC/a.out"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_f5713/fast && /usr/bin/make -f CMakeFiles/cmTC_f5713.dir/build.make CMakeFiles/cmTC_f5713.dir/build
+make[1]: Entering directory '/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_f5713.dir/testCCompiler.c.obj
+/u/yifanma/cross/bin/aarch64-elf-gcc   -mcpu=cortex-a53 -ffreestanding -nostdlib -O2    -o CMakeFiles/cmTC_f5713.dir/testCCompiler.c.obj   -c /u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_f5713
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f5713.dir/link.txt --verbose=1
+/u/yifanma/cross/bin/aarch64-elf-gcc -mcpu=cortex-a53 -ffreestanding -nostdlib -O2     CMakeFiles/cmTC_f5713.dir/testCCompiler.c.obj  -o cmTC_f5713 
+/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/ld: warning: cannot find entry symbol _start; defaulting to 0000000000400000
+make[1]: Leaving directory '/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp'
+
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_247fa/fast && /usr/bin/make -f CMakeFiles/cmTC_247fa.dir/build.make CMakeFiles/cmTC_247fa.dir/build
+make[1]: Entering directory '/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj
+/u/yifanma/cross/bin/aarch64-elf-gcc   -mcpu=cortex-a53 -ffreestanding -nostdlib -O2    -v -o CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj   -c /usr/share/cmake-3.16/Modules/CMakeCCompilerABI.c
+Using built-in specs.
+COLLECT_GCC=/u/yifanma/cross/bin/aarch64-elf-gcc
+Target: aarch64-elf
+Configured with: ../../src/gcc-13.2.0/configure --target=aarch64-elf --prefix=/u/yifanma/cross --with-newlib --with-headers=/u/yifanma/cross/aarch64-elf/include --enable-languages=c,c++ --disable-shared --disable-threads --disable-libssp --disable-libquadmath --disable-libgomp --disable-nls
+Thread model: single
+Supported LTO compression algorithms: zlib zstd
+gcc version 13.2.0 (GCC) 
+COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj' '-c' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_247fa.dir/'
+ /u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/cc1 -quiet -v /usr/share/cmake-3.16/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_247fa.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-a53 -mlittle-endian -mabi=lp64 -O2 -version -ffreestanding -o /tmp/ccfsbZSm.s
+GNU C17 (GCC) version 13.2.0 (aarch64-elf)
+	compiled by GNU C version 9.4.0, GMP version 6.2.0, MPFR version 4.0.2, MPC version 1.1.0, isl version none
+GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+#include "..." search starts here:
+#include <...> search starts here:
+ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include
+ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include-fixed
+ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/sys-include
+ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/include
+End of search list.
+Compiler executable checksum: 05aec0c8e0a4ff44a4520bae7925f47d
+COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj' '-c' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_247fa.dir/'
+ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/as -EL -march=armv8-a+crc -mabi=lp64 -o CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj /tmp/ccfsbZSm.s
+COMPILER_PATH=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/libexec/gcc/aarch64-elf/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/lib/gcc/aarch64-elf/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/
+LIBRARY_PATH=/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib/
+COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj' '-c' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.'
+Linking C executable cmTC_247fa
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_247fa.dir/link.txt --verbose=1
+/u/yifanma/cross/bin/aarch64-elf-gcc -mcpu=cortex-a53 -ffreestanding -nostdlib -O2    -v CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj  -o cmTC_247fa 
+Using built-in specs.
+COLLECT_GCC=/u/yifanma/cross/bin/aarch64-elf-gcc
+COLLECT_LTO_WRAPPER=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/lto-wrapper
+Target: aarch64-elf
+Configured with: ../../src/gcc-13.2.0/configure --target=aarch64-elf --prefix=/u/yifanma/cross --with-newlib --with-headers=/u/yifanma/cross/aarch64-elf/include --enable-languages=c,c++ --disable-shared --disable-threads --disable-libssp --disable-libquadmath --disable-libgomp --disable-nls
+Thread model: single
+Supported LTO compression algorithms: zlib zstd
+gcc version 13.2.0 (GCC) 
+COMPILER_PATH=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/libexec/gcc/aarch64-elf/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/lib/gcc/aarch64-elf/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/
+LIBRARY_PATH=/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib/
+COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'cmTC_247fa' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_247fa.'
+ /u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/collect2 -plugin /u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/liblto_plugin.so -plugin-opt=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccbBBNDM.res -EL -X -maarch64elf -o cmTC_247fa -L/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0 -L/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj
+/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/ld: warning: cannot find entry symbol _start; defaulting to 0000000000400000
+COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'cmTC_247fa' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_247fa.'
+make[1]: Leaving directory '/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp'
+
+
+
+Parsed C implicit include dir info from above output: rv=done
+  found start of include info
+  found start of implicit include info
+    add: [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include]
+    add: [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include-fixed]
+    add: [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/sys-include]
+    add: [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/include]
+  end of search list found
+  collapse include dir [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include] ==> [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include]
+  collapse include dir [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include-fixed] ==> [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include-fixed]
+  collapse include dir [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/sys-include] ==> [/u/yifanma/cross/aarch64-elf/sys-include]
+  collapse include dir [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/include] ==> [/u/yifanma/cross/aarch64-elf/include]
+  implicit include dirs: [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include;/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include-fixed;/u/yifanma/cross/aarch64-elf/sys-include;/u/yifanma/cross/aarch64-elf/include]
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(aarch64-elf-ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command(s):/usr/bin/make cmTC_247fa/fast && /usr/bin/make -f CMakeFiles/cmTC_247fa.dir/build.make CMakeFiles/cmTC_247fa.dir/build]
+  ignore line: [make[1]: Entering directory '/u/yifanma/Desktop/multi-core/dingOS/kernel/doom/doomgeneric/build/CMakeFiles/CMakeTmp']
+  ignore line: [Building C object CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj]
+  ignore line: [/u/yifanma/cross/bin/aarch64-elf-gcc   -mcpu=cortex-a53 -ffreestanding -nostdlib -O2    -v -o CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj   -c /usr/share/cmake-3.16/Modules/CMakeCCompilerABI.c]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/u/yifanma/cross/bin/aarch64-elf-gcc]
+  ignore line: [Target: aarch64-elf]
+  ignore line: [Configured with: ../../src/gcc-13.2.0/configure --target=aarch64-elf --prefix=/u/yifanma/cross --with-newlib --with-headers=/u/yifanma/cross/aarch64-elf/include --enable-languages=c c++ --disable-shared --disable-threads --disable-libssp --disable-libquadmath --disable-libgomp --disable-nls]
+  ignore line: [Thread model: single]
+  ignore line: [Supported LTO compression algorithms: zlib zstd]
+  ignore line: [gcc version 13.2.0 (GCC) ]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj' '-c' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_247fa.dir/']
+  ignore line: [ /u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/cc1 -quiet -v /usr/share/cmake-3.16/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_247fa.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-a53 -mlittle-endian -mabi=lp64 -O2 -version -ffreestanding -o /tmp/ccfsbZSm.s]
+  ignore line: [GNU C17 (GCC) version 13.2.0 (aarch64-elf)]
+  ignore line: [	compiled by GNU C version 9.4.0  GMP version 6.2.0  MPFR version 4.0.2  MPC version 1.1.0  isl version none]
+  ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+  ignore line: [#include "..." search starts here:]
+  ignore line: [#include <...> search starts here:]
+  ignore line: [ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include]
+  ignore line: [ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/include-fixed]
+  ignore line: [ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/sys-include]
+  ignore line: [ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/include]
+  ignore line: [End of search list.]
+  ignore line: [Compiler executable checksum: 05aec0c8e0a4ff44a4520bae7925f47d]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj' '-c' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_247fa.dir/']
+  ignore line: [ /u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/as -EL -march=armv8-a+crc -mabi=lp64 -o CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj /tmp/ccfsbZSm.s]
+  ignore line: [COMPILER_PATH=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/libexec/gcc/aarch64-elf/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/lib/gcc/aarch64-elf/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/]
+  ignore line: [LIBRARY_PATH=/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj' '-c' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.']
+  ignore line: [Linking C executable cmTC_247fa]
+  ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_247fa.dir/link.txt --verbose=1]
+  ignore line: [/u/yifanma/cross/bin/aarch64-elf-gcc -mcpu=cortex-a53 -ffreestanding -nostdlib -O2    -v CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj  -o cmTC_247fa ]
+  ignore line: [Using built-in specs.]
+  ignore line: [COLLECT_GCC=/u/yifanma/cross/bin/aarch64-elf-gcc]
+  ignore line: [COLLECT_LTO_WRAPPER=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/lto-wrapper]
+  ignore line: [Target: aarch64-elf]
+  ignore line: [Configured with: ../../src/gcc-13.2.0/configure --target=aarch64-elf --prefix=/u/yifanma/cross --with-newlib --with-headers=/u/yifanma/cross/aarch64-elf/include --enable-languages=c c++ --disable-shared --disable-threads --disable-libssp --disable-libquadmath --disable-libgomp --disable-nls]
+  ignore line: [Thread model: single]
+  ignore line: [Supported LTO compression algorithms: zlib zstd]
+  ignore line: [gcc version 13.2.0 (GCC) ]
+  ignore line: [COMPILER_PATH=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/libexec/gcc/aarch64-elf/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/lib/gcc/aarch64-elf/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/bin/]
+  ignore line: [LIBRARY_PATH=/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/:/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib/]
+  ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-a53' '-ffreestanding' '-nostdlib' '-O2' '-v' '-o' 'cmTC_247fa' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_247fa.']
+  link line: [ /u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/collect2 -plugin /u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/liblto_plugin.so -plugin-opt=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccbBBNDM.res -EL -X -maarch64elf -o cmTC_247fa -L/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0 -L/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj]
+    arg [/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/collect2] ==> ignore
+    arg [-plugin] ==> ignore
+    arg [/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/liblto_plugin.so] ==> ignore
+    arg [-plugin-opt=/u/yifanma/cross/libexec/gcc/aarch64-elf/13.2.0/lto-wrapper] ==> ignore
+    arg [-plugin-opt=-fresolution=/tmp/ccbBBNDM.res] ==> ignore
+    arg [-EL] ==> ignore
+    arg [-X] ==> ignore
+    arg [-maarch64elf] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_247fa] ==> ignore
+    arg [-L/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0] ==> dir [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0]
+    arg [-L/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib] ==> dir [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib]
+    arg [CMakeFiles/cmTC_247fa.dir/CMakeCCompilerABI.c.obj] ==> ignore
+  collapse library dir [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0] ==> [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0]
+  collapse library dir [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0/../../../../aarch64-elf/lib] ==> [/u/yifanma/cross/aarch64-elf/lib]
+  implicit libs: []
+  implicit dirs: [/u/yifanma/cross/lib/gcc/aarch64-elf/13.2.0;/u/yifanma/cross/aarch64-elf/lib]
+  implicit fwks: []
+
+
