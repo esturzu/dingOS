@@ -5,8 +5,7 @@
 #include "process.h"
 #include "ext2.h"
 
-#define USER_MASK 0xFFFF'0000'0000'0000
-#define IN_USER(ptr) ((((uint64_t) (ptr)) & USER_MASK) == USER_MASK)
+#define IN_USER(ptr) ((uint64_t) (ptr) < 0x0001'0000'0000'0000)
 
 // TODO:
 // - Refactor calling and return convention for system calls
@@ -193,6 +192,5 @@ uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state) {
   return 0;
 }
 
-#undef USER_MASK
 #undef IN_USER
 

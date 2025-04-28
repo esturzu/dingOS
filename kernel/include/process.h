@@ -50,6 +50,8 @@ struct ProcessContext
 class Process
 {
   static constexpr int NUM_IO_RESOURCES = 16;
+  static constexpr uint64_t STACK_LOW_INCLUSIVE = 0x0000'FFFF'FFF0'0000;
+  static constexpr uint64_t STACK_HIGH_EXCLUSIVE = 0x0001'0000'0000'0000;
   ProcessContext context;
   VMM::TranslationTable translation_table;
   IOResource* resources[NUM_IO_RESOURCES];
@@ -64,6 +66,8 @@ public:
   void run();
   void save_state(uint64_t* register_frame);
   void map_range(uint64_t start, uint64_t end);
+  void vm_load(uint64_t vaddr, uint64_t filesz, uint64_t memsz,
+               const char* data);
   void set_entry_point(uint64_t entry);
   IOResource* get_io_resource(int fd);
   Syscall::Result<int> file_open(const char* name);

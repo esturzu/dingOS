@@ -3,6 +3,7 @@
 #include "process.h"
 #include "cores.h"
 #include "system_call.h"
+#include "physmem.h"
 
 Process* activeProcess[4] = {nullptr, nullptr, nullptr, nullptr};
 
@@ -17,7 +18,7 @@ void user_mode()
   }
 }
 
-Process::Process() : translation_table(VMM::TranslationTable::Granule::KB_4), context(VMM::kernel_to_phys_ptr((uint64_t) user_mode), 0x800000)
+Process::Process() : translation_table(VMM::TranslationTable::Granule::KB_4), context(VMM::kernel_to_phys_ptr((uint64_t) user_mode), STACK_HIGH_EXCLUSIVE)
 {
   // Basic Sanity Mapping
   for (uint64_t virtual_address = 0; virtual_address < 0x40000000; virtual_address += 0x1000)
@@ -26,12 +27,9 @@ Process::Process() : translation_table(VMM::TranslationTable::Granule::KB_4), co
   }
 
   // User Space Stack Mapping
-  context.sp = 0;
   constexpr uint64_t flags = VMM::TranslationTable::UnprivilegedAccess;
   constexpr auto page_size = VMM::TranslationTable::PageSize::KB_4;
-  for (uint64_t a = 0xFFFF'FFFF'FF00'0000; a != 0; a += 0x1000) {
-    translation_table.map_address(a, flags, page_size);
-  }
+  map_range(STACK_LOW_INCLUSIVE, STACK_HIGH_EXCLUSIVE);
 
   // Fills IO Resources
   static_assert(NUM_IO_RESOURCES >= 3, "Kernel error: Num IO < 3");
@@ -112,11 +110,39 @@ void Process::save_state(uint64_t* register_frame)
 // Maps the memory addresses in the range from start (inclusive) to end
 // (exclusive), where it pads with extra bytes if needed to page align
 void Process::map_range(uint64_t start, uint64_t end) {
+  if (((start | end) & 0xFFF) != 0) {
+    printf("WARNING: START OR END MISALIGNED\n");
+  }
   constexpr uint64_t flags = VMM::TranslationTable::UnprivilegedAccess;
   constexpr auto page_size = VMM::TranslationTable::PageSize::KB_4;
-  for (uint64_t a = start & (uint64_t) (-4096); a < end; a += 4096) {
+  start &= (uint64_t) -0x1000;
+  end = (end + 0xFFF) & (uint64_t) -0x1000;
+  for (uint64_t a = start; a != end; a += 0x1000) {
     translation_table.map_address(a, flags, page_size);
   }
+}
+
+void Process::vm_load(uint64_t vaddr, uint64_t filesz, uint64_t memsz,
+                      const char* data) {
+  if ((vaddr & 0xFFF) != 0) {
+    printf("WARNING: VM LOAD START MISALIGNED\n");
+    return;
+  }
+
+  uint64_t num_pages = (memsz + 0xFFF) >> 12;
+  char** pages = new char*[num_pages];
+  constexpr uint64_t flags = VMM::TranslationTable::UnprivilegedAccess;
+  constexpr auto page_size = VMM::TranslationTable::PageSize::KB_4;
+  for (uint64_t i = 0, a = vaddr; i < num_pages; i++, a += 0x1000) {
+    void* frame = PhysMem::allocate_frame();
+    pages[i] = (char*) VMM::phys_to_kernel_ptr(frame);
+    translation_table.map_address(a, (uint64_t) frame, flags, page_size);
+  }
+
+  uint64_t i = 0;
+  for (; i < filesz; i++) pages[i >> 12][i & 0xFFF] = data[i];
+  for (; i < memsz; i++) pages[i >> 12][i & 0xFFF] = 0;
+  delete[] pages;
 }
 
 // Sets the entry point of a program
