@@ -1,97 +1,196 @@
 #include "system_call.h"
-
 #include "cores.h"
 #include "event_loop.h"
 #include "printf.h"
 #include "process.h"
+#include "ext2.h"
 
-// TODO For print system calls (syscalls 2 and 3):
-// - Optimize saving state (instead of saving all registers again, just select
-//   the ones that actually change - for example, just x0 and x1)
-// - Optimize character printing (instead of printing in a loop and using
-//   printf with "%c", just add directly to the final print buffer)
+#define IN_USER(ptr) ((uint64_t) (ptr) < 0x0001'0000'0000'0000)
 
-uint64_t system_call_handler (uint16_t syscall_type, uint64_t* saved_state)
-{
-  debug_printf("Sys Call Handler\n");
+// TODO:
+// - Refactor calling and return convention for system calls
+// - Move exit and yield implementations into separate methods?
+// - Exit codes + fork + join + getpid
 
-  switch (syscall_type)
-  {
-    case 0: // Exit System Call
-      {
-        debug_printf("Exit System Call\n");
+// [[noreturn]] void exit(int code) {}
+// [[noreturn]] void yield() {}
 
-        uint8_t current_core = SMP::whichCore();
+Syscall::Result<int> fork() {
+  return Syscall::NOT_IMPLEMENTED;
+}
 
-        Process* current_process = activeProcess[current_core];
+Syscall::Result<int> join(int pid) {
+  return Syscall::NOT_IMPLEMENTED;
+}
 
-        activeProcess[current_core] = nullptr;
+Syscall::Result<int> getpid() {
+  return Syscall::NOT_IMPLEMENTED;
+}
 
-        event_loop();
-      }
-    case 1: // Yield System Call
-      {
-        debug_printf("Yield System Call\n");
+Syscall::Result<int> fopen(const char* filename) {
+  Process* current_process = activeProcess[SMP::whichCore()];
+  return current_process->file_open(filename);
+}
 
-        uint8_t current_core = SMP::whichCore();
+Syscall::Result<int> close(int fd) {
+  Process* current_process = activeProcess[SMP::whichCore()];
+  return current_process->close_io_resource(fd);
+}
 
-        Process* current_process = activeProcess[current_core];
+IOResource* fetch_io_resource(int fd) {
+  Process* current_process = activeProcess[SMP::whichCore()];
+  return current_process->get_io_resource(fd);
+}
 
-        current_process->save_state(saved_state);
+Syscall::Result<long> read(char* buffer, long size, int fd) {
+  if (!IN_USER(buffer)) return Syscall::INVALID_POINTER;
+  IOResource* io_resource = fetch_io_resource(fd);
+  if (io_resource == nullptr) return Syscall::INVALID_FD;
+  return io_resource->read(buffer, size);
+}
 
-        activeProcess[current_core] = nullptr;
+Syscall::Result<long> write(const char* buffer, long size, int fd) {
+  if (!IN_USER(buffer)) return Syscall::INVALID_POINTER;
+  IOResource* io_resource = fetch_io_resource(fd);
+  if (io_resource == nullptr) return Syscall::INVALID_FD;
+  return io_resource->write(buffer, size);
+}
 
-        __asm__ volatile("dmb sy" ::: "memory");
+Syscall::Result<long> seek(long loc, Syscall::SeekType seek_type, int fd) {
+  IOResource* io_resource = fetch_io_resource(fd);
+  if (io_resource == nullptr) return Syscall::INVALID_FD;
+  return io_resource->seek(loc, seek_type);
+}
 
-        schedule_event([current_process](){
-          current_process->run();
-        });
+Syscall::Result<int> exec(const char* filename, int argc, const char** argv) {
+  if (!IN_USER(filename) || !IN_USER(argv)) return Syscall::INVALID_POINTER;
+  Node* output = find_from_abs_path(filename);
+  if (output == nullptr) return Syscall::FILE_NOT_FOUND;
+  return Syscall::NOT_IMPLEMENTED;
+}
 
-        event_loop();
-      }
-    case 2: // Print Character System Call
-      {
-        // Convention: x0 stores the character to be printed. The system call
-        // returns 1 if the character was printed successfully, and 0
-        // otherwise
-        printf("%c", (char) saved_state[0]);
-        saved_state[0] = 1;
+template <typename T>
+void process_return(uint64_t* saved_state, Syscall::Result<T> result) {
+  result.set_state(saved_state);
+  Process* current_process = activeProcess[SMP::whichCore()];
+  current_process->save_state(saved_state);
+  current_process->run();
+}
 
-        uint8_t current_core = SMP::whichCore();
-        Process* current_process = activeProcess[current_core];
-        current_process->save_state(saved_state);
-        current_process->run();
-      }
-    case 3: // Print String System Call
-      {
-        // Convention: x0 stores the pointer of data to be printed, and x1
-        // stores the size of the data. The system call returns the number of
-        // characters successfully printed, or -1 if some error occurred. Note
-        // that it verifies that the pointer is in user space before printing.
-        uint64_t pointerU64 = saved_state[0];
-        constexpr uint64_t mask = 0xFFFF'0000'0000'0000;
-        bool validPointer = (pointerU64 & mask) == mask;
+uint64_t system_call_handler(uint16_t syscall_type, uint64_t* saved_state) {
+  switch (syscall_type) {
+    // 0x00: void exit(int code);
+    case 0x00: {
+      uint8_t current_core = SMP::whichCore();
+      Process* current_process = activeProcess[current_core];
+      delete current_process;
+      activeProcess[current_core] = nullptr;
+      event_loop();
+      break;
+    }
 
-        if (validPointer) {
-          const char* pointer = (const char*) pointerU64;
-          uint64_t size = saved_state[1];
-          for (uint64_t i = 0; i < size; i++) printf("%c", pointer);
-          saved_state[0] = size;
-        } else {
-          saved_state[0] = -1;
-        }
+    // 0x01: void yield();
+    case 0x01: {
+      uint8_t current_core = SMP::whichCore();
+      Process* current_process = activeProcess[current_core];
+      current_process->save_state(saved_state);
+      activeProcess[current_core] = nullptr;
+      __asm__ volatile("dmb sy" ::: "memory");
+      schedule_event([current_process] () { current_process->run(); });
+      event_loop();
+      break;
+    }
 
-        uint8_t current_core = SMP::whichCore();
-        Process* current_process = activeProcess[current_core];
-        current_process->save_state(saved_state);
-        current_process->run();
-      }
-    default:
-      {
-        printf("Unknown System Call\n");
-        while (true) {}
-      }
+    // 0x02: int fork();
+    case 0x02: {
+      Syscall::Result<int> result = fork();
+      process_return(saved_state, result);
+      break;
+    }
+
+    // 0x03: int join(int pid);
+    case 0x03: {
+      int pid = (int) saved_state[0];
+      Syscall::Result<int> result = join(pid);
+      process_return(saved_state, result);
+      break;
+    }
+
+    // 0x04: int getpid();
+    case 0x04: {
+      Syscall::Result<int> result = getpid();
+      process_return(saved_state, result);
+      break;
+    }
+
+    // 0x05: int fopen(const char* filename);
+    case 0x05: {
+      const char* filename = (const char*) saved_state[0];
+      Syscall::Result<int> result = fopen(filename);
+      process_return(saved_state, result);
+      break;
+    }
+
+    // 0x06: int close(int fd);
+    case 0x06: {
+      int fd = (int) saved_state[0];
+      Syscall::Result<int> result = close(fd);
+      process_return(saved_state, result);
+      break;
+    }
+
+    // 0x07: long read(char* buffer, long size, int fd);
+    case 0x07: {
+      char* buffer = (char*) saved_state[0];
+      long size = (long) saved_state[1];
+      int fd = (int) saved_state[2];
+      Syscall::Result<long> result = read(buffer, size, fd);
+      process_return(saved_state, result);
+      break;
+    }
+
+    // 0x08: long write(const char* buffer, long size, int fd);
+    case 0x08: {
+      const char* buffer = (const char*) saved_state[0];
+      long size = (long) saved_state[1];
+      int fd = (int) saved_state[2];
+      Syscall::Result<long> result = write(buffer, size, fd);
+      process_return(saved_state, result);
+      break;
+    }
+
+    // 0x09: long seek(long loc, SeekType seek_type, int fd);
+    case 0x09: {
+      long loc = (long) saved_state[0];
+      Syscall::SeekType seek_type = (Syscall::SeekType) saved_state[1];
+      int fd = (int) saved_state[2];
+      Syscall::Result<long> result = seek(loc, seek_type, fd);
+      process_return(saved_state, result);
+      break;
+    }
+
+    // 0x0A: int exec(const char* filename, int argc, const char** argv);
+    case 0x0A: {
+      const char* filename = (const char*) saved_state[0];
+      int argc = (int) saved_state[1];
+      const char** argv = (const char**) saved_state[2];
+      Syscall::Result<int> result = exec(filename, argc, argv);
+      process_return(saved_state, result);
+      break;
+    }
+
+    default: {
+      printf("Unknown System Call\n");
+      Syscall::Result<int> result = Syscall::INVALID_SYSTEM_CALL;
+      process_return(saved_state, result);
+      break;
+    }
   }
 
+  printf("Kernel error: system_call_handler should not return\n");
+  while (true) {}
   return 0;
 }
+
+#undef IN_USER
+

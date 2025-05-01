@@ -388,6 +388,68 @@ Node* find_in_directory(Node* dir, const char* name) {
     return nullptr;     // Entry not found
 }
 
+// Internal method to find a Node from a relative path - this function depends
+// on the Node and path being non-null and on the initial '/' being removed
+// for absolute paths
+Node* _find_from_rel_path_internal(Node* dir, const char* path) {
+  size_t size = 0;
+  while (path[size] != '\0') size++;
+  size++;
+
+  char* buffer = new char[size];
+  char* name = buffer;
+  char* ptr = buffer;
+  char* end = buffer + size;
+  Node* output = dir;
+  bool first = true;
+
+  while (ptr < end) {
+    char c = *(path++);
+    if (c == '/' || c == '\0') {
+      if (name != ptr) {
+        *ptr = '\0';
+        Node* next = find_in_directory(output, name);
+        if (first) first = false;
+        else delete output;
+        if (next == nullptr || (c == '/' && !next->is_dir())) {
+          output = nullptr;
+          break;
+        }
+        output = next;
+      }
+      name = ++ptr;
+    } else {
+      *(ptr++) = c;
+    }
+  }
+
+  delete[] buffer;
+  return output;
+}
+
+// Internal method to find a Node from an absolute path - this function
+// depends on the path being non-null and beginning with '/'
+Node* _find_from_abs_path_internal(const char* path) {
+  SDAdapter* adapter = new SDAdapter(1024);
+  Ext2* fs = new Ext2(adapter);
+  Node* output = _find_from_rel_path_internal(fs->root, path + 1);
+  delete fs;
+  delete adapter;
+  return output;
+}
+
+Node* find_from_path(Node* dir, const char* path) {
+  if (dir == nullptr || !dir->is_dir()) return nullptr;
+  if (path == nullptr || path[0] == '\0') return nullptr;
+  if (path[0] == '/') return _find_from_abs_path_internal(path);
+  return _find_from_rel_path_internal(dir, path);
+}
+
+Node* find_from_abs_path(const char* path) {
+  if (path == nullptr || path[0] != '/') return nullptr;
+  return _find_from_abs_path_internal(path);
+}
+
 /*
  * FILE OPERATIONS
  */

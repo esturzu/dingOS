@@ -46,32 +46,22 @@ ELFLoader::Result ELFLoader::load(const char* data, uint64_t size,
     if (type == 0) continue;
     if (type != 1) return UNSUPPORTED_PROGRAM_HEADER_TYPE;
 
+    uint64_t vaddr = ph->p_vaddr;
     uint64_t off = ph->p_offset;
     uint64_t filesz = ph->p_filesz;
     uint64_t memsz = ph->p_memsz;
     uint64_t end = off + filesz;
+    if ((vaddr & 0xFFF) != 0) return UNSUPPORTED_PAGE_UNALIGNED_VADDR;
     if (memsz < filesz) return INVALID_MEM_SIZE;
     if (INVALID(off, end, size)) return INVALID_PROGRAM_HEADER_DATA_OFFSET;
   }
 
   // Iterates through each program header and loads the corresponding data
   for (const ProgramHeader64* ph = phstart; ph < phend; ph++) {
-    uint32_t type = ph->type;
-    if (type == 0) continue;
-
-    uint64_t off = ph->p_offset;
-    uint64_t filesz = ph->p_filesz;
-    uint64_t memsz = ph->p_memsz;
-    uint64_t end = off + filesz;
-
-    const char* dataLoc = (const char*) (data + off);
-    char* vmemLoc = (char*) ph->p_vaddr;
-    char* fileEnd = vmemLoc + filesz;
-    char* memEnd = vmemLoc + memsz;
-
-    process->map_range((uint64_t) vmemLoc, (uint64_t) memEnd);
-    while (vmemLoc < fileEnd) *(vmemLoc++) = *(dataLoc++);
-    while (vmemLoc < memEnd) *(vmemLoc++) = 0;
+    if (ph->type == 1) {
+      process->vm_load(ph->p_vaddr, ph->p_filesz, ph->p_memsz,
+                       data + ph->p_offset);
+    }
   }
 
   // Sets the entry point and returns success
