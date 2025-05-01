@@ -32,7 +32,7 @@ RESULT_LONG StandardOutput::read(char* buffer, long size) {
 }
 
 RESULT_LONG StandardOutput::write(const char* buffer, long size) {
-  if (size < 0) return Syscall::INVALID_IO_SIZE;
+  if (size < 0) return Syscall::INVALID_SIZE;
   for (long i = 0; i < size; i++) uart_putc(buffer[i]);
   return size;
 }
@@ -50,7 +50,7 @@ RESULT_LONG StandardError::read(char* buffer, long size) {
 }
 
 RESULT_LONG StandardError::write(const char* buffer, long size) {
-  if (size < 0) return Syscall::INVALID_IO_SIZE;
+  if (size < 0) return Syscall::INVALID_SIZE;
   for (long i = 0; i < size; i++) uart_putc(buffer[i]);
   return size;
 }
@@ -80,7 +80,7 @@ Syscall::ErrorCode FileResource::open(const char* name) {
 
 RESULT_LONG FileResource::read(char* buffer, long size) {
   if (pos > file_size || pos < 0) return Syscall::INVALID_FILE_POS;
-  if (size < 0) return Syscall::INVALID_IO_SIZE;
+  if (size < 0) return Syscall::INVALID_SIZE;
   long c = file_size - pos, output = c < size ? c : size;
   char* pointer = data + pos;
   for (long i = 0; i < output; i++) buffer[i] = pointer[i];

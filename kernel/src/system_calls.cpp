@@ -24,7 +24,8 @@ Syscall::Result<int> join(int pid) {
 }
 
 Syscall::Result<int> getpid() {
-  return Syscall::NOT_IMPLEMENTED;
+  Process* current_process = activeProcess[SMP::whichCore()];
+  return current_process->getpid();
 }
 
 Syscall::Result<int> fopen(const char* filename) {
@@ -63,9 +64,14 @@ Syscall::Result<long> seek(long loc, Syscall::SeekType seek_type, int fd) {
 }
 
 Syscall::Result<int> exec(const char* filename, int argc, const char** argv) {
-  if (!IN_USER(filename) || !IN_USER(argv)) return Syscall::INVALID_POINTER;
+  if (!IN_USER(filename)) return Syscall::INVALID_POINTER;
   Node* output = find_from_abs_path(filename);
   if (output == nullptr) return Syscall::FILE_NOT_FOUND;
+  if (argc == 0) {
+
+  } else {
+    if (!IN_USER(argv)) return Syscall::INVALID_POINTER;
+  }
   return Syscall::NOT_IMPLEMENTED;
 }
 

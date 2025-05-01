@@ -80,13 +80,13 @@
  *       returns the number of bytes read (which can be zero, if the amount of
  *       bytes to read is zero or if the position is at the end of the file).
  *       Possible errors are INVALID_POINTER, INVALID_FD, INVALID_OPERATION,
- *       INVALID_FILE_POS, and INVALID_IO_SIZE.
+ *       INVALID_FILE_POS, and INVALID_SIZE.
  *
  * 0x08: Writes to an IO resource given a buffer to write from, an amount to
  *       write (in bytes), and a file descriptor (fd). If successful, it
  *       returns the number of bytes written (which can be zero, if the amount
  *       of bytes to write is zero). Possible errors are INVALID_POINTER,
- *       INVALID_FD, INVALID_OPERATION, and INVALID_IO_SIZE. Currently
+ *       INVALID_FD, INVALID_OPERATION, and INVALID_SIZE. Currently
  *       unimplemented for file writes, and errors subject to change, though
  *       the calling convention should not.
  *
@@ -144,7 +144,7 @@ namespace Syscall {
     INVALID_SYSTEM_CALL = 2,
     INVALID_FD          = 3,
     INVALID_OPERATION   = 4,
-    INVALID_IO_SIZE     = 5,
+    INVALID_SIZE        = 5,
     INVALID_FILE_POS    = 6,
     INVALID_SEEK_TYPE   = 7,
     INVALID_POINTER     = 8,

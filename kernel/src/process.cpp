@@ -18,8 +18,15 @@ void user_mode()
   }
 }
 
+int Process::find_unused_pid() {
+  return process_counter.add_fetch(1) - 1;
+}
+
 Process::Process() : translation_table(VMM::TranslationTable::Granule::KB_4), context(VMM::kernel_to_phys_ptr((uint64_t) user_mode), STACK_HIGH_EXCLUSIVE)
 {
+  // Assigns Process ID (pid)
+  pid = find_unused_pid();
+
   // Basic Sanity Mapping
   for (uint64_t virtual_address = 0; virtual_address < 0x40000000; virtual_address += 0x1000)
   {
@@ -47,7 +54,7 @@ Process::~Process()
   // TODO free filesystem attributes
   // Deletes IO Resources
   for (int i = 0; i < NUM_IO_RESOURCES; i++) {
-    if (resources[i] != nullptr) delete resources[i];
+    close_io_resource(i);
   }
 }
 
@@ -105,6 +112,10 @@ void Process::save_state(uint64_t* register_frame)
   context.x29 = register_frame[29];
   context.x30 = register_frame[30];
   context.x31 = register_frame[31];
+}
+
+int getpid() {
+  return pid;
 }
 
 // Maps the memory addresses in the range from start (inclusive) to end
