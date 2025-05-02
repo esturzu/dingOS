@@ -10,12 +10,18 @@ ARMBIN := /u/gheith/public/gcc-arm-10.3-2021.07-x86_64-aarch64-none-linux-gnu/bi
 QEMUBIN := /u/hill/Coursework/CS378/tools/qemu/bin
 QEMU_LIBS := /u/hill/Coursework/CS378/tools/glib/lib/x86_64-linux-gnu
 
+# Flags
 AS := $(ARMBIN)/aarch64-none-linux-gnu-as 						# Assembler
 CC := $(ARMBIN)/aarch64-none-linux-gnu-gcc 						# C Compiler
 CXX := $(ARMBIN)/aarch64-none-linux-gnu-g++ 					# C++ Compiler
 OBJCOPY := $(ARMBIN)/aarch64-none-linux-gnu-objcopy 	# Objcopy
 GDB := $(ARMBIN)/aarch64-none-linux-gnu-gdb 					# GDB
 QEMU := $(QEMUBIN)/qemu-system-aarch64 								# QEMU
+
+# Doom
+DG_DIR   := doom/doomgeneric
+DG_LIB   := $(DG_DIR)/build/libdoomgeneric.a
+DG_OBJS  := doom/dg_platform.o doom/doom1_wad.o
 
 # QEMU flags and params
 # QEMU_FLAGS := -no-reboot -M raspi3b -nographic -smp 4 -drive file=../ext2.img,if=sd,format=raw -cpu cortex-a72 -m 1G \ 
@@ -64,8 +70,8 @@ INC_SUBDIRS := $(shell find $(INCDIR) -type d)
 
 # For each subdir in include/, add "-I subdir" to the compiler flags
 INC_PATHS := $(foreach d, $(INC_SUBDIRS), -I $d)
-CCFLAGS   += $(INC_PATHS)
-CXXFLAGS  += $(INC_PATHS)
+CCFLAGS   += $(INC_PATHS) -I$(DG_DIR)/src
+CXXFLAGS  += $(INC_PATHS) -I$(DG_DIR)/src
 
 # Search recursively for all files to build
 CSRC   	:= $(shell find $(SRCDIR) -name '*.c')
@@ -78,6 +84,7 @@ CXXOBJ 	:= $(patsubst $(SRCDIR)/%.cpp,%.o,$(CXXSRC))
 ASOBJ 	:= $(patsubst $(SRCDIR)/%.s,%.o,$(ASSRC))
 
 OBJS 		:= $(addprefix $(BUILD)/, $(COBJ) $(CXXOBJ) $(ASOBJ))
+OBJS 		+= $(DG_OBJS)
 
 # The specialized CRT files must come first/last
 CRTI := $(BUILD)/crti.o
@@ -111,8 +118,8 @@ qemu: $(IMG)
 	LD_LIBRARY_PATH=$(QEMU_LIBS) $(QEMU) $(QEMU_FLAGS) -kernel $(IMG)
 
 # How to build the final ELF from all objects + linker script
-$(EXEC): linker.ld $(OBJS)
-	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS) -Wl,--end-group
+$(EXEC): linker.ld $(OBJS) $(DG_LIB)
+	$(CXX) -T $< $(CXXFLAGS) -o $@ $(CRTI) -Wl,--start-group $(OTHER_OBJS) $(DG_LIB) -Wl,--end-group
 
 # How to produce the .img from the ELF
 $(IMG): $(EXEC)
@@ -131,6 +138,9 @@ $(BUILD)/%.o : $(SRCDIR)/%.cpp | $(BUILD)
 $(BUILD)/%.o : $(SRCDIR)/%.s | $(BUILD)
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -c $< -o $@
+
+$(BUILD)/dg_platform.o: doom/dg_platform.cpp | $(BUILD)
+	$(CXX) $(CXXFLAGS) $(OPT_FLAGS) $(DEPFLAGS) -c $< -o $@ -MF $(basename $@).d
 
 # Create the build directory if needed
 $(BUILD):

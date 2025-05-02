@@ -29,7 +29,7 @@ uint64_t SystemTimer::get_free_running_counter_value() {
   volatile uint32_t* higher_32_register =
       (volatile uint32_t*)(system_timer_base_address + higher_32_offset);
 
-  running_counter_value |= ((uint64_t)higher_32_register) << 32;
+  running_counter_value |= ((uint64_t)*higher_32_register) << 32;
 
   return running_counter_value;
 }
@@ -56,8 +56,9 @@ void SystemTimer::set_compare_register(uint8_t n, uint32_t value) {
 }
 
 /**
- * @brief Sets up the timer on compare register 0 to trigger an interrupt every second
- * 
+ * @brief Sets up the timer on compare register 0 to trigger an interrupt every
+ * second
+ *
  * @param IRQ_num The IRQ number to set this timer to
  */
 void SystemTimer::setup_timer(uint8_t IRQ_num) {

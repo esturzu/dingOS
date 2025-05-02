@@ -1,8 +1,8 @@
 #include "dg_platform.h"
 
-#include "framebuffer.h"
-#include "machine.h"
-#include "printf.h"
+#include "../include/framebuffer.h"
+#include "../include/machine.h"
+#include "../include/printf.h"
 
 static uint8_t* g_fb;
 static uint32_t g_pitch, g_w, g_h;
@@ -28,8 +28,8 @@ void DG_SwitchBuffer(void) {
   }
 }
 
-void DG_SleepMs(int ms) { Machine::delay_ms(ms); }
-uint32_t DG_GetTicksMs(void) { return Machine::ticks_ms(); }
+void DG_SleepMs(int ms) { delay_ms(ms); }
+uint32_t DG_GetTicksMs(void) { return ticks_ms(); }
 int DG_GetKey(void) { return 0; }  // stub
 void DG_Print(const char* f, ...) { /* optional UART printf */ }
 
