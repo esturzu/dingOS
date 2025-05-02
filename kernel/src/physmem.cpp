@@ -63,7 +63,7 @@ namespace PhysMem {
                         // Zeroes out the page
                         zero_out((char*) new_page, PAGE_SIZE);
                         new_page = VMM::kernel_to_phys_ptr(new_page);
-                        debug_printf("Frame found at 0x%lx\n", new_page);
+                        // debug_printf("Frame found at 0x%lx\n", new_page);
                         return new_page;
                     }
                     // Look at the next bit

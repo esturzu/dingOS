@@ -55,6 +55,8 @@ extern "C" void enter_process(struct ProcessContext*);
 
 void Process::run()
 {
+  debug_printf("Entered Process:run()");
+
   set_ELR_EL1(context.pc);
   set_SP_EL0(context.sp);
   set_SPSR_EL1(context.status_register);
@@ -69,6 +71,7 @@ void Process::run()
   // from context and executes `eret` into EL0
   debug_printf("Entering Process\n");
   enter_process(&context);
+  debug_printf("enter_process returned");
 
   uint64_t el, spsr;
     asm volatile("mrs %0, CurrentEL" : "=r"(el));

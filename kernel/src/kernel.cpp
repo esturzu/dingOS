@@ -1,12 +1,13 @@
 #include "kernel.h"
 
-#include "local_timer.h"
 #include "cores.h"
 #include "crti.h"
 #include "elf.h"
 #include "event_loop.h"
+#include "ext2.h"
 #include "framebuffer.h"
 #include "heap.h"
+#include "local_timer.h"
 #include "machine.h"
 #include "physmem.h"
 #include "printf.h"
@@ -16,9 +17,8 @@
 #include "stdint.h"
 #include "system_timer.h"
 #include "tester.h"
-#include "ext2.h"
-#include "vmm.h"
 #include "usb.h"
+#include "vmm.h"
 
 extern "C" void kernelMain() {
   // Handled UART init
@@ -44,7 +44,7 @@ extern "C" void kernelMain() {
 
   SD::init();
 
-#if 0
+#if 1
   // To have the right disk, you have to 'mkdir fs_root'
   // Then, run with command:
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
@@ -56,7 +56,7 @@ extern "C" void kernelMain() {
 
   // If file is found
   if (existing_test_file) {
-    char *buffer = new char[file_size + 1];
+    char* buffer = new char[file_size + 1];
     int bytes_read = read_file(existing_test_file, buffer, file_size);
     if (bytes_read > 0) {
       buffer[bytes_read] = '\0';
@@ -64,16 +64,21 @@ extern "C" void kernelMain() {
     }
 
     // Run user program
-    Process* process = (Process*) malloc(sizeof(Process));
+    Process* process = new Process();
     ELFLoader::Result result = ELFLoader::load(buffer, bytes_read, process);
     bool success = result.success();
     if (!success) {
       Debug::panic("ELF load failed code=%u", (uint32_t)result.getErrorCode());
     }
 
-    schedule_event([process]{ process->run(); });
+    schedule_event([process] {
+      debug_printf("Going to run hello.elf");
+      process->run();
+    });
 
-    delete existing_test_file;
+    while (true);
+
+    // delete existing_test_file;
   }
 #endif
 
@@ -103,7 +108,7 @@ extern "C" void kernelMain() {
   }
 #endif
 
-  setupTests();
+  // setupTests();
 
 #if 0
   schedule_event([] {
