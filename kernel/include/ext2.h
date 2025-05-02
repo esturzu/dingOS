@@ -183,8 +183,29 @@ public:
             sd_adapter->read_all(node->directLinked[block_number] * (1024 << supa->block_size), 
                             (1024 << supa->block_size), buffer);
         } else if (block_number < (12 + N)) {
-            // Single indirect block - referenced through a single indirection
-            debug_printf("DEBUG: Node::read_block: Single indirect blocks not implemented\n");
+            uint32_t N = block_size / 4; // Number of block pointers in a block
+            uint32_t index = block_number - 12; // Index within the indirect block
+
+            if (node->singleIndirect == 0) {
+                debug_printf("DEBUG: Node::read_block: Single indirect block not allocated\n");
+                return;
+            }
+
+            // Read the single indirect block into a buffer
+            uint32_t* block_table = new uint32_t[N];
+            sd_adapter->read_all(node->singleIndirect * block_size, block_size, (char*)block_table);
+
+            uint32_t target_block = block_table[index];
+            if (target_block == 0) {
+                debug_printf("DEBUG: Node::read_block: Target block in single indirect is not allocated (zero)\n");
+                delete[] block_table;
+                return;
+            }
+
+            debug_printf("DEBUG: Node::read_block: Reading from indirect block entry %u (block %u)\n", index, target_block);
+            sd_adapter->read_all(target_block * block_size, block_size, buffer);
+            delete[] block_table;
+
         } else if (block_number < (12 + N + (N * N))) {
             // Double indirect block - referenced through double indirection
             debug_printf("DEBUG: Node::read_block: Double indirect blocks not implemented\n");
