@@ -120,8 +120,6 @@ void elfTests() {
     printf(" ELF should have printed 'hi' above\n");
     printf(" ELF Run Random Result: %lu\n", value);
   }
-
-  delete process;
 }
 
 #endif // ELF_TESTS_H

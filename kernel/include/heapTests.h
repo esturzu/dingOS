@@ -15,7 +15,6 @@ void heapTests() {
   // Setup
   uint64_t* block = (uint64_t*)malloc(256);
   for (int i = 0; i < 32; i++) {
-    printf("Calling Malloc %d\n", i);
     block[i] = (uint64_t)malloc(16);
   }
   for (int i = 1; i < 32; i *= 2) {
