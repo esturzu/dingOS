@@ -1,12 +1,5 @@
 # dingOS
 
-## About
-
-A distributed OS with a microkernel design that aims to emulate Linux. dingOS is event-driven and binary-compatible.
-
-Written in C++ and uses ARM64 architecture. We will run it on a Raspberry Pi 3B. We will have access to two.
-
-## Build
 
 Using the Makefile, to build with no debug print statements:
 
