@@ -396,4 +396,12 @@ void add_dir_entry(Node* dir, const char* name, uint32_t inode_num);
 void init_ext2();
 
 
+//jounral helper 
+extern uint32_t ntohl(uint32_t x);
+extern uint32_t htonl(uint32_t x);
+
+
+
+
+
 #endif // _EXT2_H_

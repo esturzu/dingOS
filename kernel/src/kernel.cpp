@@ -21,6 +21,10 @@
 #include "tester.h"
 #include "vmm.h"
 
+extern void run_journal_test();
+extern void verify_journal_recovery();
+
+
 extern "C" void kernelMain() {
   // Handled uart Init
   PhysMem::page_init();
@@ -48,12 +52,16 @@ extern "C" void kernelMain() {
   // To have the right disk, you have to 'mkdir fs_root'
   // Then, run with command:
   // make clean-fs ; make fs-image ; clear ; make clean qemu DEBUG_ENABLED=0
+  // init_ext2();
+
+  // run_journal_test();
+  verify_journal_recovery();
   
-  SDAdapter* adapter = new SDAdapter(1024);
-  Ext2* fs = new Ext2(adapter);
-  Node* journal = new Node(fs->get_block_size(), 8, fs->adapter);
-  print_inode_info(journal);
-  delete journal;
+  // SDAdapter* adapter = new SDAdapter(1024);
+  // Ext2* fs = new Ext2(adapter);
+  // Node* journal = new Node(fs->get_block_size(), 8, fs->adapter);
+  // print_inode_info(journal);
+  // delete journal;
 
   // const char* existing_file_name = "hello.txt";
   // Node* existing_test_file = find_in_directory(fs->root, existing_file_name);
@@ -69,31 +77,31 @@ extern "C" void kernelMain() {
   // }
 
   // Create a test file
-  const char* test_filename = "example.txt";
-  printf("about to create %s\n", test_filename);
-  Node* test_file = create_file(fs->root, test_filename);
-  printf("Successfully created %s\n", test_filename);
+  // const char* test_filename = "example.txt";
+  // printf("about to create %s\n", test_filename);
+  // Node* test_file = create_file(fs->root, test_filename);
+  // printf("Successfully created %s\n", test_filename);
 
-  if (test_file) {
-    const char* content = "Hello from DingOS EXT2 filesystem!";
-    printf("about to write to %s\n", test_filename);
-    test_file->write_all(0, strlen_ext(content), (char*)content);
-    printf("Successfully wrote to %s\n", test_filename);
-    delete test_file;
+  // if (test_file) {
+  //   const char* content = "Hello from DingOS EXT2 filesystem!";
+  //   printf("about to write to %s\n", test_filename);
+  //   test_file->write_all(0, strlen_ext(content), (char*)content);
+  //   printf("Successfully wrote to %s\n", test_filename);
+  //   delete test_file;
 
-    // Read the file back
-    Node* reading_test_file = find_in_directory(fs->root, test_filename);
-    int file_size = reading_test_file->size_in_bytes();
-    if (reading_test_file) {
-      char buffer[file_size + 1];
-      int bytes_read = read_file(reading_test_file, buffer, file_size);
-      if (bytes_read > 0) {
-        buffer[bytes_read] = '\0';
-        printf("File contents: %s\n", buffer);
-      }
-      delete reading_test_file;
-    }
-  }
+  //   // Read the file back
+  //   Node* reading_test_file = find_in_directory(fs->root, test_filename);
+  //   int file_size = reading_test_file->size_in_bytes();
+  //   if (reading_test_file) {
+  //     char buffer[file_size + 1];
+  //     int bytes_read = read_file(reading_test_file, buffer, file_size);
+  //     if (bytes_read > 0) {
+  //       buffer[bytes_read] = '\0';
+  //       printf("File contents: %s\n", buffer);
+  //     }
+  //     delete reading_test_file;
+  //   }
+  // }
 
   // setupTests();
 

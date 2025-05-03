@@ -1,4 +1,5 @@
 #include "ext2.h"
+#include "journal.h"
 /*
  * EXT2 FILESYSTEM IMPLEMENTATION
  *
@@ -75,6 +76,21 @@ void print_inode_info(Node* node) {
     printf("------------------\n");
 }
 
+
+// Converts a 32-bit big-endian integer to host byte order (little-endian on most platforms)
+uint32_t ntohl(uint32_t x) {
+    return ((x & 0xFF000000) >> 24) |
+           ((x & 0x00FF0000) >> 8)  |
+           ((x & 0x0000FF00) << 8)  |
+           ((x & 0x000000FF) << 24);
+}
+
+uint32_t htonl(uint32_t x) {
+    return ((x & 0x000000FF) << 24) |
+           ((x & 0x0000FF00) << 8)  |
+           ((x & 0x00FF0000) >> 8)  |
+           ((x & 0xFF000000) >> 24);
+}
 
 
 // Compare two strings for equality
@@ -160,7 +176,12 @@ void Node::update_inode_on_disk() {
     
     printf("DEBUG: Node::update_inode_on_disk: Writing to offset 0x%x, size=%u\n", 
            inode_offset, sizeof(iNode));
+
+    //JOUNRAL STUFF - 3 lines 
+    uint32_t block_num = inode_offset / (1024 << supa->block_size);
+    log_metadata_block(sd_adapter, block_num, node);
     int64_t result = sd_adapter->write_all(inode_offset, sizeof(iNode), (char*)node);
+    // end jounral stuff 
     printf("DEBUG: Node::update_inode_on_disk: Write result=%lld\n", result);
 }
 
@@ -615,6 +636,10 @@ Node* create_file(Node* dir, const char* name) {
         delete existing;
         return nullptr;
     }
+
+    // JOURNAL STUFF
+    start_transaction(dir->sd_adapter);
+
     
     // Allocate an inode
     printf("DEBUG: create_file: Allocating new inode\n");
@@ -628,10 +653,16 @@ Node* create_file(Node* dir, const char* name) {
     // Create the inode (file type)
     printf("DEBUG: create_file: Creating inode with type 0x8000 (file)\n");
     create_inode(inode_num, 0x8000, dir->sd_adapter); // 0x8000 = regular file type
+
+
     
     // Add directory entry
     printf("DEBUG: create_file: Adding directory entry\n");
     add_dir_entry(dir, name, inode_num);
+
+
+    //JOUNRAL 
+    commit_transaction(dir->sd_adapter);
     
     // Return the new node
     printf("DEBUG: create_file: Creating Node object for new file\n");
@@ -640,15 +671,22 @@ Node* create_file(Node* dir, const char* name) {
     // Flush inode bitmap if dirty
     if (inode_bitmap_dirty) {
         printf("DEBUG: Flushing inode bitmap to disk\n");
+        //JOURNAL
+        log_metadata_block(dir->sd_adapter, bgdt->bit_map_iNode_address, cached_inode_bitmap);
+        // After commit:
         dir->sd_adapter->write_block(bgdt->bit_map_iNode_address, (char*)cached_inode_bitmap, 0, 1024 << supa->block_size);
         inode_bitmap_dirty = false;
+        // end jounral edits 
     }
 
     // Flush block bitmap if dirty
     if (block_bitmap_dirty) {
         printf("DEBUG: Flushing block bitmap to disk\n");
+        //JOUNRAL
+        log_metadata_block(dir->sd_adapter, bgdt->bit_map_block_address, cached_block_bitmap);
         dir->sd_adapter->write_block(bgdt->bit_map_block_address, (char*)cached_block_bitmap, 0, 1024 << supa->block_size);
         block_bitmap_dirty = false;
+        // end jounral edits 
     }
 
     // Flush BGDT if dirty
@@ -708,6 +746,39 @@ void init_ext2() {
     
     // Read the BGDT
     adapter->read_all(BGDT_index * fs_block_size, sizeof(BGDT), (char*)bgdt);
+
+
+
+    // journaling
+    // Step 1: Load inode 8 (journal inode)
+    Node* journal_inode = new Node(fs_block_size, 8, adapter);
+    // Step 2: Get the block that contains the journal superblock
+    uint32_t journal_block = journal_inode->node->directLinked[0];
+    printf("DEBUG: Journal superblock is in block %u\n", journal_block);
+
+    dump_blocks(adapter, journal_block, 1);
+
+    // Step 3: Allocate and zero memory
+    journal_superblock* jsb = (journal_superblock*) operator new(sizeof(journal_superblock));
+    zero_memory(jsb, sizeof(journal_superblock));
+
+    // Step 4: Read the journal superblock
+    adapter->read_all(journal_block * fs_block_size, sizeof(journal_superblock), (char*)jsb);
+
+    // Step 5: Validate and print
+    if (ntohl(jsb->header.magic) == 0xc03b3998) {
+        printf("Journal superblock loaded.\n");
+        printf("Transaction ID: %u\n", ntohl(jsb->header.transaction_id));
+        printf("Journal block size: %u\n", ntohl(jsb->block_size));
+        printf("Total blocks in journal: %u\n", ntohl(jsb->total_blocks));
+    } else {
+        printf("Invalid or missing journal superblock\n");
+    }
+
+    init_journal(jsb);
+
+    
+
     
     // Create an ext2 filesystem instance
     Ext2* fs = new Ext2(adapter);
@@ -722,7 +793,20 @@ void init_ext2() {
     } else {
         printf("Error: Root is not a directory or not found\n");
     }
-    
+
+    Node* new_file = create_file(fs->root, "journal_test.txt");
+    if (new_file) {
+        printf("Created file 'journal_test.txt' (inode %u)\n", new_file->number);
+    } else {
+        printf("Failed to create 'journal_test.txt'\n");
+    }
+
+
+    printf("\n=== Dumping Journal Contents ===\n");
+    dump_blocks(adapter, get_journal_start(), 10);
+
+
+        
     // Don't delete fs here if you want to keep using it
     // The initialization function should probably return the filesystem
     // or store it in a global variable
